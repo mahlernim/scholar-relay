@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "ScholarRelay",
+    "description": "Formal product name"
+  },
+  "extensionDescription": {
+    "message": "PDF, 연구 논문 및 웹페이지를 Gemini Notebook으로 보내고 정리된 아티팩트를 생성합니다.",
+    "description": "Short extension and Chrome Web Store summary"
+  }
+}

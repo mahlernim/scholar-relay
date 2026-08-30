@@ -8,6 +8,8 @@ $manifestPath = Join-Path $extensionRoot 'manifest.json'
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 
 $runtimeFiles = @(
+    '_locales/en/messages.json',
+    '_locales/ko/messages.json',
     'background.js',
     'content.js',
     'icons/icon16.png',

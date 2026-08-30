@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "ScholarRelay",
+  "name": "__MSG_extensionName__",
   "version": "1.2.1",
   "minimum_chrome_version": "120",
-  "description": "Send PDFs, research papers, and webpages to Gemini Notebook and generate organized artifacts.",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "en",
   "permissions": [
     "activeTab",
     "scripting",

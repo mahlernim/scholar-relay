@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "ScholarRelay",
+    "description": "Formal product name"
+  },
+  "extensionDescription": {
+    "message": "Send PDFs, research papers, and webpages to Gemini Notebook and generate organized artifacts.",
+    "description": "Short extension and Chrome Web Store summary"
+  }
+}

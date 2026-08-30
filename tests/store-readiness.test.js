@@ -19,7 +19,9 @@ import {
 test('store manifest uses minimum permissions and a production-safe alarm baseline', async () => {
   const manifest = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
 
-  assert.equal(manifest.name, 'ScholarRelay');
+  assert.equal(manifest.name, '__MSG_extensionName__');
+  assert.equal(manifest.description, '__MSG_extensionDescription__');
+  assert.equal(manifest.default_locale, 'en');
   assert.equal(manifest.version, '1.2.1');
   assert.equal(manifest.minimum_chrome_version, '120');
   assert.equal(manifest.permissions.includes('cookies'), false);
@@ -30,10 +32,12 @@ test('store manifest uses minimum permissions and a production-safe alarm baseli
 });
 
 test('ScholarRelay branding, package identity, and localized store copy stay aligned', async () => {
-  const [manifestText, packageText, popupText, backgroundText, readmeText, privacyText, listingText, packageScript] =
+  const [manifestText, packageText, englishLocaleText, koreanLocaleText, popupText, backgroundText, readmeText, privacyText, listingText, packageScript] =
     await Promise.all([
       readFile(new URL('../manifest.json', import.meta.url), 'utf8'),
       readFile(new URL('../package.json', import.meta.url), 'utf8'),
+      readFile(new URL('../_locales/en/messages.json', import.meta.url), 'utf8'),
+      readFile(new URL('../_locales/ko/messages.json', import.meta.url), 'utf8'),
       readFile(new URL('../popup.html', import.meta.url), 'utf8'),
       readFile(new URL('../background.js', import.meta.url), 'utf8'),
       readFile(new URL('../README.md', import.meta.url), 'utf8'),
@@ -44,9 +48,14 @@ test('ScholarRelay branding, package identity, and localized store copy stay ali
 
   const manifest = JSON.parse(manifestText);
   const packageJson = JSON.parse(packageText);
+  const englishLocale = JSON.parse(englishLocaleText);
+  const koreanLocale = JSON.parse(koreanLocaleText);
   assert.equal(packageJson.name, 'scholar-relay');
   assert.equal(packageJson.version, manifest.version);
-  assert.match(manifest.description, /Gemini Notebook/);
+  assert.equal(englishLocale.extensionName.message, 'ScholarRelay');
+  assert.equal(koreanLocale.extensionName.message, 'ScholarRelay');
+  assert.match(englishLocale.extensionDescription.message, /Gemini Notebook/);
+  assert.match(koreanLocale.extensionDescription.message, /Gemini Notebook/);
   assert.doesNotMatch(`${popupText}\n${backgroundText}`, /Chrome PDF to NotebookLM/);
   assert.match(popupText, /Open in Gemini Notebook|Gemini Notebook chooses/);
   assert.match(readmeText, /formerly NotebookLM/);
@@ -54,6 +63,8 @@ test('ScholarRelay branding, package identity, and localized store copy stay ali
   assert.match(listingText, /## English listing/);
   assert.match(listingText, /## 한국어 스토어 등록 문구/);
   assert.match(packageScript, /scholar-relay-v\$\(\$manifest\.version\)-store\.zip/);
+  assert.match(packageScript, /_locales\/en\/messages\.json/);
+  assert.match(packageScript, /_locales\/ko\/messages\.json/);
 });
 
 test('runtime recovery recreates only missing polling alarms', () => {
