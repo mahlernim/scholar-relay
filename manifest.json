@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Chrome PDF to NotebookLM",
-  "version": "1.1.2",
-  "description": "Detect PDF/web sources and generate NotebookLM artifacts from Chrome",
+  "version": "1.2.0",
+  "description": "Create NotebookLM notebooks from PDFs and webpages, organize them into collections, and generate artifacts.",
   "permissions": [
     "activeTab",
     "scripting",

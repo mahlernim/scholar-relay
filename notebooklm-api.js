@@ -30,6 +30,8 @@ const RPCMethod = {
   GENERATE_MIND_MAP: 'yyryJe',
   CREATE_NOTE: 'CYK0Xb',
   UPDATE_NOTE: 'cYAfTb',
+  LIST_LABELS: 'I3xc3c',
+  UPDATE_LABEL: 'le8sX',
 };
 
 // Artifact type codes (from notebooklm-py rpc/types.py ArtifactTypeCode)
@@ -173,6 +175,7 @@ let _mutationTimeoutMs = 15000;
 const READ_ONLY_RPC_METHODS = new Set([
   RPCMethod.GET_NOTEBOOK,
   RPCMethod.LIST_ARTIFACTS,
+  RPCMethod.LIST_LABELS,
 ]);
 
 const MAX_READ_ATTEMPTS = 3;
@@ -193,6 +196,15 @@ function artifactClientOptions() {
     null,
     [1, null, null, null, null, null, null, null, null, null, [1]],
     [[1, 4, 8, 2, 3, 6]],
+  ];
+}
+
+function collectionRequestOptions() {
+  return [
+    2,
+    null,
+    null,
+    [1, null, null, null, null, null, null, null, null, null, [1, 3]],
   ];
 }
 
@@ -639,6 +651,95 @@ async function deleteNotebook(notebookId) {
   await rpcCall(RPCMethod.DELETE_NOTEBOOK, params, '/', true);
   console.log(`[NotebookLM API] Deleted notebook: ${notebookId}`);
   return { ok: true };
+}
+
+/**
+ * List account-level NotebookLM collections.
+ * Collections reuse the label RPCs with a null notebook parent and type 3.
+ * Returns [{ id, name, emoji, notebookIds }].
+ */
+async function listCollections() {
+  const params = [collectionRequestOptions(), null, 3];
+  const result = await rpcCall(RPCMethod.LIST_LABELS, params, '/', true);
+  if (!result) return [];
+  if (!Array.isArray(result)) {
+    throw new Error('COLLECTION_SCHEMA_CHANGED: Collection response was not a list.');
+  }
+
+  const rows = result.length > 1 ? result[1] : null;
+  if (rows === null || rows === undefined) return [];
+  if (!Array.isArray(rows)) {
+    throw new Error('COLLECTION_SCHEMA_CHANGED: Collection rows were malformed.');
+  }
+
+  return rows.map((row, index) => {
+    if (!Array.isArray(row) || typeof row[0] !== 'string' || typeof row[2] !== 'string') {
+      throw new Error(`COLLECTION_SCHEMA_CHANGED: Collection row ${index + 1} was malformed.`);
+    }
+    const rawNotebookIds = row[1] ?? [];
+    if (!Array.isArray(rawNotebookIds) || rawNotebookIds.some(id => typeof id !== 'string')) {
+      throw new Error(`COLLECTION_SCHEMA_CHANGED: Collection membership row ${index + 1} was malformed.`);
+    }
+    if (row[3] !== null && row[3] !== undefined && typeof row[3] !== 'string') {
+      throw new Error(`COLLECTION_SCHEMA_CHANGED: Collection emoji row ${index + 1} was malformed.`);
+    }
+    return {
+      id: row[2],
+      name: row[0],
+      emoji: row[3] || null,
+      notebookIds: [...rawNotebookIds],
+    };
+  });
+}
+
+/**
+ * Add one notebook to an existing collection without retrying the mutation.
+ * A read-before-write avoids duplicate membership, and a read-after-write
+ * reconciles an uncertain response or a silent server-side no-op.
+ */
+async function addNotebookToCollection(collectionId, notebookId) {
+  if (!collectionId || !notebookId) {
+    throw new Error('A collection ID and notebook ID are required.');
+  }
+
+  const before = await listCollections();
+  const target = before.find(collection => collection.id === collectionId);
+  if (!target) {
+    throw new Error('The selected collection no longer exists. Refresh the collection list and choose again.');
+  }
+  if (target.notebookIds.includes(notebookId)) {
+    return { ...target, alreadyMember: true };
+  }
+
+  const params = [
+    collectionRequestOptions(),
+    null,
+    collectionId,
+    [[null, null, null, [[notebookId]]], []],
+    3,
+  ];
+
+  try {
+    await rpcCall(RPCMethod.UPDATE_LABEL, params, '/', true);
+  } catch (error) {
+    if (error?.code !== 'TRANSIENT_MUTATION_UNCERTAIN') throw error;
+    const reconciled = (await listCollections()).find(collection => collection.id === collectionId);
+    if (reconciled?.notebookIds.includes(notebookId)) {
+      console.warn('[NotebookLM API] Collection mutation response was incomplete; recovered the committed membership.');
+      return { ...reconciled, recovered: true };
+    }
+    throw error;
+  }
+
+  const confirmed = (await listCollections()).find(collection => collection.id === collectionId);
+  if (!confirmed) {
+    throw new Error('The selected collection disappeared while assigning the notebook.');
+  }
+  if (!confirmed.notebookIds.includes(notebookId)) {
+    throw new Error('NotebookLM did not confirm that the notebook was added to the selected collection.');
+  }
+  console.log(`[NotebookLM API] Added notebook ${notebookId} to collection ${collectionId}`);
+  return confirmed;
 }
 
 function makeAbortError() {
@@ -1772,6 +1873,8 @@ export {
   getNotebookUrl,
   createNotebook,
   deleteNotebook,
+  listCollections,
+  addNotebookToCollection,
   addUrlSource,
   addFileSource,
   listSources,
@@ -1811,6 +1914,7 @@ export const __testing = {
   RPCMethod,
   requestTemplateOptions,
   artifactClientOptions,
+  collectionRequestOptions,
   rpcCall,
   resetTokens() {
     _csrfToken = null;

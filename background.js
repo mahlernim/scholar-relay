@@ -25,6 +25,8 @@ import {
     getNotebookUrl,
     createNotebook,
     deleteNotebook,
+    listCollections,
+    addNotebookToCollection,
     addUrlSource,
     addFileSource,
     listSources,
@@ -73,6 +75,7 @@ const INITIAL_STATE = {
     notebookUrl: null,
     notebookTitle: null,
     sourceId: null,
+    collectionAssignment: null, // { collectionId, name, status, error? }
     tasks: [],               // [{ type, taskId, status }] for each artifact being generated
     error: null,
     startedAt: null,
@@ -337,6 +340,7 @@ const DEFAULT_SETTINGS = {
     chimeEnabled: true,
     autoOpenNotebook: false,
     useSourceTitleForNotebook: true,
+    collectionId: '',
 };
 
 async function getSettings() {
@@ -626,6 +630,31 @@ async function tickSourcePoll(state) {
 
     try {
         const settings = await getSettings();
+
+        if (settings.collectionId) {
+            await setState({ stepDetail: 'Source ready! Adding notebook to collection...' });
+            try {
+                const collection = await addNotebookToCollection(settings.collectionId, state.notebookId);
+                await setState({
+                    collectionAssignment: {
+                        collectionId: collection.id,
+                        name: collection.name,
+                        status: 'completed',
+                    },
+                });
+            } catch (collectionErr) {
+                console.warn('[Pipeline] Could not add notebook to collection:', collectionErr.message);
+                await setState({
+                    collectionAssignment: {
+                        collectionId: settings.collectionId,
+                        name: null,
+                        status: 'failed',
+                        error: collectionErr.message,
+                    },
+                });
+            }
+        }
+
         const sourceIds = [state.sourceId];
         const tasks = [];
 
@@ -879,6 +908,7 @@ async function runPipeline(pdfUrl, pageUrl, uploadFile = null, sourceType = 'pdf
             notebookUrl: null,
             notebookTitle: null,
             sourceId: null,
+            collectionAssignment: null,
             tasks: [],
             error: null,
             startedAt: new Date().toISOString(),
@@ -1018,6 +1048,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === 'GET_STATE') {
         getState().then(state => sendResponse(state));
+        return true;
+    }
+
+    if (message.type === 'LIST_COLLECTIONS') {
+        listCollections()
+            .then(collections => sendResponse({ ok: true, collections }))
+            .catch(error => sendResponse({
+                ok: false,
+                collections: [],
+                message: error?.message || 'Could not load NotebookLM collections',
+            }));
         return true;
     }
 

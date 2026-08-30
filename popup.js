@@ -39,6 +39,7 @@ const DEFAULTS = {
     generateDataTable: false, dataTablePrompt: '',
     notificationEnabled: true,
     chimeEnabled: true, autoOpenNotebook: false, useSourceTitleForNotebook: true,
+    collectionId: '',
 };
 
 const SELECT_MAP = {
@@ -47,6 +48,7 @@ const SELECT_MAP = {
     's-videoStyle': 'videoStyle',
     's-infographicStylePreset': 'infographicStylePreset',
     's-infographicNativeStyle': 'infographicNativeStyle',
+    's-collectionId': 'collectionId',
 };
 const RADIO_NAMES = [
     'audioLength', 'videoFormat', 'reportFormat',
@@ -100,7 +102,12 @@ async function loadSettings() {
 
     for (const [id, key] of Object.entries(SELECT_MAP)) {
         const el = document.getElementById(id);
-        if (el) el.value = s[key] ?? DEFAULTS[key];
+        if (!el) continue;
+        const value = s[key] ?? DEFAULTS[key];
+        if (id === 's-collectionId' && value && !Array.from(el.options).some(opt => opt.value === value)) {
+            el.add(new Option('Previously selected collection', value));
+        }
+        el.value = value;
     }
     for (const name of RADIO_NAMES) {
         const val = s[name] ?? DEFAULTS[name];
@@ -118,6 +125,48 @@ async function loadSettings() {
     }
 
     updateReportPromptHint();
+}
+
+async function refreshCollections() {
+    const select = document.getElementById('s-collectionId');
+    const status = document.getElementById('collection-load-status');
+    if (!select) return;
+
+    const selectedId = select.value;
+    select.disabled = true;
+    if (status) status.textContent = 'Loading collections...';
+
+    try {
+        const response = await chrome.runtime.sendMessage({ type: 'LIST_COLLECTIONS' });
+        if (!response?.ok) throw new Error(response?.message || 'Could not load collections');
+
+        select.replaceChildren(new Option('Do not add to a collection', ''));
+        for (const collection of response.collections || []) {
+            const emoji = collection.emoji ? `${collection.emoji} ` : '';
+            const count = Array.isArray(collection.notebookIds) ? collection.notebookIds.length : 0;
+            select.add(new Option(`${emoji}${collection.name} (${count})`, collection.id));
+        }
+
+        if (selectedId && !Array.from(select.options).some(opt => opt.value === selectedId)) {
+            select.add(new Option('Previously selected collection (unavailable)', selectedId));
+        }
+        select.value = selectedId;
+        if (status) {
+            const count = response.collections?.length || 0;
+            status.textContent = count
+                ? `${count} collection${count === 1 ? '' : 's'} available.`
+                : 'No collections found. Create one in NotebookLM first.';
+        }
+    } catch (error) {
+        select.replaceChildren(new Option('Do not add to a collection', ''));
+        if (selectedId) {
+            select.add(new Option('Previously selected collection (could not refresh)', selectedId));
+            select.value = selectedId;
+        }
+        if (status) status.textContent = error?.message || 'Could not load collections.';
+    } finally {
+        select.disabled = false;
+    }
 }
 
 async function saveSettings() {
@@ -207,6 +256,7 @@ document.getElementById('btn-gear').addEventListener('click', async () => {
             listenersWired = true;
         }
         await loadSettings();
+        await refreshCollections();
     }
 });
 
@@ -215,6 +265,7 @@ function wireSettingsListeners() {
     for (const id of Object.keys(SELECT_MAP)) {
         document.getElementById(id)?.addEventListener('change', saveSettings);
     }
+    document.getElementById('btn-refresh-collections')?.addEventListener('click', refreshCollections);
     // Radios
     for (const name of RADIO_NAMES) {
         document.querySelectorAll(`input[name="${name}"]`).forEach(inp => {
@@ -437,6 +488,13 @@ function renderProgress(state) {
       </div>
     </div>` : '';
 
+    const collection = state.collectionAssignment;
+    const collectionHtml = collection?.status === 'completed' ? `
+    <div class="collection-status success">🗂 Added to ${escapeHtml(collection.name || 'collection')}</div>`
+        : collection?.status === 'failed' ? `
+    <div class="collection-status warning">⚠️ Collection assignment failed: ${escapeHtml(collection.error || 'Unknown error')}</div>`
+            : '';
+
     let bottomHtml = '';
     if (state.notebookUrl) {
         bottomHtml += `<a class="notebook-link" href="${state.notebookUrl}" target="_blank">📓 Open Notebook in NotebookLM</a>`;
@@ -468,6 +526,7 @@ function renderProgress(state) {
       <div class="pdf-url">${escapeHtml((state.pdfUrl || '').substring(0, 80))}</div>
     </div>
     ${titleHtml}
+    ${collectionHtml}
     <div class="pipeline">${stepsHtml}</div>
     ${bottomHtml}`;
 

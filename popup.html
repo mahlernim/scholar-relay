@@ -48,12 +48,7 @@
     .header-icon {
       width: 32px;
       height: 32px;
-      background: linear-gradient(135deg, var(--accent), #ff6b8a);
       border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
       box-shadow: 0 2px 8px var(--accent-glow);
       flex-shrink: 0;
     }
@@ -332,6 +327,26 @@
       color: var(--success);
     }
 
+    .collection-status {
+      margin: 8px 0;
+      padding: 7px 9px;
+      border-radius: 6px;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .collection-status.success {
+      color: var(--success);
+      background: rgba(0, 214, 143, 0.1);
+      border: 1px solid rgba(0, 214, 143, 0.25);
+    }
+
+    .collection-status.warning {
+      color: var(--warning);
+      background: rgba(232, 162, 0, 0.1);
+      border: 1px solid rgba(232, 162, 0, 0.25);
+    }
+
     /* ========================================
        SETTINGS PANEL
        ======================================== */
@@ -376,7 +391,7 @@
     }
 
     .settings-inner {
-      padding: 4px 14px 4px;
+      padding: 0;
       max-height: 420px;
       overflow-y: auto;
     }
@@ -388,6 +403,40 @@
     .settings-inner::-webkit-scrollbar-thumb {
       background: var(--border);
       border-radius: 2px;
+    }
+
+    .settings-group {
+      width: 100%;
+      margin: 0;
+      padding: 10px 14px;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .settings-group:last-child {
+      border-bottom: 0;
+    }
+
+    .settings-group-title {
+      margin-bottom: 9px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--text);
+    }
+
+    .settings-group-help {
+      margin-top: 5px;
+      color: var(--text-dim);
+      font-size: 10px;
+      line-height: 1.35;
+    }
+
+    .settings-group-artifacts {
+      padding-bottom: 2px;
     }
 
     .settings-footer {
@@ -560,6 +609,40 @@
       line-height: 1.4;
     }
 
+    .collection-select-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .collection-select-row .s-select {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .btn-refresh-collections {
+      flex-shrink: 0;
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .btn-refresh-collections:hover {
+      color: var(--text);
+      border-color: rgba(233, 69, 96, 0.35);
+    }
+
+    .s-help {
+      margin-top: 4px;
+      color: var(--text-dim);
+      font-size: 10px;
+      line-height: 1.35;
+    }
+
     /* Radio chips */
     .s-radio-group {
       display: flex;
@@ -613,10 +696,10 @@
 
   <!-- HEADER -->
   <div class="header">
-    <div class="header-icon">🎧</div>
+    <img class="header-icon" src="icons/icon128.png" alt="">
     <div class="header-text">
       <h1>Chrome PDF to NotebookLM</h1>
-      <div class="subtitle">Auto-generate audio &amp; artifacts</div>
+      <div class="subtitle">Create notebooks &amp; artifacts</div>
     </div>
     <button class="btn-gear" id="btn-gear" title="Settings">⚙️</button>
   </div>
@@ -625,12 +708,41 @@
   <div id="settings-panel" role="region" aria-label="Settings">
 
     <div class="settings-header">
-      <span class="settings-header-title">⚙️ Artifact Settings</span>
+      <span class="settings-header-title">⚙️ Settings</span>
     </div>
 
     <div id="artifact-warning">⚠️ At least one artifact must be enabled.</div>
 
     <div class="settings-inner">
+
+      <!-- ================== NOTEBOOK SETTINGS ================== -->
+      <section class="settings-group" aria-labelledby="notebook-settings-title">
+        <div class="settings-group-title" id="notebook-settings-title">📓 Notebook Settings</div>
+        <div class="s-field">
+          <span class="s-label">Add new notebooks to</span>
+          <div class="collection-select-row">
+            <select id="s-collectionId" class="s-select">
+              <option value="">Do not add to a collection</option>
+            </select>
+            <button type="button" class="btn-refresh-collections" id="btn-refresh-collections"
+              title="Refresh collections" aria-label="Refresh collections">↻</button>
+          </div>
+          <div class="s-help" id="collection-load-status">Collections load from your signed-in NotebookLM account.</div>
+        </div>
+        <hr class="s-sep">
+        <div class="s-toggle-row">
+          <span class="s-toggle-label">Prefer detected paper title</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="s-useSourceTitleForNotebook">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <div class="settings-group-help">When unavailable or off, NotebookLM chooses the notebook title.</div>
+      </section>
+
+      <!-- ================== ARTIFACT SETTINGS ================== -->
+      <section class="settings-group settings-group-artifacts" aria-labelledby="artifact-settings-title">
+        <div class="settings-group-title" id="artifact-settings-title">🎨 Artifact Settings</div>
 
       <!-- ================== AUDIO ================== -->
       <!-- expanded by default -->
@@ -988,20 +1100,11 @@
         </div>
       </div>
 
+      </section><!-- /artifact settings -->
+
       <!-- ================== EXPERIENCE ================== -->
-      <div class="s-section expanded" id="sec-ux">
-        <div class="s-section-header" data-section="sec-ux">
-          <span class="s-section-title">✨ Experience</span>
-          <span class="s-section-arrow">▾</span>
-        </div>
-          <div class="s-section-content">
-          <div class="s-toggle-row" style="margin-bottom:8px">
-            <span class="s-toggle-label">Use detected paper title for notebook</span>
-            <label class="toggle-switch">
-              <input type="checkbox" id="s-useSourceTitleForNotebook">
-              <span class="toggle-track"></span>
-            </label>
-          </div>
+      <section class="settings-group" aria-labelledby="experience-settings-title">
+        <div class="settings-group-title" id="experience-settings-title">✨ Experience</div>
           <div class="s-toggle-row" style="margin-bottom:8px">
             <span class="s-toggle-label">Desktop notifications</span>
             <label class="toggle-switch">
@@ -1023,8 +1126,7 @@
               <span class="toggle-track"></span>
             </label>
           </div>
-        </div>
-      </div>
+      </section>
 
     </div><!-- /settings-inner -->
 

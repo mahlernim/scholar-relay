@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   __testing,
+  addNotebookToCollection,
   addFileSource,
   addUrlSource,
   ArtifactStatus,
@@ -21,6 +22,7 @@ import {
   InfographicOrientation,
   InfographicStyle,
   listArtifactStatuses,
+  listCollections,
   listSources,
   QuizDifficulty,
   QuizQuantity,
@@ -96,6 +98,142 @@ test('request option factories return fresh canonical envelopes', () => {
     [1, null, null, null, null, null, null, null, null, null, [1]],
     [[1, 4, 8, 2, 3, 6]],
   ]);
+
+  const firstCollection = __testing.collectionRequestOptions();
+  const secondCollection = __testing.collectionRequestOptions();
+  firstCollection[3][10][1] = 99;
+  assert.deepEqual(secondCollection, [
+    2, null, null,
+    [1, null, null, null, null, null, null, null, null, null, [1, 3]],
+  ]);
+});
+
+test('lists account-level collections with the confirmed type-3 payload', async () => {
+  let params;
+  installFetch((url, options) => {
+    if (url.endsWith('/')) return tokenResponse();
+    params = decodeRpcParams(options);
+    return rpcResponse(__testing.RPCMethod.LIST_LABELS, [
+      null,
+      [
+        ['Research', ['notebook-one', 'notebook-two'], 'collection-one', '📁'],
+        ['Reading', null, 'collection-two', null],
+      ],
+    ]);
+  });
+
+  const collections = await listCollections();
+  assert.deepEqual(params, [__testing.collectionRequestOptions(), null, 3]);
+  assert.deepEqual(collections, [
+    {
+      id: 'collection-one',
+      name: 'Research',
+      emoji: '📁',
+      notebookIds: ['notebook-one', 'notebook-two'],
+    },
+    {
+      id: 'collection-two',
+      name: 'Reading',
+      emoji: null,
+      notebookIds: [],
+    },
+  ]);
+});
+
+test('collection listing fails loudly when the wire row changes shape', async () => {
+  installFetch(url => {
+    if (url.endsWith('/')) return tokenResponse();
+    return rpcResponse(__testing.RPCMethod.LIST_LABELS, [null, [['Missing ID']]]);
+  });
+
+  await assert.rejects(
+    () => listCollections(),
+    /COLLECTION_SCHEMA_CHANGED/
+  );
+});
+
+test('adds a new notebook to an existing collection and confirms membership', async () => {
+  const listRows = [
+    [null, [['Research', [], 'collection-one', '📁']]],
+    [null, [['Research', ['notebook-one'], 'collection-one', '📁']]],
+  ];
+  let listCall = 0;
+  let updateParams;
+
+  installFetch((url, options) => {
+    if (url.endsWith('/')) return tokenResponse();
+    const methodId = new URL(url).searchParams.get('rpcids');
+    if (methodId === __testing.RPCMethod.LIST_LABELS) {
+      return rpcResponse(methodId, listRows[listCall++]);
+    }
+    if (methodId === __testing.RPCMethod.UPDATE_LABEL) {
+      updateParams = decodeRpcParams(options);
+      return rpcResponse(methodId, []);
+    }
+    throw new Error(`Unexpected RPC ${methodId}`);
+  });
+
+  const collection = await addNotebookToCollection('collection-one', 'notebook-one');
+  assert.equal(collection.notebookIds.includes('notebook-one'), true);
+  assert.equal(listCall, 2);
+  assert.deepEqual(updateParams, [
+    __testing.collectionRequestOptions(),
+    null,
+    'collection-one',
+    [[null, null, null, [['notebook-one']]], []],
+    3,
+  ]);
+});
+
+test('does not mutate collection membership when the notebook is already present', async () => {
+  let updateCalls = 0;
+  installFetch(url => {
+    if (url.endsWith('/')) return tokenResponse();
+    const methodId = new URL(url).searchParams.get('rpcids');
+    if (methodId === __testing.RPCMethod.LIST_LABELS) {
+      return rpcResponse(methodId, [
+        null,
+        [['Research', ['notebook-one'], 'collection-one', null]],
+      ]);
+    }
+    if (methodId === __testing.RPCMethod.UPDATE_LABEL) updateCalls++;
+    throw new Error(`Unexpected RPC ${methodId}`);
+  });
+
+  const collection = await addNotebookToCollection('collection-one', 'notebook-one');
+  assert.equal(collection.alreadyMember, true);
+  assert.equal(updateCalls, 0);
+});
+
+test('reconciles a committed collection assignment after its response stalls', async () => {
+  __testing.setMutationTimeout(1);
+  let listCall = 0;
+  let updateCalls = 0;
+
+  installFetch(url => {
+    if (url.endsWith('/')) return tokenResponse();
+    const methodId = new URL(url).searchParams.get('rpcids');
+    if (methodId === __testing.RPCMethod.LIST_LABELS) {
+      const members = listCall++ === 0 ? [] : ['notebook-one'];
+      return rpcResponse(methodId, [
+        null,
+        [['Research', members, 'collection-one', null]],
+      ]);
+    }
+    if (methodId === __testing.RPCMethod.UPDATE_LABEL) {
+      updateCalls++;
+      const response = mockResponse();
+      response.text = async () => new Promise(() => {});
+      return response;
+    }
+    throw new Error(`Unexpected RPC ${methodId}`);
+  });
+
+  const collection = await addNotebookToCollection('collection-one', 'notebook-one');
+  assert.equal(collection.recovered, true);
+  assert.equal(collection.notebookIds.includes('notebook-one'), true);
+  assert.equal(updateCalls, 1);
+  assert.equal(listCall, 2);
 });
 
 test('visual style enums match the current NotebookLM wire values', () => {

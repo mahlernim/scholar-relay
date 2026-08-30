@@ -1,103 +1,117 @@
-﻿# Chrome PDF to NotebookLM
+# Chrome PDF to NotebookLM
 
-Turn a PDF, arXiv page, or webpage into a NotebookLM notebook and generate artifacts in one workflow.
+Turn a PDF, arXiv paper, or webpage into a NotebookLM notebook and generate the artifacts you want in one workflow.
+
+[Download the latest install-ready release](https://github.com/mahlernim/chrome-pdf-to-notebooklm/releases/latest) · [한국어](#한국어) · [English](#english)
 
 ## Screenshots
-![Pipeline progress](./screenshot1.png)
-![Artifact settings](./screenshot2.png)
 
-## 한국어 안내
-
-### 소개
-**Chrome PDF to NotebookLM**은 현재 탭의 PDF/웹페이지/로컬 파일을 NotebookLM 소스로 추가하고, 오디오 개요를 포함한 아티팩트 생성을 자동으로 진행하는 크롬 확장 프로그램입니다.
-
-### 주요 기능
-- PDF 자동 감지: 직접 PDF URL, arXiv 페이지, 페이지 내 PDF 링크 감지
-- 원클릭 실행: 원격 PDF는 파일로 내려받아 업로드하고, 일반 웹페이지는 URL 소스로 추가한 뒤 아티팩트 생성
-- 백그라운드 진행: 팝업을 닫아도 진행 상태 유지
-- 로컬 PDF 업로드 지원: 필요 시 파일 선택으로 업로드
-- 아티팩트 설정 제공: Audio/Infographic 등 생성 옵션 조절
-- NotebookLM 최신 요청 형식 지원: 노트북/소스 생성 및 아티팩트 생성 호환성 개선
-- NotebookLM 새 주소(`notebook.google.com`)와 기존 주소를 모두 지원
-- 퀴즈와 플래시카드의 수량 및 난이도를 각각 선택 가능
-- 인포그래픽 레이아웃 프리셋과 NotebookLM 기본 비주얼 스타일을 별도로 선택
-- 감지된 논문 제목을 노트북 제목으로 사용하며, Experience 설정에서 끌 수 있음
-- 업로드한 PDF의 내장 제목 메타데이터를 우선 사용하고 URL 형태나 일반적인 파일명은 노트북 제목에서 제외
-
-### 설치 (개발자 모드)
-1. 이 저장소를 다운로드 또는 클론합니다.
-2. Chrome에서 `chrome://extensions`를 엽니다.
-3. 우측 상단에서 **개발자 모드**를 켭니다.
-4. **압축해제된 확장 프로그램을 로드**를 클릭합니다.
-5. 이 저장소의 루트 폴더(현재 `manifest.json`이 있는 폴더)를 선택합니다.
-6. 확장 목록에서 **Chrome PDF to NotebookLM**이 보이면 설치 완료입니다.
-
-### 사용 방법
-1. [NotebookLM](https://notebook.google.com)에 Google 계정으로 로그인합니다. 기존 `notebooklm.google.com` 로그인도 계속 지원합니다.
-2. PDF/arXiv/웹페이지를 연 뒤 확장 아이콘을 클릭합니다.
-3. 상황에 맞게 아래 버튼 중 하나를 선택합니다.
-- `Generate Audio Overview` (PDF 감지됨)
-- `Use Current Webpage URL` (PDF 미감지)
-- `Upload Local PDF` 또는 `Use Current PDF and Generate` (로컬 파일)
-4. 진행 화면에서 상태를 확인하고 완료 후 `Open Notebook in NotebookLM`으로 이동합니다.
-
-### 권한 관련 안내
-- 로컬 `file://` PDF를 현재 탭에서 직접 읽으려면 확장 상세 설정에서 **파일 URL에 대한 액세스 허용**을 켜야 할 수 있습니다.
-- 권한과 동작은 NotebookLM 및 Chrome 정책 변경에 따라 영향을 받을 수 있습니다.
-
-### 문제 해결
-- 버튼 동작이 없으면: [NotebookLM](https://notebook.google.com)을 열어 로그인 상태를 확인한 뒤 다시 시도하세요. 확장 프로그램은 지원되는 두 주소 중 로그인된 주소를 자동으로 선택합니다.
-- 로컬 PDF 읽기 실패 시: `Allow access to file URLs` 활성화 후 다시 시도하세요.
-- URL 소스 추가 실패 시: `Upload Local PDF` 방식으로 업로드를 시도하세요.
+| Workflow | Settings |
+| --- | --- |
+| ![Completed workflow with collection assignment](./docs/screenshots/workflow.png) | ![Notebook, artifact, and experience settings](./docs/screenshots/settings.png) |
 
 ---
 
-## English Guide
+## 한국어
 
-### Overview
-**Chrome PDF to NotebookLM** is a Chrome extension that takes a PDF/web source from your current tab, adds it to NotebookLM, and runs artifact generation (including audio overview) in a streamlined flow.
+### 주요 기능
 
-### Key Features
-- Smart PDF detection: direct PDF URLs, arXiv pages, and PDF links on pages
-- One-click pipeline: remote PDFs are fetched and uploaded as files before artifact generation; ordinary webpages remain URL sources
-- Background progress: keeps running even when the popup is closed
-- Local PDF upload support with fallback file picker
-- Artifact settings for Audio/Infographic and more
-- Current NotebookLM request compatibility for notebook, source, and artifact generation
-- Supports both the current `notebook.google.com` address and the legacy address
-- Separate quantity and difficulty controls for quizzes and flashcards
-- Separate infographic layout presets and native NotebookLM visual styles
-- Uses the detected paper title as the notebook title by default, with an opt-out in Experience settings
-- Prefers embedded PDF title metadata for uploaded PDFs and rejects URL-shaped or generic notebook titles
+- 현재 탭에서 PDF, arXiv 논문, 웹페이지를 감지해 NotebookLM 소스로 추가합니다.
+- 원격 PDF와 로컬 PDF 업로드를 지원하며, PDF 메타데이터에서 신뢰할 수 있는 논문 제목을 찾습니다.
+- 새 노트북을 선택한 기존 NotebookLM 컬렉션에 자동으로 추가할 수 있습니다.
+- 감지한 논문 제목을 우선 사용하거나 NotebookLM의 자동 제목 생성을 선택할 수 있습니다.
+- 오디오, 비디오, 보고서, 퀴즈, 플래시카드, 인포그래픽, 슬라이드, 마인드맵, 데이터 표를 원하는 조합으로 생성합니다.
+- 팝업을 닫아도 백그라운드에서 진행되며 완료 알림, 차임, 노트북 자동 열기를 설정할 수 있습니다.
 
-### Install (Developer Mode)
-1. Download or clone this repository.
-2. Open `chrome://extensions` in Chrome.
-3. Enable **Developer mode**.
-4. Click **Load unpacked**.
-5. Select the repository root folder (the folder that contains `manifest.json`).
-6. Confirm **Chrome PDF to NotebookLM** appears in your extension list.
+### 설치
 
-### How to Use
-1. Sign in at [NotebookLM](https://notebook.google.com). Existing sessions at `notebooklm.google.com` remain supported.
-2. Open a PDF/arXiv/webpage and click the extension icon.
-3. Choose the appropriate action:
-- `Generate Audio Overview` (when PDF is detected)
-- `Use Current Webpage URL` (when no PDF is detected)
-- `Upload Local PDF` or `Use Current PDF and Generate` (for local files)
-4. Track progress in the popup and open results via `Open Notebook in NotebookLM`.
+1. [최신 릴리스](https://github.com/mahlernim/chrome-pdf-to-notebooklm/releases/latest)의 **Assets**에서 `chrome-pdf-to-notebooklm-v1.2.0.zip`을 다운로드합니다. GitHub가 자동으로 제공하는 **Source code** ZIP은 설치용 파일이 아닙니다.
+2. ZIP을 계속 사용할 폴더에 압축 해제합니다.
+3. Chrome에서 `chrome://extensions`를 열고 **개발자 모드**를 켭니다.
+4. **압축해제된 확장 프로그램을 로드**를 클릭하고 `manifest.json`이 들어 있는 압축 해제 폴더를 선택합니다.
+5. [NotebookLM](https://notebook.google.com)에 로그인합니다.
 
-### Permission Notes
-- For direct reading of local `file://` PDFs from the current tab, you may need to enable **Allow access to file URLs** in extension settings.
-- Behavior can be affected by NotebookLM and Chrome policy changes.
+### 업데이트
 
-### Troubleshooting
-- No progress after start: open [NotebookLM](https://notebook.google.com), confirm that you are signed in, and retry. The extension automatically selects a supported address with an active session.
-- Local PDF read fails: enable `Allow access to file URLs` and retry.
-- URL import fails: use `Upload Local PDF` as a fallback.
+새 릴리스 ZIP의 파일을 기존 확장 프로그램 폴더에 덮어쓴 다음 `chrome://extensions`에서 확장 프로그램의 **새로고침** 버튼을 클릭합니다. 같은 폴더를 사용하면 기존 설정이 유지됩니다.
+
+### 사용 방법
+
+1. PDF, arXiv 논문 또는 웹페이지를 열고 확장 아이콘을 클릭합니다.
+2. 필요하면 **Settings**에서 노트북, 아티팩트, 사용 환경 설정을 조정합니다.
+3. 감지된 소스를 사용하거나 로컬 PDF를 선택해 생성을 시작합니다.
+4. 진행 상태를 확인하고 완료 후 **Open Notebook in NotebookLM**을 클릭합니다.
+
+### 설정
+
+| 영역 | 기능 |
+| --- | --- |
+| **Notebook Settings** | 새 노트북을 추가할 컬렉션과 감지한 논문 제목 사용 여부 |
+| **Artifact Settings** | 생성할 아티팩트와 형식, 길이, 언어, 스타일, 사용자 지침 |
+| **Experience** | 데스크톱 알림, 완료 차임, 완료된 노트북 자동 열기 |
+
+컬렉션 추가에 실패해도 소스 처리와 아티팩트 생성은 계속됩니다. 컬렉션 목록은 현재 로그인한 NotebookLM 계정에서 불러옵니다.
+
+### 권한 및 문제 해결
+
+- 로컬 `file://` PDF를 읽으려면 확장 프로그램 세부정보에서 **파일 URL에 대한 액세스 허용**을 켜야 할 수 있습니다.
+- 시작되지 않으면 [NotebookLM](https://notebook.google.com)의 로그인 상태를 확인하고 다시 시도합니다.
+- 컬렉션이 보이지 않으면 NotebookLM에서 컬렉션을 만든 뒤 설정의 새로고침 버튼을 클릭합니다.
+- URL 소스를 추가하지 못하면 **Upload Local PDF**로 파일을 직접 업로드합니다.
+
+---
+
+## English
+
+### Highlights
+
+- Detects PDFs, arXiv papers, and webpages in the current tab and adds them to NotebookLM.
+- Supports remote and local PDF uploads and extracts trustworthy paper titles from PDF metadata.
+- Can automatically add each new notebook to a selected existing NotebookLM collection.
+- Can prefer the detected paper title or let NotebookLM choose the notebook title.
+- Generates any combination of audio, video, reports, quizzes, flashcards, infographics, slide decks, mind maps, and data tables.
+- Continues in the background when the popup closes, with optional notifications, a completion chime, and automatic notebook opening.
+
+### Install
+
+1. Under **Assets** on the [latest release](https://github.com/mahlernim/chrome-pdf-to-notebooklm/releases/latest), download `chrome-pdf-to-notebooklm-v1.2.0.zip`. GitHub's automatically generated **Source code** archives are not install-ready extensions.
+2. Extract the ZIP into a folder you will keep.
+3. Open `chrome://extensions` and enable **Developer mode**.
+4. Click **Load unpacked** and select the extracted folder containing `manifest.json`.
+5. Sign in to [NotebookLM](https://notebook.google.com).
+
+### Update
+
+Extract the new release over the existing extension folder, then click the extension's **Reload** button on `chrome://extensions`. Reusing the same folder preserves your settings.
+
+### Use
+
+1. Open a PDF, arXiv paper, or webpage and click the extension icon.
+2. If needed, open **Settings** and configure notebook, artifact, and experience options.
+3. Start with the detected source or choose a local PDF.
+4. Follow progress and click **Open Notebook in NotebookLM** when complete.
+
+### Settings
+
+| Section | Controls |
+| --- | --- |
+| **Notebook Settings** | Destination collection and whether to prefer the detected paper title |
+| **Artifact Settings** | Artifact selection, format, length, language, style, and custom instructions |
+| **Experience** | Desktop notifications, completion chime, and automatic notebook opening |
+
+Source processing and artifact generation continue if collection assignment fails. Collections are loaded from the currently signed-in NotebookLM account.
+
+### Permissions and troubleshooting
+
+- To read local `file://` PDFs, enable **Allow access to file URLs** in the extension's details.
+- If a run does not start, confirm that you are signed in at [NotebookLM](https://notebook.google.com) and retry.
+- If a collection is missing, create it in NotebookLM and use the refresh button in Settings.
+- If a URL source cannot be added, use **Upload Local PDF** to upload the file directly.
 
 ## Credits
-- NotebookLM protocol implementation was heavily informed by [`teng-lin/notebooklm-py`](https://github.com/teng-lin/notebooklm-py).
+
+The NotebookLM protocol implementation was heavily informed by [`teng-lin/notebooklm-py`](https://github.com/teng-lin/notebooklm-py).
 
 ## License
+
 MIT. See [LICENSE](./LICENSE).
