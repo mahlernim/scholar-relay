@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Chrome PDF to NotebookLM",
-  "version": "1.2.0",
-  "description": "Create NotebookLM notebooks from PDFs and webpages, organize them into collections, and generate artifacts.",
+  "name": "ScholarRelay",
+  "version": "1.2.1",
+  "minimum_chrome_version": "120",
+  "description": "Send PDFs, research papers, and webpages to Gemini Notebook and generate organized artifacts.",
   "permissions": [
     "activeTab",
     "scripting",
     "storage",
-    "cookies",
     "notifications",
     "offscreen",
     "alarms"
@@ -15,8 +15,11 @@
   "host_permissions": [
     "https://notebook.google.com/*",
     "https://notebooklm.google.com/*",
-    "file:///*",
-    "*://*/*"
+    "file:///*"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
   ],
   "background": {
     "service_worker": "background.js",

@@ -1,4 +1,5 @@
 import { choosePdfTitle } from './pdf-metadata.js';
+import { httpOriginPattern, needsOptionalPdfAccess } from './site-permissions.js';
 
 /**
  * Popup script: reads pipeline state from background service worker
@@ -155,7 +156,7 @@ async function refreshCollections() {
             const count = response.collections?.length || 0;
             status.textContent = count
                 ? `${count} collection${count === 1 ? '' : 's'} available.`
-                : 'No collections found. Create one in NotebookLM first.';
+                : 'No collections found. Create one in Gemini Notebook first.';
         }
     } catch (error) {
         select.replaceChildren(new Option('Do not add to a collection', ''));
@@ -497,7 +498,7 @@ function renderProgress(state) {
 
     let bottomHtml = '';
     if (state.notebookUrl) {
-        bottomHtml += `<a class="notebook-link" href="${state.notebookUrl}" target="_blank">📓 Open Notebook in NotebookLM</a>`;
+        bottomHtml += `<a class="notebook-link" href="${state.notebookUrl}" target="_blank">📓 Open in Gemini Notebook</a>`;
     }
     if (state.status === 'completed') {
         const tasks = state.tasks || [];
@@ -706,6 +707,22 @@ async function tryDirectTabPdfRead(tab, preferredPdfUrl = null) {
     }
 }
 
+async function requestPdfOriginAccess(pageUrl, pdfUrl) {
+    if (!needsOptionalPdfAccess(pageUrl, pdfUrl)) return true;
+    const originPattern = httpOriginPattern(pdfUrl);
+    if (!originPattern) return true;
+
+    const alreadyGranted = await chrome.permissions.contains({ origins: [originPattern] });
+    if (alreadyGranted) return true;
+
+    try {
+        return await chrome.permissions.request({ origins: [originPattern] });
+    } catch (error) {
+        console.warn('[Popup] PDF site permission request was dismissed:', error?.message || error);
+        return false;
+    }
+}
+
 async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSourceTitle = null) {
     const btn = document.getElementById('btn-upload-start') || document.getElementById('btn-start');
     if (btn) { btn.disabled = true; btn.textContent = 'Reading current PDF...'; }
@@ -713,7 +730,17 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tab?.id) throw new Error('No active tab');
+        const originAccessGranted = await requestPdfOriginAccess(tab.url || pageUrl, pdfUrl);
         const pageTitle = detectedSourceTitle || await detectSourceTitleFromTab(tab);
+
+        if (!originAccessGranted) {
+            if (!/^https?:\/\//i.test(pdfUrl || '')) {
+                throw new Error('Site access was not granted. Choose a local PDF instead.');
+            }
+            console.log('[Popup] Site access denied; trying Gemini Notebook URL import without downloading the PDF');
+            await startPipeline(pdfUrl, pageUrl || tab.url || pdfUrl, 'pdf', pageTitle);
+            return;
+        }
 
         let payload = await tryDirectTabPdfRead(tab, pdfUrl);
 

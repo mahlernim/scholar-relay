@@ -1,9 +1,11 @@
 {
-  "name": "chrome-pdf-to-notebooklm",
-  "version": "1.2.0",
+  "name": "scholar-relay",
+  "version": "1.2.1",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "capture:assets": "node ./scripts/capture-assets.mjs",
+    "package:store": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/package-store.ps1"
   }
 }

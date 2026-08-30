@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
-  <title id="title">Chrome PDF to NotebookLM</title>
+  <title id="title">ScholarRelay</title>
   <desc id="desc">A PDF document beneath navy headphones on a rose rounded square.</desc>
   <defs>
     <linearGradient id="tile" x1="18" y1="12" x2="112" y2="120" gradientUnits="userSpaceOnUse">
@@ -7,13 +7,13 @@
       <stop offset="1" stop-color="#F2768B"/>
     </linearGradient>
   </defs>
-  <rect x="4" y="4" width="120" height="120" rx="27" fill="url(#tile)"/>
-  <path d="M24 67V61C24 36 41 21 64 21s40 15 40 40v6" fill="none" stroke="#263348" stroke-width="11" stroke-linecap="round"/>
-  <path d="M37 48h45l14 14v48a7 7 0 0 1-7 7H37a7 7 0 0 1-7-7V55a7 7 0 0 1 7-7Z" fill="#FFF"/>
-  <path d="M82 48v10a4 4 0 0 0 4 4h10Z" fill="#F7CCD3"/>
-  <text x="63" y="96" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="800" letter-spacing="-1" fill="#D8425B">PDF</text>
-  <rect x="17" y="62" width="17" height="35" rx="8.5" fill="#263348"/>
-  <rect x="94" y="62" width="17" height="35" rx="8.5" fill="#263348"/>
-  <rect x="21" y="68" width="6" height="23" rx="3" fill="#FFF" opacity=".92"/>
-  <rect x="101" y="68" width="6" height="23" rx="3" fill="#FFF" opacity=".92"/>
+  <rect x="16" y="16" width="96" height="96" rx="22" fill="url(#tile)"/>
+  <path d="M31 70V64c0-21 14-33 33-33s33 12 33 33v6" fill="none" stroke="#263348" stroke-width="9" stroke-linecap="round"/>
+  <path d="M39 50h37l14 14v37a6 6 0 0 1-6 6H39a6 6 0 0 1-6-6V56a6 6 0 0 1 6-6Z" fill="#FFF"/>
+  <path d="M76 50v10a4 4 0 0 0 4 4h10Z" fill="#F7CCD3"/>
+  <text x="62" y="91" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="800" letter-spacing="-1" fill="#D8425B">PDF</text>
+  <rect x="25" y="66" width="14" height="29" rx="7" fill="#263348"/>
+  <rect x="89" y="66" width="14" height="29" rx="7" fill="#263348"/>
+  <rect x="28" y="72" width="5" height="17" rx="2.5" fill="#FFF" opacity=".92"/>
+  <rect x="95" y="72" width="5" height="17" rx="2.5" fill="#FFF" opacity=".92"/>
 </svg>

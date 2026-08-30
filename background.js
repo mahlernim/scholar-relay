@@ -1,12 +1,12 @@
 /**
- * Background service worker for Chrome PDF to NotebookLM extension.
+ * Background service worker for ScholarRelay.
  *
  * MV3 SERVICE WORKER LIFETIME
  * Chrome terminates idle service workers after ~30 seconds. Any code that
  * sleeps between network calls (e.g. a while-loop with setTimeout) risks
  * being killed mid-execution during a 10-15 minute job.
  *
- * Solution: use chrome.alarms (15-second period, unpacked extension) for the two long polling
+ * Solution: use chrome.alarms (30-second production-safe period) for the two long polling
  * phases. The alarm wakes the worker, runs one poll tick, then exits.
  * All inter-tick state is persisted in chrome.storage.local.
  *
@@ -14,9 +14,9 @@
  * 1. Authenticate (CSRF + session tokens)         -- sync network call
  * 2. Create notebook                              -- sync network call
  * 3. Add source (URL or file upload)              -- sync network call
- * 4. [ALARM] Poll every 15s -- wait for source ingestion (up to 10 min)
+ * 4. [ALARM] Poll every 30s -- wait for source ingestion (up to 10 min)
  * 5.         On source ready: trigger selected artifacts with pacing
- * 6. [ALARM] Poll every 15s -- wait for all artifact tasks (up to 20 min)
+ * 6. [ALARM] Poll every 30s -- wait for all artifact tasks (up to 20 min)
  * 7. Notify + chime on completion
  */
 
@@ -55,8 +55,17 @@ import {
     InfographicStyle,
     SourceStatus,
 } from './notebooklm-api.js';
+import {
+    PIPELINE_ALARM_NAME,
+    PIPELINE_POLL_PERIOD_MINUTES,
+    createExclusiveRunner,
+    interruptedPipelineUpdate,
+    pollingElapsedMs,
+    runtimeRecoveryAction,
+} from './runtime-policy.js';
+import { httpOriginPattern, sameHttpOrigin } from './site-permissions.js';
 
-const ALARM_NAME = 'pipeline-poll';
+const ALARM_NAME = PIPELINE_ALARM_NAME;
 const ARTIFACT_START_DELAY_MS = 1000;
 
 // =========================================================================
@@ -227,6 +236,18 @@ function ensurePdfFilename(name) {
 }
 
 async function downloadRemotePdfForUpload(pdfUrl, pageUrl = null) {
+    const originPattern = httpOriginPattern(pdfUrl);
+    const coveredByActiveTab = sameHttpOrigin(pdfUrl, pageUrl);
+    const hasGrantedOrigin = originPattern
+        ? await chrome.permissions.contains({ origins: [originPattern] })
+        : false;
+    if (originPattern && !coveredByActiveTab && !hasGrantedOrigin) {
+        throw new Error(
+            `SITE_ACCESS_REQUIRED: Direct download access was not granted for ${new URL(pdfUrl).host}. ` +
+            'Grant access from the extension popup or upload the PDF manually.'
+        );
+    }
+
     const response = await fetch(pdfUrl, {
         method: 'GET',
         credentials: 'include',
@@ -445,7 +466,7 @@ async function playCompletionChime() {
             await chrome.offscreen.createDocument({
                 url,
                 reasons: ['AUDIO_PLAYBACK'],
-                justification: 'Play completion chime for NotebookLM pipeline',
+                justification: 'Play the ScholarRelay completion chime',
             });
         }
         await chrome.runtime.sendMessage({ type: 'PLAY_CHIME' });
@@ -506,7 +527,7 @@ async function completePipeline() {
         chrome.notifications.create('pipeline-complete', {
             type: 'basic',
             iconUrl: 'icons/icon128.png',
-            title: `\uD83C\uDFD9 NotebookLM Ready!`,
+            title: `\uD83C\uDFD9 Gemini Notebook Ready!`,
             message: notificationMessage,
             priority: 2,
             requireInteraction: true,
@@ -552,7 +573,7 @@ async function failPipeline(errorMsg, notebookId = null, sourceWasReady = false)
         chrome.notifications.create('pipeline-error', {
             type: 'basic',
             iconUrl: 'icons/icon128.png',
-            title: 'NotebookLM Pipeline Error',
+            title: 'ScholarRelay Error',
             message: finalError.substring(0, 140) || 'Unknown error',
             priority: 2,
         });
@@ -572,7 +593,7 @@ async function failPipeline(errorMsg, notebookId = null, sourceWasReady = false)
  */
 async function tickSourcePoll(state) {
     const SOURCE_TIMEOUT_MS = 600000; // 10 minutes
-    const elapsed = Date.now() - new Date(state.stepStartedAt).getTime();
+    const elapsed = pollingElapsedMs(state.stepStartedAt);
     const sourceLabel = getSourceLabel(state.sourceType);
     const ingestionLabel = getIngestionLabel(state.sourceType);
 
@@ -803,7 +824,7 @@ async function tickSourcePoll(state) {
  */
 async function tickArtifactPoll(state) {
     const ARTIFACT_TIMEOUT_MS = 1200000; // 20 minutes
-    const elapsed = Date.now() - new Date(state.stepStartedAt).getTime();
+    const elapsed = pollingElapsedMs(state.stepStartedAt);
 
     if (elapsed > ARTIFACT_TIMEOUT_MS) {
         await failPipeline('Artifact generation timed out after 20 minutes.', null, true);
@@ -853,30 +874,64 @@ async function tickArtifactPoll(state) {
 // Alarm listener -- the heart of long-running polling
 // =========================================================================
 
+const runExclusivePollTick = createExclusiveRunner();
+
 chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name !== ALARM_NAME) return;
+    const ran = await runExclusivePollTick(async () => {
+        const state = await getState();
 
-    const state = await getState();
+        if (!state || state.status !== 'running') {
+            await chrome.alarms.clear(ALARM_NAME);
+            return;
+        }
 
-    if (!state || state.status !== 'running') {
-        chrome.alarms.clear(ALARM_NAME);
-        return;
+        console.log(`[Alarm] tick -- step=${state.step}`);
+
+        if (state.step === 'wait_source') {
+            await tickSourcePoll(state);
+        } else if (state.step === 'wait_artifacts') {
+            await tickArtifactPoll(state);
+        } else if (state.step === 'generate_artifacts') {
+            console.log('[Alarm] Artifact start phase still in progress');
+        } else {
+            console.log(`[Alarm] tick during non-polling step '${state.step}', ignoring`);
+        }
+    });
+
+    if (!ran) {
+        console.warn('[Alarm] Previous poll tick is still running; skipping overlap');
     }
+});
 
-    console.log(`[Alarm] tick -- step=${state.step}`);
+async function reconcilePipelineRuntime() {
+    const [state, alarm] = await Promise.all([
+        getState(),
+        chrome.alarms.get(ALARM_NAME),
+    ]);
+    const action = runtimeRecoveryAction(state, !!alarm);
 
-    if (state.step === 'wait_source') {
-        await tickSourcePoll(state);
-    } else if (state.step === 'wait_artifacts') {
-        await tickArtifactPoll(state);
-    } else if (state.step === 'generate_artifacts') {
-        // The artifacts were just triggered this same tick (inside tickSourcePoll).
-        // Nothing more to do -- next tick will be wait_artifacts.
-    } else {
-        // Not a polling step (e.g. still in auth/create/add_source).
-        // This shouldn't normally happen but is harmless.
-        console.log(`[Alarm] tick during non-polling step '${state.step}', ignoring`);
+    if (action === 'create_alarm') {
+        await chrome.alarms.create(ALARM_NAME, {
+            periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES,
+        });
+        console.log(`[Recovery] Restored ${ALARM_NAME} for ${state.step}`);
+    } else if (action === 'clear_alarm') {
+        await chrome.alarms.clear(ALARM_NAME);
+    } else if (action === 'interrupt') {
+        await chrome.alarms.clear(ALARM_NAME);
+        await setState(interruptedPipelineUpdate(state));
+        setBadge('!', '#e03e3e');
+        console.warn(`[Recovery] Stopped interrupted non-idempotent phase: ${state?.step}`);
     }
+}
+
+chrome.runtime.onStartup.addListener(() => {
+    reconcilePipelineRuntime().catch(error => console.warn('[Recovery] Startup reconciliation failed:', error));
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+    reconcilePipelineRuntime().catch(error => console.warn('[Recovery] Install reconciliation failed:', error));
 });
 
 // =========================================================================
@@ -899,7 +954,7 @@ async function runPipeline(pdfUrl, pageUrl, uploadFile = null, sourceType = 'pdf
         await setState({
             status: 'running',
             step: 'auth',
-            stepDetail: 'Authenticating with NotebookLM...',
+            stepDetail: 'Connecting to Gemini Notebook...',
             pdfUrl,
             sourceType: effectiveSourceType,
             pageUrl,
@@ -988,17 +1043,15 @@ async function runPipeline(pdfUrl, pageUrl, uploadFile = null, sourceType = 'pdf
         await setState({
             sourceId: source.id,
             step: 'wait_source',
-            stepDetail: `Waiting for ${ingestionLabel} (checking every ~15s)...`,
+            stepDetail: `Waiting for ${ingestionLabel} (checking every ~30s)...`,
             stepStartedAt: new Date().toISOString(),
         });
 
-        chrome.alarms.clear(ALARM_NAME);
-        // NOTE: Chrome enforces a minimum of 1 minute for periodInMinutes in
-        // Web Store (production) extensions. Since this extension is loaded as
-        // an unpacked developer extension, shorter periods work fine.
-        // Change to periodInMinutes: 1 if you ever publish to the Web Store.
-        chrome.alarms.create(ALARM_NAME, { periodInMinutes: 0.25 }); // 15 seconds
-        console.log('[Pipeline] Alarm-based polling started (15 s interval)');
+        await chrome.alarms.clear(ALARM_NAME);
+        await chrome.alarms.create(ALARM_NAME, {
+            periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES,
+        });
+        console.log('[Pipeline] Alarm-based polling started (30 s interval)');
 
     } catch (err) {
         const msg = err?.message || 'Unknown error';
@@ -1057,7 +1110,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             .catch(error => sendResponse({
                 ok: false,
                 collections: [],
-                message: error?.message || 'Could not load NotebookLM collections',
+                message: error?.message || 'Could not load Gemini Notebook collections',
             }));
         return true;
     }
@@ -1117,4 +1170,5 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
     }
 });
 
-console.log('[Chrome PDF to NotebookLM] Service worker loaded');
+console.log('[ScholarRelay] Service worker loaded');
+reconcilePipelineRuntime().catch(error => console.warn('[Recovery] Initial reconciliation failed:', error));

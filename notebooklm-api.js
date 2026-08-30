@@ -240,7 +240,7 @@ async function fetchTokens() {
       const csrfMatch = html.match(/"SNlM0e"\s*:\s*"([^"]+)"/);
       const sessionMatch = html.match(/"FdrFJe"\s*:\s*"([^"]+)"/);
       if (!csrfMatch || !sessionMatch) {
-        failures.push(`${baseUrl} did not provide an authenticated NotebookLM session`);
+        failures.push(`${baseUrl} did not provide an authenticated Gemini Notebook session`);
         continue;
       }
 
@@ -258,7 +258,7 @@ async function fetchTokens() {
   }
 
   throw new Error(
-    `AUTH_REQUIRED: Could not find an authenticated NotebookLM session. Sign in at ${DEFAULT_BASE_URL} and retry. ${failures.join('. ')}`
+    `AUTH_REQUIRED: Could not find an authenticated Gemini Notebook (formerly NotebookLM) session. Sign in at ${DEFAULT_BASE_URL} and retry. ${failures.join('. ')}`
   );
 }
 
@@ -580,7 +580,7 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false) {
 
     if (response.status === 401 || response.status === 403) {
       if (authRetried) {
-        throw new Error('AUTH_REQUIRED: NotebookLM authentication failed after refreshing the session. Sign in again and retry.');
+        throw new Error('AUTH_REQUIRED: Gemini Notebook authentication failed after refreshing the session. Sign in again and retry.');
       }
       authRetried = true;
       _csrfToken = null;
@@ -591,7 +591,7 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false) {
 
     if (response.status === 429 || response.status >= 500) {
       if (!isReadOnly) {
-        throw mutationUncertainError(methodId, `NotebookLM returned HTTP ${response.status}.`);
+        throw mutationUncertainError(methodId, `Gemini Notebook returned HTTP ${response.status}.`);
       }
       transientAttempt++;
       if (transientAttempt >= maxAttempts) {
@@ -736,7 +736,7 @@ async function addNotebookToCollection(collectionId, notebookId) {
     throw new Error('The selected collection disappeared while assigning the notebook.');
   }
   if (!confirmed.notebookIds.includes(notebookId)) {
-    throw new Error('NotebookLM did not confirm that the notebook was added to the selected collection.');
+    throw new Error('Gemini Notebook did not confirm that the notebook was added to the selected collection.');
   }
   console.log(`[NotebookLM API] Added notebook ${notebookId} to collection ${collectionId}`);
   return confirmed;
