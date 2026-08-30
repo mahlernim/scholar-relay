@@ -1,3 +1,5 @@
+import { choosePdfTitle } from './pdf-metadata.js';
+
 /**
  * Popup script: reads pipeline state from background service worker
  * and renders the UI. Triggers pipeline start on button click.
@@ -389,7 +391,9 @@ function renderDetection(data) {
       <div class="pdf-source">via ${escapeHtml(sourceLabel)}</div>
     </div>
     <button class="btn-generate" id="btn-start">🎧 Generate Artifacts</button>`;
-    document.getElementById('btn-start').addEventListener('click', () => startPipeline(data.pdfUrl, data.pageUrl, 'pdf', data.sourceTitle));
+    document.getElementById('btn-start').addEventListener('click', () =>
+        startPipelineFromCurrentTabPdf(data.pageUrl || data.pdfUrl, data.pdfUrl, data.sourceTitle)
+    );
 }
 
 function renderNoPdf() {
@@ -517,12 +521,18 @@ async function startPipelineFile(file, pageUrl, sourceTitle = null) {
     const btn = document.getElementById('btn-upload-start') || document.getElementById('btn-upload-manual');
     if (btn) { btn.disabled = true; btn.textContent = 'Uploading...'; }
     const fileDataBase64 = await readFileAsBase64(file);
+    const selectedTitle = choosePdfTitle({
+        payload: fileDataBase64,
+        pageTitle: sourceTitle,
+        filename: file.name,
+    });
+    console.log(`[Popup] Notebook title source: ${selectedTitle.source}`);
     await chrome.runtime.sendMessage({
         type: 'START_PIPELINE_FILE',
         fileName: file.name || 'local-upload.pdf',
         mimeType: file.type || 'application/pdf',
         fileDataBase64, pageUrl,
-        sourceTitle: sourceTitle || cleanDetectedTitle(file.name.replace(/\.pdf$/i, '')),
+        sourceTitle: selectedTitle.title,
     });
     await new Promise(r => setTimeout(r, 300));
     const state = await getState();
@@ -598,8 +608,10 @@ function showFileAccessHint() {
     );
 }
 
-async function tryDirectTabPdfRead(tab) {
-    const sourceUrl = extractPdfUrlFromTabUrl(tab?.url || '');
+async function tryDirectTabPdfRead(tab, preferredPdfUrl = null) {
+    const sourceUrl = /^https?:\/\//i.test(preferredPdfUrl || '')
+        ? preferredPdfUrl
+        : extractPdfUrlFromTabUrl(tab?.url || '');
     if (!sourceUrl) {
         return { ok: false, error: 'No readable PDF URL found in the active tab' };
     }
@@ -635,22 +647,22 @@ async function tryDirectTabPdfRead(tab) {
     }
 }
 
-async function startPipelineFromCurrentTabPdf(pageUrl) {
-    const btn = document.getElementById('btn-upload-start');
+async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSourceTitle = null) {
+    const btn = document.getElementById('btn-upload-start') || document.getElementById('btn-start');
     if (btn) { btn.disabled = true; btn.textContent = 'Reading current PDF...'; }
 
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (!tab?.id) throw new Error('No active tab');
-        const sourceTitle = await detectSourceTitleFromTab(tab);
+        const pageTitle = detectedSourceTitle || await detectSourceTitleFromTab(tab);
 
-        let payload = await tryDirectTabPdfRead(tab);
+        let payload = await tryDirectTabPdfRead(tab, pdfUrl);
 
         // Fallback path for pages where URL doesn't expose the actual PDF.
         if (!payload?.ok || !payload.fileDataBase64) {
             const injected = await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
-                func: async () => {
+                func: async (preferredPdfUrl) => {
                     const pickCandidateUrl = () => {
                         const embed = document.querySelector('embed[type="application/pdf"]');
                         if (embed?.src) return embed.src;
@@ -680,7 +692,9 @@ async function startPipelineFromCurrentTabPdf(pageUrl) {
                         return 'local-upload.pdf';
                     };
 
-                    const sourceUrl = pickCandidateUrl();
+                    const sourceUrl = /^https?:\/\//i.test(preferredPdfUrl || '')
+                        ? preferredPdfUrl
+                        : pickCandidateUrl();
                     try {
                         const response = await fetch(sourceUrl, { credentials: 'include' });
                         if (!response.ok) {
@@ -704,6 +718,7 @@ async function startPipelineFromCurrentTabPdf(pageUrl) {
                         return { ok: false, error: e?.message || 'Could not read current PDF from tab' };
                     }
                 },
+                args: [pdfUrl],
             });
             payload = injected?.[0]?.result;
         }
@@ -715,6 +730,13 @@ async function startPipelineFromCurrentTabPdf(pageUrl) {
             throw new Error(payload?.error || 'Could not read current PDF from tab');
         }
 
+        const selectedTitle = choosePdfTitle({
+            payload: payload.fileDataBase64,
+            pageTitle,
+            filename: payload.fileName,
+        });
+        console.log(`[Popup] Notebook title source: ${selectedTitle.source}`);
+
         if (btn) { btn.textContent = 'Uploading...'; }
         await chrome.runtime.sendMessage({
             type: 'START_PIPELINE_FILE',
@@ -722,7 +744,7 @@ async function startPipelineFromCurrentTabPdf(pageUrl) {
             mimeType: payload.mimeType || 'application/pdf',
             fileDataBase64: payload.fileDataBase64,
             pageUrl: pageUrl || payload.sourceUrl || null,
-            sourceTitle,
+            sourceTitle: selectedTitle.title,
         });
         await new Promise(r => setTimeout(r, 300));
         const state = await getState();
@@ -730,7 +752,10 @@ async function startPipelineFromCurrentTabPdf(pageUrl) {
         startPolling();
     } catch (err) {
         console.warn('[Popup] Direct local PDF read failed, falling back to file picker:', err?.message || err);
-        if (btn) { btn.disabled = false; btn.textContent = 'Use Current PDF and Generate'; }
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = btn.id === 'btn-start' ? '🎧 Generate Artifacts' : 'Use Current PDF and Generate';
+        }
         promptForPdfUpload(pageUrl);
     }
 }

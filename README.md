@@ -13,7 +13,7 @@ Turn a PDF, arXiv page, or webpage into a NotebookLM notebook and generate artif
 
 ### 주요 기능
 - PDF 자동 감지: 직접 PDF URL, arXiv 페이지, 페이지 내 PDF 링크 감지
-- 원클릭 실행: 노트북 생성부터 소스 추가, 아티팩트 생성까지 한 번에 실행
+- 원클릭 실행: 원격 PDF는 파일로 내려받아 업로드하고, 일반 웹페이지는 URL 소스로 추가한 뒤 아티팩트 생성
 - 백그라운드 진행: 팝업을 닫아도 진행 상태 유지
 - 로컬 PDF 업로드 지원: 필요 시 파일 선택으로 업로드
 - 아티팩트 설정 제공: Audio/Infographic 등 생성 옵션 조절
@@ -22,6 +22,7 @@ Turn a PDF, arXiv page, or webpage into a NotebookLM notebook and generate artif
 - 퀴즈와 플래시카드의 수량 및 난이도를 각각 선택 가능
 - 인포그래픽 레이아웃 프리셋과 NotebookLM 기본 비주얼 스타일을 별도로 선택
 - 감지된 논문 제목을 노트북 제목으로 사용하며, Experience 설정에서 끌 수 있음
+- 업로드한 PDF의 내장 제목 메타데이터를 우선 사용하고 URL 형태나 일반적인 파일명은 노트북 제목에서 제외
 
 ### 설치 (개발자 모드)
 1. 이 저장소를 다운로드 또는 클론합니다.
@@ -58,7 +59,7 @@ Turn a PDF, arXiv page, or webpage into a NotebookLM notebook and generate artif
 
 ### Key Features
 - Smart PDF detection: direct PDF URLs, arXiv pages, and PDF links on pages
-- One-click pipeline: notebook creation, source add, and artifact generation
+- One-click pipeline: remote PDFs are fetched and uploaded as files before artifact generation; ordinary webpages remain URL sources
 - Background progress: keeps running even when the popup is closed
 - Local PDF upload support with fallback file picker
 - Artifact settings for Audio/Infographic and more
@@ -67,6 +68,7 @@ Turn a PDF, arXiv page, or webpage into a NotebookLM notebook and generate artif
 - Separate quantity and difficulty controls for quizzes and flashcards
 - Separate infographic layout presets and native NotebookLM visual styles
 - Uses the detected paper title as the notebook title by default, with an opt-out in Experience settings
+- Prefers embedded PDF title metadata for uploaded PDFs and rejects URL-shaped or generic notebook titles
 
 ### Install (Developer Mode)
 1. Download or clone this repository.
