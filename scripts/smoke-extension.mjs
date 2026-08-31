@@ -181,6 +181,8 @@ try {
   const chromePath = await resolveChrome();
   chrome = spawn(chromePath, [
     '--disable-gpu',
+    '--enable-unsafe-extension-debugging',
+    ...(process.env.CI ? ['--disable-dev-shm-usage', '--no-sandbox'] : []),
     '--no-first-run',
     '--no-default-browser-check',
     '--window-position=-32000,-32000',
