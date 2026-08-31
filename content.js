@@ -14,8 +14,6 @@
     if (window.__pdfDetectorInjected) return;
     window.__pdfDetectorInjected = true;
 
-    const currentUrl = window.location.href;
-
     function detectSourceTitle() {
         const candidates = [
             document.querySelector('meta[name="citation_title"]')?.content,
@@ -32,6 +30,7 @@
      * Returns { isPdf, pdfUrl, pageUrl, source }
      */
     function detectPdf() {
+        const currentUrl = window.location.href;
         const pageUrl = currentUrl;
         const sourceTitle = detectSourceTitle();
 

@@ -1,0 +1,178 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  chrome-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Set up Chrome for Testing
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4 # v2.2.0
+        with:
+          chrome-version: stable
+
+      - name: Run Chrome smoke test
+        run: xvfb-run --auto-servernum npm run smoke:chrome
+        env:
+          CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+
+  test-and-package:
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Run deterministic tests
+        run: npm test
+
+      - name: Check syntax, JSON, and whitespace
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Recurse -File -Include '*.js', '*.mjs' |
+            Where-Object { $_.FullName -notmatch '[\\/]dist[\\/]' }
+          foreach ($file in $files) {
+            node --check $file.FullName
+            if ($LASTEXITCODE -ne 0) {
+              throw "Syntax check failed: $($file.FullName)"
+            }
+          }
+          Get-ChildItem -Recurse -File -Filter '*.json' | ForEach-Object {
+            Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json | Out-Null
+          }
+          git diff --check
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Whitespace check failed'
+          }
+
+      - name: Build and verify release package
+        shell: pwsh
+        run: |
+          npm run package:store
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Package build failed'
+          }
+
+          $manifest = Get-Content manifest.json -Raw | ConvertFrom-Json
+          $zipPath = "dist/scholar-relay-v$($manifest.version).zip"
+          $checksumPath = "$zipPath.sha256"
+          if (-not (Test-Path -LiteralPath $zipPath -PathType Leaf)) {
+            throw "Missing package: $zipPath"
+          }
+          if (-not (Test-Path -LiteralPath $checksumPath -PathType Leaf)) {
+            throw "Missing checksum: $checksumPath"
+          }
+
+          $expected = @(
+            '_locales/en/messages.json',
+            '_locales/ko/messages.json',
+            'background.js',
+            'content.js',
+            'detection-policy.js',
+            'icons/icon16.png',
+            'icons/icon48.png',
+            'icons/icon128.png',
+            'LICENSE',
+            'manifest.json',
+            'notebooklm-api.js',
+            'offscreen.html',
+            'offscreen.js',
+            'pdf-file-policy.js',
+            'pdf-metadata.js',
+            'popup.html',
+            'popup.js',
+            'runtime-policy.js',
+            'site-permissions.js'
+          ) | Sort-Object
+
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $archive = [IO.Compression.ZipFile]::OpenRead($zipPath)
+          try {
+            $entries = @($archive.Entries | Where-Object { -not [string]::IsNullOrEmpty($_.Name) })
+            $actual = @($entries.FullName | ForEach-Object { $_ -replace '\\', '/' }) | Sort-Object
+            if (Compare-Object $expected $actual) {
+              throw 'Archive allowlist mismatch'
+            }
+
+            $manifestEntry = $entries | Where-Object FullName -eq 'manifest.json'
+            $reader = [IO.StreamReader]::new($manifestEntry.Open())
+            try {
+              $embedded = $reader.ReadToEnd() | ConvertFrom-Json
+            }
+            finally {
+              $reader.Dispose()
+            }
+            if ($embedded.version -ne $manifest.version) {
+              throw 'Embedded manifest version mismatch'
+            }
+          }
+          finally {
+            $archive.Dispose()
+          }
+
+          function Get-Sha256([string]$Path) {
+            $sha256 = [Security.Cryptography.SHA256]::Create()
+            $stream = [IO.File]::OpenRead($Path)
+            try {
+              $bytes = $sha256.ComputeHash($stream)
+            }
+            finally {
+              $stream.Dispose()
+              $sha256.Dispose()
+            }
+            return [BitConverter]::ToString($bytes).Replace('-', '').ToLowerInvariant()
+          }
+
+          $actualHash = Get-Sha256 $zipPath
+          $expectedChecksum = "$actualHash  $([IO.Path]::GetFileName($zipPath))`n"
+          $actualChecksum = [IO.File]::ReadAllText($checksumPath)
+          if ($actualChecksum -cne $expectedChecksum) {
+            throw 'Package checksum mismatch'
+          }
+
+          $extractPath = Join-Path $env:RUNNER_TEMP "scholar-relay-$([guid]::NewGuid().ToString('N'))"
+          try {
+            [IO.Compression.ZipFile]::ExtractToDirectory($zipPath, $extractPath)
+            foreach ($relativePath in $expected) {
+              $sourcePath = Join-Path (Get-Location) ($relativePath -replace '/', '\\')
+              $archivedPath = Join-Path $extractPath ($relativePath -replace '/', '\\')
+              if ((Get-Sha256 $sourcePath) -ne (Get-Sha256 $archivedPath)) {
+                throw "Archive content differs from checkout: $relativePath"
+              }
+            }
+          }
+          finally {
+            if (Test-Path -LiteralPath $extractPath) {
+              [IO.Directory]::Delete($extractPath, $true)
+            }
+          }

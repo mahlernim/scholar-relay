@@ -32,6 +32,8 @@ Choose any supported combination of Audio Overview, Video Overview, report, quiz
 
 ScholarRelay uses the Gemini Notebook session already established in Chrome. It never asks for or stores your Google password or verification codes. A PDF hosted on a different website may require a one-time Chrome permission prompt for that specific website. If access is declined, ScholarRelay tries URL import and keeps manual PDF upload available.
 
+Direct PDF downloads and local uploads are limited to 32 MiB to keep Chrome memory use safe. Larger remote PDFs use URL import, while larger local files can be uploaded directly in Gemini Notebook.
+
 ScholarRelay is an independent, open-source extension and is not affiliated with, authorized by, or endorsed by Google. Gemini Notebook was formerly named NotebookLM. ScholarRelay integrates with the consumer web application rather than an official consumer API, so service changes can affect compatibility.
 
 ## 한국어 스토어 등록 문구
@@ -53,6 +55,8 @@ ScholarRelay는 직접 열린 PDF, arXiv 논문, 웹페이지에 연결된 PDF �
 오디오 오버뷰, 비디오 오버뷰, 보고서, 퀴즈, 플래시카드, 인포그래픽, 슬라이드, 마인드맵, 데이터 표를 원하는 조합으로 선택할 수 있습니다. 팝업을 닫은 뒤에도 생성 상태를 확인하며, 선택 사항인 알림, 완료 차임 및 노트북 자동 열기로 결과가 준비되었는지 확인할 수 있습니다.
 
 ScholarRelay는 Chrome에 이미 로그인된 Gemini Notebook 세션을 사용합니다. Google 비밀번호나 인증 코드를 요청하거나 저장하지 않습니다. PDF가 현재 페이지와 다른 사이트에 있으면 해당 사이트에 한정된 일회성 Chrome 권한 요청이 표시될 수 있습니다. 권한을 거부하면 URL 가져오기를 시도하고, 직접 PDF를 업로드할 수 있는 방법도 유지합니다.
+
+Chrome 메모리를 안전하게 유지하기 위해 직접 PDF 다운로드와 로컬 업로드는 32 MiB로 제한됩니다. 더 큰 원격 PDF는 URL 가져오기를 사용하고, 더 큰 로컬 파일은 Gemini Notebook에서 직접 업로드할 수 있습니다.
 
 ScholarRelay는 독립적인 오픈 소스 확장 프로그램이며 Google과 제휴하거나 Google의 승인 또는 보증을 받지 않았습니다. Gemini Notebook의 이전 명칭은 NotebookLM입니다. 공식 소비자용 API가 아닌 소비자 웹 애플리케이션과 연동하므로 서비스 변경에 따라 호환성 업데이트가 필요할 수 있습니다.
 
