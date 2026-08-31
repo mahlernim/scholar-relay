@@ -14,9 +14,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-and-package:
-    runs-on: windows-latest
-    timeout-minutes: 15
+  chrome-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out
@@ -34,13 +34,27 @@ jobs:
         with:
           chrome-version: stable
 
-      - name: Run deterministic tests
-        run: npm test
-
       - name: Run Chrome smoke test
-        run: npm run smoke:chrome
+        run: xvfb-run --auto-servernum npm run smoke:chrome
         env:
           CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+
+  test-and-package:
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Run deterministic tests
+        run: npm test
 
       - name: Check syntax, JSON, and whitespace
         shell: pwsh
