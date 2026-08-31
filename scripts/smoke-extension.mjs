@@ -1,7 +1,7 @@
 import { access, cp, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 
@@ -251,7 +251,7 @@ try {
   await new Promise(resolveClose => server.close(resolveClose));
   const safeTempRoot = resolve(tmpdir());
   const resolvedTemp = resolve(tempRoot);
-  if (!resolvedTemp.startsWith(`${safeTempRoot}\\`) || !resolvedTemp.includes('scholar-relay-smoke-')) {
+  if (dirname(resolvedTemp) !== safeTempRoot || !basename(resolvedTemp).startsWith('scholar-relay-smoke-')) {
     throw new Error(`Refusing to remove unexpected temporary path: ${resolvedTemp}`);
   }
   await rm(resolvedTemp, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
