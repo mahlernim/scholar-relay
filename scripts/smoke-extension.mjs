@@ -34,84 +34,104 @@ async function resolveChrome() {
   throw new Error('Chrome was not found. Set CHROME_PATH and retry.');
 }
 
-class CdpSession {
-  constructor(url) {
-    this.socket = new WebSocket(url);
+class PipeConnection {
+  constructor(readable, writable) {
+    this.readable = readable;
+    this.writable = writable;
     this.nextId = 1;
     this.pending = new Map();
+    this.buffer = Buffer.alloc(0);
+    readable.on('data', chunk => this.receive(chunk));
+    readable.on('error', error => this.fail(error));
+    readable.on('end', () => this.fail(new Error('Chromium closed the DevTools pipe.')));
   }
 
-  async open() {
-    await new Promise((resolveOpen, rejectOpen) => {
-      this.socket.addEventListener('open', resolveOpen, { once: true });
-      this.socket.addEventListener('error', rejectOpen, { once: true });
-    });
-    this.socket.addEventListener('message', event => {
-      const message = JSON.parse(event.data);
-      if (!message.id || !this.pending.has(message.id)) return;
+  receive(chunk) {
+    this.buffer = Buffer.concat([this.buffer, chunk]);
+    for (let separator = this.buffer.indexOf(0); separator !== -1; separator = this.buffer.indexOf(0)) {
+      const packet = this.buffer.subarray(0, separator);
+      this.buffer = this.buffer.subarray(separator + 1);
+      if (!packet.length) continue;
+      const message = JSON.parse(packet.toString('utf8'));
+      if (!message.id || !this.pending.has(message.id)) continue;
       const pending = this.pending.get(message.id);
       this.pending.delete(message.id);
+      clearTimeout(pending.timeout);
       if (message.error) pending.reject(new Error(message.error.message));
       else pending.resolve(message.result);
+    }
+  }
+
+  call(method, params = {}, sessionId) {
+    const id = this.nextId++;
+    const message = { id, method, params };
+    if (sessionId) message.sessionId = sessionId;
+    return new Promise((resolveCall, reject) => {
+      const timeout = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`${method} timed out on the Chromium DevTools pipe.`));
+      }, 15000);
+      this.pending.set(id, { resolve: resolveCall, reject, timeout });
+      this.writable.write(`${JSON.stringify(message)}\0`, error => {
+        if (!error) return;
+        clearTimeout(timeout);
+        this.pending.delete(id);
+        reject(error);
+      });
     });
   }
 
-  call(method, params = {}) {
-    const id = this.nextId++;
-    const result = new Promise((resolveCall, reject) => this.pending.set(id, { resolve: resolveCall, reject }));
-    this.socket.send(JSON.stringify({ id, method, params }));
-    return result;
+  fail(error) {
+    for (const pending of this.pending.values()) {
+      clearTimeout(pending.timeout);
+      pending.reject(error);
+    }
+    this.pending.clear();
   }
 
   close() {
-    this.socket.close();
+    this.writable.end();
+    this.readable.destroy();
   }
 }
 
-async function json(port, path, options) {
-  const response = await fetch(`http://127.0.0.1:${port}${path}`, options);
-  if (!response.ok) throw new Error(`${path} returned HTTP ${response.status}`);
-  return response.json();
-}
-
-async function waitForPort() {
-  const portFile = join(profileDir, 'DevToolsActivePort');
-  for (let attempt = 0; attempt < 150; attempt += 1) {
-    try {
-      const [port] = (await readFile(portFile, 'utf8')).trim().split(/\r?\n/);
-      if (port) return Number(port);
-    } catch {}
-    await delay(100);
+class TargetSession {
+  constructor(connection, sessionId, targetId) {
+    this.connection = connection;
+    this.sessionId = sessionId;
+    this.targetId = targetId;
+    this.closed = false;
   }
-  throw new Error('Chrome DevTools port did not become available.');
-}
 
-async function findExtensionId(port) {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    const targets = await json(port, '/json');
-    const worker = targets.find(item => item.type === 'service_worker' && item.url?.endsWith('/background.js'));
-    const id = worker?.url?.match(/^chrome-extension:\/\/([^/]+)/)?.[1];
-    if (id) return id;
-    try {
-      const preferences = JSON.parse(await readFile(join(profileDir, 'Default', 'Preferences'), 'utf8'));
-      const settings = preferences.extensions?.settings || {};
-      for (const [extensionId, value] of Object.entries(settings)) {
-        if (value?.path && resolve(value.path) === extensionRoot) return extensionId;
-        if (value?.manifest?.name === 'ScholarRelay') return extensionId;
-      }
-    } catch {}
-    await delay(100);
+  call(method, params = {}) {
+    return this.connection.call(method, params, this.sessionId);
   }
-  throw new Error('Loaded extension service worker was not found.');
+
+  async close() {
+    if (this.closed) return;
+    this.closed = true;
+    await this.connection.call('Target.closeTarget', { targetId: this.targetId }).catch(() => {});
+  }
 }
 
-async function openTarget(port, url) {
-  const target = await json(port, `/json/new?${encodeURIComponent(url)}`, { method: 'PUT' });
-  const session = new CdpSession(target.webSocketDebuggerUrl);
-  await session.open();
-  await session.call('Page.enable');
-  await session.call('Runtime.enable');
-  return session;
+async function loadUnpackedExtension(connection, path) {
+  const result = await connection.call('Extensions.loadUnpacked', { path });
+  if (!result?.id) throw new Error('Chromium did not return an extension ID.');
+  return result.id;
+}
+
+async function openTarget(connection, url) {
+  const { targetId } = await connection.call('Target.createTarget', { url });
+  const { sessionId } = await connection.call('Target.attachToTarget', { targetId, flatten: true });
+  const session = new TargetSession(connection, sessionId, targetId);
+  try {
+    await session.call('Page.enable');
+    await session.call('Runtime.enable');
+    return session;
+  } catch (error) {
+    await session.close();
+    throw error;
+  }
 }
 
 async function evaluate(session, expression) {
@@ -123,16 +143,34 @@ async function evaluate(session, expression) {
 }
 
 async function waitForExtensionPage(session) {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
+  let state;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
     try {
-      const ready = await evaluate(session, `location.protocol === 'chrome-extension:' && document.readyState === 'complete' && typeof chrome?.tabs?.create === 'function'`);
-      if (ready) return;
+      state = await evaluate(session, `({href:location.href,readyState:document.readyState,hasChrome:typeof globalThis.chrome !== 'undefined',hasTabs:typeof globalThis.chrome?.tabs !== 'undefined',ready:location.protocol === 'chrome-extension:' && document.readyState === 'complete' && typeof globalThis.chrome?.tabs?.create === 'function'})`);
+      if (state.ready) return;
+      if (state.href === 'chrome-error://chromewebdata/' && state.readyState === 'complete') break;
     } catch {}
     await delay(100);
   }
-  const state = await evaluate(session, `({href:location.href,readyState:document.readyState,hasChrome:typeof chrome !== 'undefined',hasTabs:typeof chrome?.tabs !== 'undefined'})`)
+  state ||= await evaluate(session, `({href:location.href,readyState:document.readyState,hasChrome:typeof globalThis.chrome !== 'undefined',hasTabs:typeof globalThis.chrome?.tabs !== 'undefined'})`)
     .catch(error => ({ evaluationError: error.message }));
   throw new Error(`Extension popup did not become ready: ${JSON.stringify(state)}`);
+}
+
+async function openExtensionPopup(connection, url) {
+  let lastError;
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const session = await openTarget(connection, url);
+    try {
+      await waitForExtensionPage(session);
+      return session;
+    } catch (error) {
+      lastError = error;
+      await session.close();
+      await delay(250);
+    }
+  }
+  throw new Error(`Extension popup could not be opened after bounded retries. ${lastError?.message || ''}`.trim());
 }
 
 async function reload(session) {
@@ -167,6 +205,7 @@ const origin = `http://127.0.0.1:${serverPort}`;
 
 let chrome;
 let popup;
+let browserConnection;
 try {
   await cp(sourceRoot, extensionRoot, {
     recursive: true,
@@ -186,16 +225,14 @@ try {
     '--no-first-run',
     '--no-default-browser-check',
     '--window-position=-32000,-32000',
-    '--remote-debugging-port=0',
+    '--remote-debugging-pipe',
     `--user-data-dir=${profileDir}`,
-    `--disable-extensions-except=${extensionRoot}`,
-    `--load-extension=${extensionRoot}`,
-  ], { windowsHide: true, stdio: 'ignore' });
+  ], { windowsHide: true, stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });
 
-  const devtoolsPort = await waitForPort();
-  const extensionId = await findExtensionId(devtoolsPort);
-  popup = await openTarget(devtoolsPort, `chrome-extension://${extensionId}/popup.html`);
-  await waitForExtensionPage(popup);
+  browserConnection = new PipeConnection(chrome.stdio[4], chrome.stdio[3]);
+  await browserConnection.call('Browser.getVersion');
+  const extensionId = await loadUnpackedExtension(browserConnection, extensionRoot);
+  popup = await openExtensionPopup(browserConnection, `chrome-extension://${extensionId}/popup.html`);
 
   const tabA = await evaluate(popup, `chrome.tabs.create({url:${JSON.stringify(`${origin}/article`)},active:true})`);
   await delay(300);
@@ -243,7 +280,8 @@ try {
 
   console.log('Chrome extension smoke test passed.');
 } finally {
-  popup?.close();
+  await popup?.close();
+  browserConnection?.close();
   if (chrome) {
     chrome.kill();
     if (chrome.exitCode === null) {

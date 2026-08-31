@@ -28,11 +28,11 @@ jobs:
           node-version: "24"
           package-manager-cache: false
 
-      - name: Set up Chrome for Testing
+      - name: Set up pinned Chromium
         id: setup-chrome
         uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4 # v2.2.0
         with:
-          chrome-version: stable
+          chrome-version: "1688779"
 
       - name: Run Chrome smoke test
         run: xvfb-run --auto-servernum npm run smoke:chrome
