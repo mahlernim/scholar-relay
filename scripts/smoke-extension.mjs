@@ -123,16 +123,34 @@ async function evaluate(session, expression) {
 }
 
 async function waitForExtensionPage(session) {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
+  let state;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
     try {
-      const ready = await evaluate(session, `location.protocol === 'chrome-extension:' && document.readyState === 'complete' && typeof chrome?.tabs?.create === 'function'`);
-      if (ready) return;
+      state = await evaluate(session, `({href:location.href,readyState:document.readyState,hasChrome:typeof globalThis.chrome !== 'undefined',hasTabs:typeof globalThis.chrome?.tabs !== 'undefined',ready:location.protocol === 'chrome-extension:' && document.readyState === 'complete' && typeof globalThis.chrome?.tabs?.create === 'function'})`);
+      if (state.ready) return;
+      if (state.href === 'chrome-error://chromewebdata/' && state.readyState === 'complete') break;
     } catch {}
     await delay(100);
   }
-  const state = await evaluate(session, `({href:location.href,readyState:document.readyState,hasChrome:typeof chrome !== 'undefined',hasTabs:typeof chrome?.tabs !== 'undefined'})`)
+  state ||= await evaluate(session, `({href:location.href,readyState:document.readyState,hasChrome:typeof globalThis.chrome !== 'undefined',hasTabs:typeof globalThis.chrome?.tabs !== 'undefined'})`)
     .catch(error => ({ evaluationError: error.message }));
   throw new Error(`Extension popup did not become ready: ${JSON.stringify(state)}`);
+}
+
+async function openExtensionPopup(port, url) {
+  let lastError;
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const session = await openTarget(port, url);
+    try {
+      await waitForExtensionPage(session);
+      return session;
+    } catch (error) {
+      lastError = error;
+      session.close();
+      await delay(250);
+    }
+  }
+  throw new Error(`Extension popup could not be opened after bounded retries. ${lastError?.message || ''}`.trim());
 }
 
 async function reload(session) {
@@ -194,8 +212,7 @@ try {
 
   const devtoolsPort = await waitForPort();
   const extensionId = await findExtensionId(devtoolsPort);
-  popup = await openTarget(devtoolsPort, `chrome-extension://${extensionId}/popup.html`);
-  await waitForExtensionPage(popup);
+  popup = await openExtensionPopup(devtoolsPort, `chrome-extension://${extensionId}/popup.html`);
 
   const tabA = await evaluate(popup, `chrome.tabs.create({url:${JSON.stringify(`${origin}/article`)},active:true})`);
   await delay(300);
