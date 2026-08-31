@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Package
 
-Prepared for ScholarRelay 1.2.1. Confirm every field against the final uploaded ZIP before submission.
+Prepared for ScholarRelay 1.2.2. Confirm every field against the final uploaded ZIP before submission.
 
 ## Product identity
 
