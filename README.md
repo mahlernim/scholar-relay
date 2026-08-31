@@ -63,6 +63,7 @@ ScholarRelay는 PDF, 연구 논문 또는 웹페이지를 Gemini Notebook(이전
 - 실행되지 않으면 [Gemini Notebook](https://notebook.google.com)에 로그인되어 있는지 확인하고 다시 시도합니다.
 - 컬렉션이 보이지 않으면 Gemini Notebook에서 컬렉션을 만든 뒤 설정의 새로고침 버튼을 클릭합니다.
 - URL 소스를 추가하지 못하면 **Upload Local PDF**로 파일을 직접 업로드합니다.
+- Chrome 메모리를 안전하게 유지하기 위해 직접 내려받기 및 로컬 업로드는 32 MiB로 제한됩니다. 더 큰 원격 PDF는 URL 가져오기를 사용하고, 더 큰 로컬 파일은 Gemini Notebook에서 직접 업로드합니다.
 
 ---
 
@@ -113,6 +114,7 @@ Source processing and artifact generation continue if collection assignment fail
 - If a run does not start, confirm that you are signed in at [Gemini Notebook](https://notebook.google.com) and retry.
 - If a collection is missing, create it in Gemini Notebook and use the refresh button in Settings.
 - If a URL source cannot be added, use **Upload Local PDF** to upload the file directly.
+- Direct downloads and local uploads are limited to 32 MiB to keep Chrome memory use safe. Larger remote PDFs use URL import, while larger local files should be uploaded directly in Gemini Notebook.
 
 ## Credits and compatibility
 
@@ -126,4 +128,4 @@ MIT. See [LICENSE](./LICENSE).
 
 ## Maintainer: store package
 
-Run `npm run package:store` to create the allowlisted Chrome Web Store upload ZIP in `dist/`. Store copy, privacy declarations, reviewer instructions, and required asset paths are maintained in [`docs/chrome-web-store-listing.md`](./docs/chrome-web-store-listing.md).
+Run `npm run package:store` to create the canonical allowlisted ZIP and SHA-256 sidecar in `dist/`. The same ZIP is used for GitHub releases and Chrome Web Store upload. Store copy, privacy declarations, reviewer instructions, and required asset paths are maintained in [`docs/chrome-web-store-listing.md`](./docs/chrome-web-store-listing.md).

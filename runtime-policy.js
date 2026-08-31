@@ -8,6 +8,107 @@ const NON_IDEMPOTENT_STEPS = new Set([
   'add_source',
   'generate_artifacts',
 ]);
+const STOPPABLE_STEPS = new Set(['wait_source', 'wait_artifacts']);
+
+export function isActivePipelineRun(state, runId) {
+  return !!runId && state?.status === 'running' && state.runId === runId;
+}
+
+export function canStopPipeline(state, runId = state?.runId) {
+  return isActivePipelineRun(state, runId) && STOPPABLE_STEPS.has(state.step);
+}
+
+export function createPipelineStateCoordinator({ readState, writeState }) {
+  if (typeof readState !== 'function' || typeof writeState !== 'function') {
+    throw new TypeError('readState and writeState functions are required');
+  }
+
+  let queue = Promise.resolve();
+
+  const transact = operation => {
+    const apply = async () => {
+      const current = await readState();
+      const result = await operation(current);
+      if (!result) return { applied: false, state: current };
+
+      const next = result.replace ? result.state : { ...current, ...result.updates };
+      if (result.beforeWrite) await result.beforeWrite(current, next);
+      await writeState(next);
+      let effectError = null;
+      if (result.afterWrite) {
+        try {
+          await result.afterWrite(current, next);
+        } catch (error) {
+          effectError = error;
+        }
+      }
+      return { applied: true, state: next, effectError };
+    };
+    queue = queue.then(apply, apply);
+    return queue;
+  };
+
+  return {
+    update(updates, effects = {}) {
+      return transact(current => ({
+        updates: typeof updates === 'function' ? updates(current) : updates,
+        ...effects,
+      }));
+    },
+
+    replace(state, effects = {}) {
+      return transact(() => ({ replace: true, state, ...effects }));
+    },
+
+    reset(state, effects = {}) {
+      return transact(current => {
+        if (current?.status === 'running') return null;
+        return { replace: true, state, ...effects };
+      });
+    },
+
+    effectWhen(predicate, effect) {
+      return transact(current => {
+        if (!predicate(current)) return null;
+        return { updates: {}, afterWrite: effect };
+      });
+    },
+
+    claim(runId, initialState, effects = {}) {
+      return transact(current => {
+        if (!runId || current?.status !== 'idle') return null;
+        return {
+          replace: true,
+          state: { ...initialState, status: 'running', runId },
+          ...effects,
+        };
+      });
+    },
+
+    transition(runId, updates, { expectedSteps = null, ...effects } = {}) {
+      return transact(current => {
+        if (!isActivePipelineRun(current, runId)) return null;
+        if (expectedSteps && !expectedSteps.includes(current.step)) return null;
+        return {
+          updates: typeof updates === 'function' ? updates(current) : updates,
+          ...effects,
+        };
+      });
+    },
+
+    invalidate(runId, replacement, { expectedSteps = null, ...effects } = {}) {
+      return transact(current => {
+        if (!isActivePipelineRun(current, runId)) return null;
+        if (expectedSteps && !expectedSteps.includes(current.step)) return null;
+        return {
+          replace: true,
+          state: typeof replacement === 'function' ? replacement(current) : replacement,
+          ...effects,
+        };
+      });
+    },
+  };
+}
 
 export function runtimeRecoveryAction(state, hasAlarm) {
   if (!state || state.status !== 'running') {

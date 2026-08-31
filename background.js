@@ -58,11 +58,23 @@ import {
 import {
     PIPELINE_ALARM_NAME,
     PIPELINE_POLL_PERIOD_MINUTES,
+    canStopPipeline,
     createExclusiveRunner,
+    createPipelineStateCoordinator,
     interruptedPipelineUpdate,
+    isActivePipelineRun,
     pollingElapsedMs,
     runtimeRecoveryAction,
 } from './runtime-policy.js';
+import { bindDetectionToTab } from './detection-policy.js';
+import {
+    MAX_PDF_UPLOAD_BYTES,
+    assertPdfUploadSize,
+    decodedBase64ByteLength,
+    hasBase64PdfSignature,
+    hasPdfSignature,
+    readResponseWithinLimit,
+} from './pdf-file-policy.js';
 import { httpOriginPattern, sameHttpOrigin } from './site-permissions.js';
 
 const ALARM_NAME = PIPELINE_ALARM_NAME;
@@ -74,6 +86,7 @@ const ARTIFACT_START_DELAY_MS = 1000;
 
 const INITIAL_STATE = {
     status: 'idle',          // idle | running | completed | error
+    runId: null,
     step: null,              // current step name
     stepDetail: '',          // human-readable detail for current step
     pdfUrl: null,
@@ -97,28 +110,39 @@ async function getState() {
     return result.pipelineState || { ...INITIAL_STATE };
 }
 
-let stateMutationQueue = Promise.resolve();
+const pipelineState = createPipelineStateCoordinator({
+    readState: getState,
+    writeState: state => chrome.storage.local.set({ pipelineState: state }),
+});
 
 async function setState(updates) {
-    const applyUpdate = async () => {
-        const current = await getState();
-        const resolved = typeof updates === 'function' ? updates(current) : updates;
-        const newState = { ...current, ...resolved };
-        await chrome.storage.local.set({ pipelineState: newState });
-        return newState;
-    };
-    stateMutationQueue = stateMutationQueue.then(applyUpdate, applyUpdate);
-    return stateMutationQueue;
+    return (await pipelineState.update(updates)).state;
 }
 
-async function resetState() {
-    const applyReset = async () => {
-        const reset = { ...INITIAL_STATE };
-        await chrome.storage.local.set({ pipelineState: reset });
-        return reset;
-    };
-    stateMutationQueue = stateMutationQueue.then(applyReset, applyReset);
-    return stateMutationQueue;
+async function resetState(options = {}) {
+    const result = await pipelineState.reset({ ...INITIAL_STATE }, options);
+    return result.applied ? result.state : null;
+}
+
+async function transitionRun(runId, updates, options = {}) {
+    const result = await pipelineState.transition(runId, updates, options);
+    if (result.effectError) throw result.effectError;
+    return result.applied ? result.state : null;
+}
+
+async function requireActiveRun(runId, expectedSteps = null) {
+    const state = await getState();
+    if (!isActivePipelineRun(state, runId)) {
+        const error = new Error('Pipeline run is no longer active');
+        error.code = 'PIPELINE_STALE_RUN';
+        throw error;
+    }
+    if (expectedSteps && !expectedSteps.includes(state.step)) {
+        const error = new Error(`Pipeline step changed from ${expectedSteps.join(' or ')} to ${state.step || 'none'}`);
+        error.code = 'PIPELINE_STALE_RUN';
+        throw error;
+    }
+    return state;
 }
 
 function isWebpageSourceType(sourceType) {
@@ -276,16 +300,13 @@ async function downloadRemotePdfForUpload(pdfUrl, pageUrl = null) {
     const likelyPdfMime = /application\/pdf/i.test(contentType) || /application\/octet-stream/i.test(contentType);
     const likelyPdfUrl = /\.pdf(\?|#|$)/i.test(response.url || pdfUrl);
 
-    const fileData = await response.arrayBuffer();
-    const bytes = new Uint8Array(fileData);
-    const hasPdfMagic = bytes.length >= 4 &&
-        bytes[0] === 0x25 && // %
-        bytes[1] === 0x50 && // P
-        bytes[2] === 0x44 && // D
-        bytes[3] === 0x46;   // F
+    const bytes = await readResponseWithinLimit(response);
+    const fileData = bytes.buffer;
+    const hasPdfMagic = hasPdfSignature(bytes);
 
-    if (!likelyPdfMime && !likelyPdfUrl && !hasPdfMagic) {
-        throw new Error('Downloaded content does not appear to be a PDF');
+    if (!hasPdfMagic) {
+        const deliveryHint = likelyPdfMime || likelyPdfUrl ? ' despite its PDF URL or content type' : '';
+        throw new Error(`Downloaded content does not contain a PDF signature${deliveryHint}`);
     }
 
     return {
@@ -300,12 +321,14 @@ async function downloadRemotePdfForUpload(pdfUrl, pageUrl = null) {
 // =========================================================================
 
 function setBadge(text, color) {
-    chrome.action.setBadgeText({ text });
-    chrome.action.setBadgeBackgroundColor({ color });
+    return Promise.all([
+        chrome.action.setBadgeText({ text }),
+        chrome.action.setBadgeBackgroundColor({ color }),
+    ]);
 }
 
 function clearBadge() {
-    chrome.action.setBadgeText({ text: '' });
+    return chrome.action.setBadgeText({ text: '' });
 }
 
 // =========================================================================
@@ -482,11 +505,45 @@ async function playCompletionChime() {
 // Pipeline completion / error helpers
 // =========================================================================
 
-async function completePipeline() {
-    chrome.alarms.clear(ALARM_NAME);
+let notificationTargetQueue = Promise.resolve();
 
+function updateNotificationTargets(operation) {
+    const apply = async () => {
+        const stored = await chrome.storage.local.get('notificationTargets');
+        const targets = stored.notificationTargets || {};
+        const result = await operation(targets);
+        await chrome.storage.local.set({ notificationTargets: targets });
+        return result;
+    };
+    notificationTargetQueue = notificationTargetQueue.then(apply, apply);
+    return notificationTargetQueue;
+}
+
+async function rememberNotificationTarget(notificationId, notebookUrl) {
+    if (!notebookUrl) return;
+    await updateNotificationTargets(targets => {
+        targets[notificationId] = { notebookUrl, createdAt: Date.now() };
+        const obsoleteIds = Object.entries(targets)
+            .sort((a, b) => b[1].createdAt - a[1].createdAt)
+            .slice(10)
+            .map(([id]) => id);
+        for (const id of obsoleteIds) delete targets[id];
+    });
+}
+
+async function takeNotificationTarget(notificationId) {
+    return updateNotificationTargets(targets => {
+        const notebookUrl = targets[notificationId]?.notebookUrl || null;
+        delete targets[notificationId];
+        return notebookUrl;
+    });
+}
+
+async function completePipeline(runId) {
+    await requireActiveRun(runId, ['wait_artifacts']);
     const settings = await getSettings();
     const state = await getState();
+    if (!isActivePipelineRun(state, runId) || state.step !== 'wait_artifacts') return;
     const tasks = state.tasks || [];
     const totalCount = tasks.length;
     const completedCount = tasks.filter(t => t.status === 'completed').length;
@@ -494,22 +551,28 @@ async function completePipeline() {
     const allSucceeded = totalCount > 0 && failedCount === 0 && completedCount === totalCount;
 
     if (completedCount === 0) {
-        await failPipeline('All artifact generations failed. No artifacts were generated.', null, true);
+        await failPipeline(runId, 'All artifact generations failed. No artifacts were generated.');
         return;
     }
-
-    setBadge('\u2713', '#0fad6e');  // green check
 
     const stepDetail = allSucceeded
         ? 'All artifacts generated successfully!'
         : `Partial success: ${completedCount}/${totalCount} artifacts generated (${failedCount} failed).`;
 
-    await setState({
+    const completedState = await transitionRun(runId, {
         status: 'completed',
         step: 'done',
         stepDetail,
         completedAt: new Date().toISOString(),
+    }, {
+        expectedSteps: ['wait_artifacts'],
+        afterWrite: async () => {
+            try { await chrome.alarms.clear(ALARM_NAME); }
+            catch (error) { console.warn('[Alarm] Could not clear completion alarm:', error); }
+        },
     });
+    if (!completedState) return;
+    setBadge('\u2713', '#0fad6e').catch(error => console.warn('[Badge] Completion badge failed:', error));
 
     if (settings.chimeEnabled) {
         playCompletionChime();
@@ -524,7 +587,10 @@ async function completePipeline() {
         : `Notebook ${nbTitle}is partially ready with ${artifactLabel} (${failedCount} failed). Click to open.`;
 
     if (settings.notificationEnabled !== false) {
-        chrome.notifications.create('pipeline-complete', {
+        const notificationId = `pipeline-complete:${runId}`;
+        await rememberNotificationTarget(notificationId, state.notebookUrl)
+            .catch(error => console.warn('[Notification] Could not save notebook target:', error));
+        chrome.notifications.create(notificationId, {
             type: 'basic',
             iconUrl: 'icons/icon128.png',
             title: `\uD83C\uDFD9 Gemini Notebook Ready!`,
@@ -545,13 +611,10 @@ async function completePipeline() {
     console.log('[Pipeline] Completed successfully');
 }
 
-async function failPipeline(errorMsg, notebookId = null, sourceWasReady = false) {
-    chrome.alarms.clear(ALARM_NAME);
-    setBadge('!', '#e03e3e');  // red exclamation
-    const settings = await getSettings();
-
+async function failPipeline(runId, errorMsg, notebookId = null, canDeleteBlankNotebook = false) {
+    await requireActiveRun(runId);
     let cleanupMessage = '';
-    if (notebookId && !sourceWasReady) {
+    if (notebookId && canDeleteBlankNotebook) {
         try {
             await deleteNotebook(notebookId);
             cleanupMessage = ' Blank notebook was deleted automatically.';
@@ -562,15 +625,24 @@ async function failPipeline(errorMsg, notebookId = null, sourceWasReady = false)
     }
 
     const finalError = `${errorMsg}${cleanupMessage}`.trim();
-    await setState({
+    const failedState = await transitionRun(runId, {
         status: 'error',
         step: 'error',
         stepDetail: finalError,
         error: finalError,
+    }, {
+        afterWrite: async () => {
+            try { await chrome.alarms.clear(ALARM_NAME); }
+            catch (error) { console.warn('[Alarm] Could not clear failure alarm:', error); }
+        },
     });
+    if (!failedState) return;
+    setBadge('!', '#e03e3e').catch(error => console.warn('[Badge] Error badge failed:', error));
+
+    const settings = await getSettings();
 
     if (settings.notificationEnabled !== false) {
-        chrome.notifications.create('pipeline-error', {
+        chrome.notifications.create(`pipeline-error:${runId}`, {
             type: 'basic',
             iconUrl: 'icons/icon128.png',
             title: 'ScholarRelay Error',
@@ -592,6 +664,8 @@ async function failPipeline(errorMsg, notebookId = null, sourceWasReady = false)
  * and transitions state to 'wait_artifacts'.
  */
 async function tickSourcePoll(state) {
+    const runId = state.runId;
+    await requireActiveRun(runId, ['wait_source']);
     const SOURCE_TIMEOUT_MS = 600000; // 10 minutes
     const elapsed = pollingElapsedMs(state.stepStartedAt);
     const sourceLabel = getSourceLabel(state.sourceType);
@@ -599,9 +673,9 @@ async function tickSourcePoll(state) {
 
     if (elapsed > SOURCE_TIMEOUT_MS) {
         await failPipeline(
+            runId,
             `${sourceLabel} ingestion timed out after 10 minutes.`,
-            state.notebookId,
-            false   // source never became ready, delete the blank notebook
+            state.notebookId
         );
         return;
     }
@@ -609,10 +683,14 @@ async function tickSourcePoll(state) {
     let sources;
     try {
         sources = await listSources(state.notebookId);
+        await requireActiveRun(runId, ['wait_source']);
     } catch (err) {
+        if (err?.code === 'PIPELINE_STALE_RUN') return;
         // Transient network error -- log and retry next tick
         console.warn('[Tick] Could not list sources, will retry:', err.message);
-        await setState({ stepDetail: `Waiting for ${ingestionLabel} (${Math.round(elapsed / 1000)}s, retrying...)` });
+        await transitionRun(runId, {
+            stepDetail: `Waiting for ${ingestionLabel} (${Math.round(elapsed / 1000)}s, retrying...)`,
+        }, { expectedSteps: ['wait_source'] });
         return;
     }
 
@@ -620,29 +698,38 @@ async function tickSourcePoll(state) {
     const elapsedSec = Math.round(elapsed / 1000);
 
     if (!source) {
-        await setState({ stepDetail: `Waiting for ${sourceLabel} to appear (${elapsedSec}s elapsed)...` });
+        await transitionRun(runId, {
+            stepDetail: `Waiting for ${sourceLabel} to appear (${elapsedSec}s elapsed)...`,
+        }, { expectedSteps: ['wait_source'] });
         return;
     }
 
     if (source.status === SourceStatus.ERROR) {
-        await failPipeline(`${sourceLabel} processing failed.`, state.notebookId, false);
+        await failPipeline(runId, `${sourceLabel} processing failed.`, state.notebookId);
         return;
     }
 
     if (source.status !== SourceStatus.READY) {
-        await setState({ stepDetail: `${ingestionLabel} in progress (${elapsedSec}s elapsed)...` });
+        await transitionRun(runId, {
+            stepDetail: `${ingestionLabel} in progress (${elapsedSec}s elapsed)...`,
+        }, { expectedSteps: ['wait_source'] });
         return;
     }
 
     // Source is READY -- fetch notebook title, then trigger artifact generation
     console.log('[Tick] Source ready, triggering artifact generation');
-    await setState({ step: 'generate_artifacts', stepDetail: 'Source ready! Starting generation...' });
+    const claimed = await transitionRun(runId, {
+        step: 'generate_artifacts',
+        stepDetail: 'Source ready! Starting generation...',
+    }, { expectedSteps: ['wait_source'] });
+    if (!claimed) return;
 
     // Fetch the auto-generated notebook title and store it in state for display
     try {
         const title = await getNotebookTitle(state.notebookId);
+        await requireActiveRun(runId, ['generate_artifacts']);
         if (title) {
-            await setState({ notebookTitle: title });
+            await transitionRun(runId, { notebookTitle: title }, { expectedSteps: ['generate_artifacts'] });
             console.log(`[Tick] Notebook title: ${title}`);
         }
     } catch (titleErr) {
@@ -651,28 +738,34 @@ async function tickSourcePoll(state) {
 
     try {
         const settings = await getSettings();
+        await requireActiveRun(runId, ['generate_artifacts']);
 
         if (settings.collectionId) {
-            await setState({ stepDetail: 'Source ready! Adding notebook to collection...' });
+            await transitionRun(runId, {
+                stepDetail: 'Source ready! Adding notebook to collection...',
+            }, { expectedSteps: ['generate_artifacts'] });
             try {
+                await requireActiveRun(runId, ['generate_artifacts']);
                 const collection = await addNotebookToCollection(settings.collectionId, state.notebookId);
-                await setState({
+                await requireActiveRun(runId, ['generate_artifacts']);
+                await transitionRun(runId, {
                     collectionAssignment: {
                         collectionId: collection.id,
                         name: collection.name,
                         status: 'completed',
                     },
-                });
+                }, { expectedSteps: ['generate_artifacts'] });
             } catch (collectionErr) {
+                if (collectionErr?.code === 'PIPELINE_STALE_RUN') throw collectionErr;
                 console.warn('[Pipeline] Could not add notebook to collection:', collectionErr.message);
-                await setState({
+                await transitionRun(runId, {
                     collectionAssignment: {
                         collectionId: settings.collectionId,
                         name: null,
                         status: 'failed',
                         error: collectionErr.message,
                     },
-                });
+                }, { expectedSteps: ['generate_artifacts'] });
             }
         }
 
@@ -681,23 +774,28 @@ async function tickSourcePoll(state) {
 
         // Helper to run a generation function safely so one failure doesn't stop the pipeline
         const runTask = async (type, fn) => {
+            await requireActiveRun(runId, ['generate_artifacts']);
             try {
                 const res = await fn();
+                await requireActiveRun(runId, ['generate_artifacts']);
                 if (res?.status === 'completed') {
                     tasks.push({ type, taskId: res.taskId || null, status: 'completed' });
-                    return;
-                }
-                if (res?.status === 'failed') {
+                } else if (res?.status === 'failed') {
                     tasks.push({ type, taskId: res.taskId || null, status: 'failed', error: res.error || 'Artifact generation failed' });
-                    return;
+                } else {
+                    if (!res?.taskId) throw new Error('API returned no task ID');
+                    // Pending/unknown initial states are polled like in-progress tasks.
+                    tasks.push({ type, taskId: res.taskId, status: 'in_progress' });
                 }
-                if (!res?.taskId) throw new Error('API returned no task ID');
-                // Pending/unknown initial states are polled like in-progress tasks.
-                tasks.push({ type, taskId: res.taskId, status: 'in_progress' });
             } catch (e) {
+                if (e?.code === 'PIPELINE_STALE_RUN') throw e;
                 console.warn(`[Pipeline] Failed to start ${type}:`, e.message);
                 tasks.push({ type, taskId: null, status: 'failed', error: e.message });
             }
+            await transitionRun(runId, {
+                tasks: [...tasks],
+                stepDetail: `Started ${tasks.length} artifact request${tasks.length === 1 ? '' : 's'}...`,
+            }, { expectedSteps: ['generate_artifacts'] });
         };
 
         const artifactRequests = [
@@ -799,21 +897,23 @@ async function tickSourcePoll(state) {
             // Pace generation starts to reduce NotebookLM rate-limit bursts.
             if (i < artifactRequests.length - 1) {
                 await sleep(ARTIFACT_START_DELAY_MS);
+                await requireActiveRun(runId, ['generate_artifacts']);
             }
         }
 
         const typeLabels = tasks.map(t => t.type).join(', ');
-        await setState({
+        await transitionRun(runId, {
             tasks,
             step: 'wait_artifacts',
             stepDetail: `Generating: ${typeLabels}...`,
             stepStartedAt: new Date().toISOString(),
-        });
+        }, { expectedSteps: ['generate_artifacts'] });
     } catch (err) {
+        if (err?.code === 'PIPELINE_STALE_RUN') return;
         await failPipeline(
+            runId,
             `Failed to start artifact generation: ${err.message}`,
-            state.notebookId,
-            true   // source was ready, keep the notebook
+            state.notebookId
         );
     }
 }
@@ -823,11 +923,13 @@ async function tickSourcePoll(state) {
  * Polls all artifact tasks. Calls completePipeline() when all have settled.
  */
 async function tickArtifactPoll(state) {
+    const runId = state.runId;
+    await requireActiveRun(runId, ['wait_artifacts']);
     const ARTIFACT_TIMEOUT_MS = 1200000; // 20 minutes
     const elapsed = pollingElapsedMs(state.stepStartedAt);
 
     if (elapsed > ARTIFACT_TIMEOUT_MS) {
-        await failPipeline('Artifact generation timed out after 20 minutes.', null, true);
+        await failPipeline(runId, 'Artifact generation timed out after 20 minutes.');
         return;
     }
 
@@ -837,7 +939,9 @@ async function tickArtifactPoll(state) {
 
     try {
         statusByTaskId = await listArtifactStatuses(state.notebookId);
+        await requireActiveRun(runId, ['wait_artifacts']);
     } catch (err) {
+        if (err?.code === 'PIPELINE_STALE_RUN') return;
         console.warn('[Tick] Error listing artifact statuses:', err.message);
     }
 
@@ -857,16 +961,20 @@ async function tickArtifactPoll(state) {
 
     const elapsedMin = Math.round(elapsed / 60000);
     const summary = updatedTasks.map(t => `${t.type}: ${t.status}`).join(' | ');
-    await setState({ tasks: updatedTasks, stepDetail: `${summary} (~${elapsedMin} min elapsed)` });
+    const updated = await transitionRun(runId, {
+        tasks: updatedTasks,
+        stepDetail: `${summary} (~${elapsedMin} min elapsed)`,
+    }, { expectedSteps: ['wait_artifacts'] });
+    if (!updated) return;
 
     const allDone = updatedTasks.every(t => t.status !== 'in_progress');
     if (allDone && updatedTasks.length > 0) {
         const completedCount = updatedTasks.filter(t => t.status === 'completed').length;
         if (completedCount === 0) {
-            await failPipeline('All artifact generations failed. No artifacts were generated.', null, true);
+            await failPipeline(runId, 'All artifact generations failed. No artifacts were generated.');
             return;
         }
-        await completePipeline();
+        await completePipeline(runId);
     }
 }
 
@@ -878,11 +986,15 @@ const runExclusivePollTick = createExclusiveRunner();
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name !== ALARM_NAME) return;
+    await bootReconciliationPromise;
     const ran = await runExclusivePollTick(async () => {
         const state = await getState();
 
         if (!state || state.status !== 'running') {
-            await chrome.alarms.clear(ALARM_NAME);
+            await pipelineState.effectWhen(
+                current => current?.status !== 'running',
+                () => chrome.alarms.clear(ALARM_NAME)
+            );
             return;
         }
 
@@ -912,33 +1024,34 @@ async function reconcilePipelineRuntime() {
     const action = runtimeRecoveryAction(state, !!alarm);
 
     if (action === 'create_alarm') {
-        await chrome.alarms.create(ALARM_NAME, {
-            periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES,
-        });
-        console.log(`[Recovery] Restored ${ALARM_NAME} for ${state.step}`);
+        try {
+            await chrome.alarms.create(ALARM_NAME, {
+                periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES,
+            });
+            console.log(`[Recovery] Restored ${ALARM_NAME} for ${state.step}`);
+        } catch (error) {
+            await setState(interruptedPipelineUpdate(state));
+            setBadge('!', '#e03e3e').catch(badgeError => console.warn('[Badge] Recovery badge failed:', badgeError));
+            console.warn('[Recovery] Could not restore polling alarm:', error);
+        }
     } else if (action === 'clear_alarm') {
         await chrome.alarms.clear(ALARM_NAME);
     } else if (action === 'interrupt') {
-        await chrome.alarms.clear(ALARM_NAME);
         await setState(interruptedPipelineUpdate(state));
-        setBadge('!', '#e03e3e');
+        chrome.alarms.clear(ALARM_NAME).catch(error => console.warn('[Alarm] Recovery cleanup failed:', error));
+        setBadge('!', '#e03e3e').catch(error => console.warn('[Badge] Recovery badge failed:', error));
         console.warn(`[Recovery] Stopped interrupted non-idempotent phase: ${state?.step}`);
     }
 }
 
-chrome.runtime.onStartup.addListener(() => {
-    reconcilePipelineRuntime().catch(error => console.warn('[Recovery] Startup reconciliation failed:', error));
-});
-
-chrome.runtime.onInstalled.addListener(() => {
-    reconcilePipelineRuntime().catch(error => console.warn('[Recovery] Install reconciliation failed:', error));
-});
+const bootReconciliationPromise = reconcilePipelineRuntime()
+    .catch(error => console.warn('[Recovery] Initial reconciliation failed:', error));
 
 // =========================================================================
 // Pipeline orchestration (steps 1-3: synchronous network calls)
 // =========================================================================
 
-async function runPipeline(pdfUrl, pageUrl, uploadFile = null, sourceType = 'pdf', sourceTitle = null) {
+async function runPipeline(runId, pdfUrl, pageUrl, uploadFile = null, sourceType = 'pdf', sourceTitle = null) {
     const effectiveSourceType = uploadFile ? 'pdf' : (sourceType || 'pdf');
     const sourceLabel = getSourceLabel(effectiveSourceType);
     const ingestionLabel = getIngestionLabel(effectiveSourceType);
@@ -946,56 +1059,47 @@ async function runPipeline(pdfUrl, pageUrl, uploadFile = null, sourceType = 'pdf
     console.log(`[Pipeline] Starting for ${sourceLabel}: ${pdfUrl}`);
 
     let notebookId = null;
+    let sourceMutationStarted = false;
 
     try {
-        setBadge('...', '#6b7a8d');  // grey ellipsis while running
-
         // Step 1: Authenticate
-        await setState({
-            status: 'running',
-            step: 'auth',
-            stepDetail: 'Connecting to Gemini Notebook...',
-            pdfUrl,
-            sourceType: effectiveSourceType,
-            pageUrl,
-            sourceTitle: detectedTitle || null,
-            notebookId: null,
-            notebookUrl: null,
-            notebookTitle: null,
-            sourceId: null,
-            collectionAssignment: null,
-            tasks: [],
-            error: null,
-            startedAt: new Date().toISOString(),
-            completedAt: null,
-            stepStartedAt: new Date().toISOString(),
-        });
-
+        await requireActiveRun(runId, ['auth']);
         await fetchTokens();
-        await setState({ step: 'create_notebook', stepDetail: 'Creating notebook...' });
+        await requireActiveRun(runId, ['auth']);
+        const creating = await transitionRun(runId, {
+            step: 'create_notebook',
+            stepDetail: 'Creating notebook...',
+        }, { expectedSteps: ['auth'] });
+        if (!creating) return;
 
         // Step 2: Create notebook
         const settings = await getSettings();
         const requestedNotebookTitle = settings.useSourceTitleForNotebook !== false ? detectedTitle : '';
+        await requireActiveRun(runId, ['create_notebook']);
         const notebook = await createNotebook(requestedNotebookTitle);
         if (!notebook.id) throw new Error('Failed to create notebook -- no ID returned');
         notebookId = notebook.id;
+        await requireActiveRun(runId, ['create_notebook']);
 
         const notebookUrl = getNotebookUrl(notebook.id);
         const sourceStepDetail = uploadFile
             ? `Uploading local PDF: ${uploadFile.filename}`
             : `Adding ${sourceLabel}: ${pdfUrl.substring(0, 60)}...`;
 
-        await setState({
+        const adding = await transitionRun(runId, {
             notebookId: notebook.id,
             notebookUrl,
             step: 'add_source',
             stepDetail: sourceStepDetail,
-        });
+        }, { expectedSteps: ['create_notebook'] });
+        if (!adding) return;
 
         // Step 3: Add source
         let source = null;
         if (uploadFile) {
+            assertPdfUploadSize(decodedBase64ByteLength(uploadFile.fileData));
+            await requireActiveRun(runId, ['add_source']);
+            sourceMutationStarted = true;
             source = await addFileSource(
                 notebook.id,
                 uploadFile.filename,
@@ -1008,55 +1112,70 @@ async function runPipeline(pdfUrl, pageUrl, uploadFile = null, sourceType = 'pdf
             }
             const canFallbackToPdfUpload = !isWebpageSourceType(effectiveSourceType) && isLikelyPdfUrl(pdfUrl);
             try {
+                await requireActiveRun(runId, ['add_source']);
+                sourceMutationStarted = true;
                 source = await addUrlSource(notebook.id, pdfUrl);
             } catch (urlErr) {
+                if (urlErr?.code === 'PIPELINE_STALE_RUN') throw urlErr;
                 if (!canFallbackToPdfUpload) {
                     throw urlErr;
                 }
                 console.warn('[Pipeline] URL source add failed, trying download+upload fallback:', urlErr?.message || urlErr);
-                await setState({
+                await transitionRun(runId, {
                     stepDetail: 'URL source was blocked. Downloading PDF from the current URL and uploading directly...'
-                });
+                }, { expectedSteps: ['add_source'] });
 
                 try {
                     const fallbackFile = await downloadRemotePdfForUpload(pdfUrl, pageUrl);
+                    await requireActiveRun(runId, ['add_source']);
                     source = await addFileSource(
                         notebook.id,
                         fallbackFile.filename,
                         fallbackFile.fileData,
                         fallbackFile.mimeType
                     );
-                    await setState({
+                    await requireActiveRun(runId, ['add_source']);
+                    await transitionRun(runId, {
                         stepDetail: `URL blocked. Fallback upload succeeded (${fallbackFile.filename}).`
-                    });
+                    }, { expectedSteps: ['add_source'] });
                 } catch (fallbackErr) {
+                    if (fallbackErr?.code === 'PIPELINE_STALE_RUN') throw fallbackErr;
                     throw new Error(buildFallbackUploadErrorMessage(urlErr, fallbackErr, pdfUrl));
                 }
             }
         }
 
         if (!source.id) throw new Error('Failed to add source -- no ID returned');
+        await requireActiveRun(runId, ['add_source']);
 
         // Step 4: Hand off to alarm-based polling.
         // The service worker is free to be suspended between alarm ticks.
         // All state needed for polling is now in chrome.storage.local.
-        await setState({
+        const polling = await transitionRun(runId, {
             sourceId: source.id,
             step: 'wait_source',
             stepDetail: `Waiting for ${ingestionLabel} (checking every ~30s)...`,
             stepStartedAt: new Date().toISOString(),
+        }, {
+            expectedSteps: ['add_source'],
+            afterWrite: async () => {
+                await chrome.alarms.clear(ALARM_NAME);
+                await chrome.alarms.create(ALARM_NAME, {
+                    periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES,
+                });
+            },
         });
-
-        await chrome.alarms.clear(ALARM_NAME);
-        await chrome.alarms.create(ALARM_NAME, {
-            periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES,
-        });
+        if (!polling) return;
         console.log('[Pipeline] Alarm-based polling started (30 s interval)');
 
     } catch (err) {
+        if (err?.code === 'PIPELINE_STALE_RUN') {
+            console.log(`[Pipeline] Ignoring stale run ${runId}`);
+            return;
+        }
         const msg = err?.message || 'Unknown error';
         console.error('[Pipeline] Setup error:', err);
-        await failPipeline(msg, notebookId, false);
+        await failPipeline(runId, msg, notebookId, !!notebookId && !sourceMutationStarted);
     }
 }
 
@@ -1064,18 +1183,105 @@ async function runPipeline(pdfUrl, pageUrl, uploadFile = null, sourceType = 'pdf
 // Message handlers (from popup and content script)
 // =========================================================================
 
+async function startPipelineRequest(message, uploadFile = null) {
+    await bootReconciliationPromise;
+
+    if (uploadFile) {
+        const decodedSize = decodedBase64ByteLength(uploadFile.fileData);
+        assertPdfUploadSize(decodedSize);
+        if (!hasBase64PdfSignature(uploadFile.fileData)) {
+            throw new Error('The selected file does not contain a PDF signature.');
+        }
+    }
+
+    const runId = crypto.randomUUID();
+    const sourceType = uploadFile ? 'pdf' : (message.sourceType || 'pdf');
+    const initialState = {
+        ...INITIAL_STATE,
+        status: 'running',
+        runId,
+        step: 'auth',
+        stepDetail: 'Connecting to Gemini Notebook...',
+        pdfUrl: uploadFile ? uploadFile.filename : message.pdfUrl,
+        sourceType,
+        pageUrl: message.pageUrl || null,
+        sourceTitle: normalizeSourceTitle(message.sourceTitle) || null,
+        startedAt: new Date().toISOString(),
+        stepStartedAt: new Date().toISOString(),
+    };
+
+    const claimed = await pipelineState.claim(runId, initialState, {
+    });
+    if (!claimed.applied) {
+        const alreadyRunning = claimed.state?.status === 'running';
+        return {
+            ok: false,
+            code: alreadyRunning ? 'PIPELINE_ALREADY_RUNNING' : 'PIPELINE_NOT_IDLE',
+            message: alreadyRunning
+                ? 'Another pipeline is already active. Open the popup to review or stop it first.'
+                : 'Reset the completed or failed pipeline before starting a new one.',
+            state: claimed.state,
+        };
+    }
+
+    try { await chrome.alarms.clear(ALARM_NAME); }
+    catch (error) { console.warn('[Alarm] Could not clear an old polling alarm:', error); }
+    setBadge('...', '#6b7a8d').catch(error => console.warn('[Badge] Start badge failed:', error));
+
+    runPipeline(
+        runId,
+        uploadFile ? uploadFile.filename : message.pdfUrl,
+        message.pageUrl || null,
+        uploadFile,
+        sourceType,
+        message.sourceTitle || null
+    ).catch(error => console.error('[Pipeline] Unhandled setup failure:', error));
+
+    return { ok: true, runId, message: 'Pipeline started' };
+}
+
+async function stopPipelineRequest(requestedRunId) {
+    await bootReconciliationPromise;
+    const state = await getState();
+    if (!requestedRunId || !canStopPipeline(state, requestedRunId)) {
+        return {
+            ok: false,
+            code: 'PIPELINE_NOT_STOPPABLE',
+            message: 'This pipeline has already advanced or is no longer the active run.',
+            state,
+        };
+    }
+
+    const replacement = {
+        ...INITIAL_STATE,
+        status: 'idle',
+        stepDetail: 'Monitoring stopped. No further work will be started.',
+    };
+    const stopped = await pipelineState.invalidate(requestedRunId, replacement, {
+        expectedSteps: ['wait_source', 'wait_artifacts'],
+        afterWrite: async () => {
+            await chrome.alarms.clear(ALARM_NAME);
+        },
+    });
+    if (stopped.applied) {
+        clearBadge().catch(error => console.warn('[Badge] Clear badge failed:', error));
+    }
+    return stopped.applied
+        ? { ok: true, message: replacement.stepDetail }
+        : {
+            ok: false,
+            code: 'PIPELINE_NOT_STOPPABLE',
+            message: 'This pipeline changed before it could be stopped.',
+            state: stopped.state,
+        };
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'START_PIPELINE') {
-        chrome.alarms.clear(ALARM_NAME);
-        runPipeline(
-            message.pdfUrl,
-            message.pageUrl,
-            null,
-            message.sourceType || 'pdf',
-            message.sourceTitle || null
-        );
-        sendResponse({ ok: true, message: 'Pipeline started' });
-        return false;
+        startPipelineRequest(message)
+            .then(sendResponse)
+            .catch(error => sendResponse({ ok: false, code: error?.code, message: error?.message || 'Could not start pipeline' }));
+        return true;
     }
 
     if (message.type === 'START_PIPELINE_FILE') {
@@ -1083,29 +1289,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({ ok: false, message: 'Missing file payload or filename' });
             return false;
         }
-        chrome.alarms.clear(ALARM_NAME);
-        runPipeline(
-            message.fileName || 'local-upload.pdf',
-            message.pageUrl || null,
-            {
+        startPipelineRequest(message, {
                 filename: message.fileName || 'local-upload.pdf',
                 mimeType: message.mimeType || 'application/pdf',
                 fileData: message.fileDataBase64,
-            },
-            'pdf',
-            message.sourceTitle || null
-        );
-        sendResponse({ ok: true, message: 'Pipeline started' });
-        return false;
+            })
+            .then(sendResponse)
+            .catch(error => sendResponse({ ok: false, code: error?.code, message: error?.message || 'Could not start file pipeline' }));
+        return true;
     }
 
     if (message.type === 'GET_STATE') {
-        getState().then(state => sendResponse(state));
+        bootReconciliationPromise.then(() => getState()).then(sendResponse);
         return true;
     }
 
     if (message.type === 'LIST_COLLECTIONS') {
-        listCollections()
+        bootReconciliationPromise.then(() => listCollections())
             .then(collections => sendResponse({ ok: true, collections }))
             .catch(error => sendResponse({
                 ok: false,
@@ -1116,28 +1316,36 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === 'RESET_STATE') {
-        chrome.alarms.clear(ALARM_NAME);
-        clearBadge();
-        resetState().then(() => sendResponse({ ok: true }));
+        bootReconciliationPromise
+            .then(() => resetState({
+                afterWrite: async () => {
+                    await chrome.alarms.clear(ALARM_NAME);
+                },
+            }))
+            .then(state => {
+                if (state) clearBadge().catch(error => console.warn('[Badge] Clear badge failed:', error));
+                sendResponse(state
+                    ? { ok: true }
+                    : { ok: false, code: 'PIPELINE_ALREADY_RUNNING', message: 'Stop the active pipeline before resetting.' });
+            })
+            .catch(error => sendResponse({ ok: false, message: error?.message || 'Could not reset pipeline state' }));
         return true;
     }
 
     if (message.type === 'ABORT_PIPELINE') {
-        chrome.alarms.clear(ALARM_NAME);
-        clearBadge();
-        setState({
-            ...INITIAL_STATE,
-            status: 'idle',
-            stepDetail: 'Monitoring stopped. You can start another generation.',
-            error: null,
-        }).then(() => sendResponse({ ok: true }));
+        stopPipelineRequest(message.runId).then(sendResponse)
+            .catch(error => sendResponse({ ok: false, message: error?.message || 'Could not stop monitoring' }));
         return true;
     }
 
     if (message.type === 'DETECT_PDF') {
-        chrome.storage.local.set({ detectedPdf: message.data });
-        sendResponse({ ok: true });
-        return false;
+        const detectedPdf = bindDetectionToTab(message.data, sender.tab);
+        if (!detectedPdf) {
+            sendResponse({ ok: false, message: 'Detection was not associated with a browser tab.' });
+            return false;
+        }
+        chrome.storage.local.set({ detectedPdf }).then(() => sendResponse({ ok: true }));
+        return true;
     }
 });
 
@@ -1147,10 +1355,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Clicking the notification body opens the notebook
 chrome.notifications.onClicked.addListener(async (notificationId) => {
-    if (notificationId === 'pipeline-complete') {
-        const state = await getState();
-        if (state.notebookUrl) {
-            chrome.tabs.create({ url: state.notebookUrl });
+    if (notificationId.startsWith('pipeline-complete:')) {
+        const notebookUrl = await takeNotificationTarget(notificationId);
+        if (notebookUrl) {
+            chrome.tabs.create({ url: notebookUrl });
         }
         chrome.notifications.clear(notificationId);
     }
@@ -1158,11 +1366,11 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
 
 // Handling the "Open Notebook" / "Dismiss" action buttons
 chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIndex) => {
-    if (notificationId === 'pipeline-complete') {
+    if (notificationId.startsWith('pipeline-complete:')) {
+        const notebookUrl = await takeNotificationTarget(notificationId);
         if (buttonIndex === 0) {
-            const state = await getState();
-            if (state.notebookUrl) {
-                chrome.tabs.create({ url: state.notebookUrl });
+            if (notebookUrl) {
+                chrome.tabs.create({ url: notebookUrl });
             }
         }
         // buttonIndex 1 = "Dismiss" -- just clear
@@ -1170,5 +1378,10 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
     }
 });
 
+chrome.notifications.onClosed.addListener(notificationId => {
+    if (notificationId.startsWith('pipeline-complete:')) {
+        takeNotificationTarget(notificationId).catch(error => console.warn('[Notification] Could not clear target:', error));
+    }
+});
+
 console.log('[ScholarRelay] Service worker loaded');
-reconcilePipelineRuntime().catch(error => console.warn('[Recovery] Initial reconciliation failed:', error));

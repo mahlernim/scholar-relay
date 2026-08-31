@@ -1,4 +1,11 @@
 import { choosePdfTitle } from './pdf-metadata.js';
+import { detectionMatchesTab, directDetectionMatchesTab } from './detection-policy.js';
+import {
+    MAX_PDF_UPLOAD_BYTES,
+    assertPdfUploadSize,
+    hasPdfSignature,
+    readResponseWithinLimit,
+} from './pdf-file-policy.js';
 import { httpOriginPattern, needsOptionalPdfAccess } from './site-permissions.js';
 
 /**
@@ -360,8 +367,9 @@ async function detectSourceTitleFromTab(tab) {
 }
 
 async function detectAndRender() {
+    let tab = null;
     try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab?.url) {
             const url = tab.url;
             const sourceTitle = await detectSourceTitleFromTab(tab);
@@ -391,16 +399,21 @@ async function detectAndRender() {
 
     try {
         const stored = await chrome.storage.local.get('detectedPdf');
-        if (stored.detectedPdf?.isPdf) { renderDetection(stored.detectedPdf); return; }
+        if (stored.detectedPdf?.isPdf && detectionMatchesTab(stored.detectedPdf, tab)) {
+            renderDetection(stored.detectedPdf);
+            return;
+        }
     } catch (_) { /* ignore */ }
 
     try {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab?.id && tab?.url && !tab.url.startsWith('chrome://')) {
             await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
             await new Promise(r => setTimeout(r, 200));
             const response = await chrome.tabs.sendMessage(tab.id, { type: 'REQUEST_PDF_DETECTION' });
-            if (response?.isPdf) { renderDetection(response); return; }
+            if (response?.isPdf && directDetectionMatchesTab(response, tab)) {
+                renderDetection(response);
+                return;
+            }
         }
     } catch (_) { /* ignore */ }
 
@@ -514,7 +527,10 @@ function renderProgress(state) {
         <div class="msg">${summaryMsg}</div>
       </div>`;
     }
-    if (state.status === 'running') {
+    if (state.status === 'error') {
+        bottomHtml += `<div class="pipeline-error-box" role="alert">${escapeHtml(state.error || state.stepDetail || 'The pipeline failed.')}</div>`;
+    }
+    if (state.status === 'running' && ['wait_source', 'wait_artifacts'].includes(state.step)) {
         bottomHtml += `<button class="btn-secondary" id="btn-abort">Stop Monitoring</button>`;
     }
     if (state.status === 'error' || state.status === 'completed') {
@@ -532,10 +548,18 @@ function renderProgress(state) {
     ${bottomHtml}`;
 
     document.getElementById('btn-reset')?.addEventListener('click', async () => {
-        await chrome.runtime.sendMessage({ type: 'RESET_STATE' });
-        await detectAndRender();
+        try {
+            const response = await chrome.runtime.sendMessage({ type: 'RESET_STATE' });
+            if (!response?.ok) {
+                alert(response?.message || 'Could not reset pipeline state.');
+                return;
+            }
+            await detectAndRender();
+        } catch (error) {
+            alert(error?.message || 'The service worker did not respond. Reopen the popup and try again.');
+        }
     });
-    document.getElementById('btn-abort')?.addEventListener('click', abortPipeline);
+    document.getElementById('btn-abort')?.addEventListener('click', () => abortPipeline(state.runId));
 }
 
 // =========================================================================
@@ -544,12 +568,29 @@ function renderProgress(state) {
 
 async function startPipeline(pdfUrl, pageUrl, sourceType = 'pdf', sourceTitle = null) {
     const btn = document.getElementById('btn-start') || document.getElementById('btn-start-url');
+    const originalText = btn?.textContent || '';
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Starting...'; }
-    await chrome.runtime.sendMessage({ type: 'START_PIPELINE', pdfUrl, pageUrl, sourceType, sourceTitle });
-    await new Promise(r => setTimeout(r, 300));
-    const state = await getState();
-    renderProgress(state);
-    startPolling();
+    try {
+        const response = await chrome.runtime.sendMessage({ type: 'START_PIPELINE', pdfUrl, pageUrl, sourceType, sourceTitle });
+        if (!response?.ok) {
+            const error = new Error(response?.message || 'Could not start pipeline');
+            error.code = response?.code;
+            throw error;
+        }
+        const state = await getState();
+        if (state.runId !== response.runId || state.status !== 'running') {
+            throw new Error('The pipeline did not retain ownership after starting.');
+        }
+        renderProgress(state);
+        startPolling();
+        return response;
+    } catch (error) {
+        if (btn?.isConnected) {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+        throw error;
+    }
 }
 
 async function startPipelineFromCurrentPageUrl() {
@@ -571,33 +612,66 @@ async function startPipelineFromCurrentPageUrl() {
     }
 }
 
-async function abortPipeline() {
-    await chrome.runtime.sendMessage({ type: 'ABORT_PIPELINE' });
-    stopPolling();
-    await detectAndRender();
+async function abortPipeline(runId) {
+    try {
+        const response = await chrome.runtime.sendMessage({ type: 'ABORT_PIPELINE', runId });
+        if (!response?.ok) {
+            const current = response?.state || await getState();
+            renderProgress(current);
+            if (current.status === 'running') startPolling();
+            alert(response?.message || 'The pipeline could not be stopped.');
+            return;
+        }
+        stopPolling();
+        await detectAndRender();
+    } catch (error) {
+        alert(error?.message || 'The service worker did not respond. Reopen the popup and try again.');
+    }
 }
 
 async function startPipelineFile(file, pageUrl, sourceTitle = null) {
     const btn = document.getElementById('btn-upload-start') || document.getElementById('btn-upload-manual');
+    const originalText = btn?.textContent || '';
     if (btn) { btn.disabled = true; btn.textContent = 'Uploading...'; }
-    const fileDataBase64 = await readFileAsBase64(file);
-    const selectedTitle = choosePdfTitle({
-        payload: fileDataBase64,
-        pageTitle: sourceTitle,
-        filename: file.name,
-    });
-    console.log(`[Popup] Notebook title source: ${selectedTitle.source}`);
-    await chrome.runtime.sendMessage({
-        type: 'START_PIPELINE_FILE',
-        fileName: file.name || 'local-upload.pdf',
-        mimeType: file.type || 'application/pdf',
-        fileDataBase64, pageUrl,
-        sourceTitle: selectedTitle.title,
-    });
-    await new Promise(r => setTimeout(r, 300));
-    const state = await getState();
-    renderProgress(state);
-    startPolling();
+    try {
+        assertPdfUploadSize(file.size);
+        const signature = await file.slice(0, 1024).arrayBuffer();
+        if (!hasPdfSignature(signature)) throw new Error('The selected file does not contain a PDF signature.');
+        const fileDataBase64 = await readFileAsBase64(file);
+        const selectedTitle = choosePdfTitle({
+            payload: fileDataBase64,
+            pageTitle: sourceTitle,
+            filename: file.name,
+        });
+        console.log(`[Popup] Notebook title source: ${selectedTitle.source}`);
+        const response = await chrome.runtime.sendMessage({
+            type: 'START_PIPELINE_FILE',
+            fileName: file.name || 'local-upload.pdf',
+            mimeType: file.type || 'application/pdf',
+            fileDataBase64, pageUrl,
+            sourceTitle: selectedTitle.title,
+        });
+        if (!response?.ok) {
+            const error = new Error(response?.message || 'Could not start file pipeline');
+            error.code = response?.code;
+            throw error;
+        }
+        const state = await getState();
+        if (state.runId !== response.runId || state.status !== 'running') {
+            throw new Error('The file pipeline did not retain ownership after starting.');
+        }
+        renderProgress(state);
+        startPolling();
+        return true;
+    } catch (error) {
+        console.warn('[Popup] Could not start local PDF pipeline:', error?.message || error);
+        if (btn?.isConnected) {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+        alert(error?.message || 'Could not upload the selected PDF.');
+        return false;
+    }
 }
 
 function blobToBase64(blob) {
@@ -688,12 +762,10 @@ async function tryDirectTabPdfRead(tab, preferredPdfUrl = null) {
         if (!response.ok) {
             return { ok: false, error: `HTTP ${response.status}` };
         }
-        const blob = await response.blob();
-        const mimeType = blob.type || 'application/pdf';
-        const looksLikePdf = /pdf/i.test(mimeType) || /\.pdf(\?|#|$)/i.test(sourceUrl);
-        if (!looksLikePdf) {
-            return { ok: false, error: 'Current tab content is not a PDF' };
-        }
+        const bytes = await readResponseWithinLimit(response);
+        const mimeType = response.headers.get('content-type') || 'application/pdf';
+        if (!hasPdfSignature(bytes)) return { ok: false, error: 'Current tab content is not a valid PDF' };
+        const blob = new Blob([bytes], { type: mimeType });
         const fileDataBase64 = await blobToBase64(blob);
         return {
             ok: true,
@@ -703,7 +775,7 @@ async function tryDirectTabPdfRead(tab, preferredPdfUrl = null) {
             sourceUrl,
         };
     } catch (e) {
-        return { ok: false, error: e?.message || 'Could not fetch PDF from active tab URL' };
+        return { ok: false, code: e?.code, error: e?.message || 'Could not fetch PDF from active tab URL' };
     }
 }
 
@@ -744,11 +816,30 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
 
         let payload = await tryDirectTabPdfRead(tab, pdfUrl);
 
+        if (payload?.code === 'PDF_TOO_LARGE') {
+            if (/^https?:\/\//i.test(pdfUrl || '')) {
+                console.log('[Popup] PDF is too large for the local bridge; using Gemini Notebook URL import');
+                await startPipeline(pdfUrl, pageUrl || tab.url || pdfUrl, 'pdf', pageTitle);
+                return;
+            }
+            const error = new Error(payload.error || 'This local PDF exceeds the 32 MiB safe upload limit.');
+            error.code = payload.code;
+            throw error;
+        }
+        if (payload?.error === 'FILE_ACCESS_DISABLED') {
+            showFileAccessHint();
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = btn.id === 'btn-start' ? '🎧 Generate Artifacts' : 'Use Current PDF and Generate';
+            }
+            return;
+        }
+
         // Fallback path for pages where URL doesn't expose the actual PDF.
         if (!payload?.ok || !payload.fileDataBase64) {
             const injected = await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
-                func: async (preferredPdfUrl) => {
+                func: async (preferredPdfUrl, maxPdfBytes) => {
                     const pickCandidateUrl = () => {
                         const embed = document.querySelector('embed[type="application/pdf"]');
                         if (embed?.src) return embed.src;
@@ -786,12 +877,51 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
                         if (!response.ok) {
                             return { ok: false, error: `HTTP ${response.status}` };
                         }
-                        const blob = await response.blob();
-                        const mimeType = blob.type || 'application/pdf';
-                        const looksLikePdf = /pdf/i.test(mimeType) || /\.pdf(\?|#|$)/i.test(sourceUrl);
-                        if (!looksLikePdf) {
-                            return { ok: false, error: 'Current tab content is not a PDF' };
+                        const contentLengthHeader = response.headers.get('content-length');
+                        const contentLength = Number(contentLengthHeader);
+                        if (contentLengthHeader !== null && Number.isFinite(contentLength) && contentLength > maxPdfBytes) {
+                            try { await response.body?.cancel?.('PDF exceeds the safe local upload limit'); } catch (_) { /* already closed */ }
+                            return { ok: false, code: 'PDF_TOO_LARGE', error: 'PDF exceeds the safe local upload limit.' };
                         }
+                        if (!response.body?.getReader) {
+                            return { ok: false, code: 'PDF_STREAM_UNAVAILABLE', error: 'PDF response cannot be streamed safely.' };
+                        }
+                        const reader = response.body.getReader();
+                        const chunks = [];
+                        let total = 0;
+                        try {
+                            while (true) {
+                                const { done, value } = await reader.read();
+                                if (done) break;
+                                if (!value?.byteLength) continue;
+                                total += value.byteLength;
+                                if (total > maxPdfBytes) {
+                                    try { await reader.cancel('PDF exceeds the safe local upload limit'); } catch (_) { /* already closed */ }
+                                    return { ok: false, code: 'PDF_TOO_LARGE', error: 'PDF exceeds the safe local upload limit.' };
+                                }
+                                chunks.push(value);
+                            }
+                        } finally {
+                            try { reader.releaseLock(); } catch (_) { /* already released */ }
+                        }
+                        const bytes = new Uint8Array(total);
+                        let offset = 0;
+                        for (const chunk of chunks) {
+                            bytes.set(chunk, offset);
+                            offset += chunk.byteLength;
+                        }
+                        const mimeType = response.headers.get('content-type') || 'application/pdf';
+                        const header = bytes.subarray(0, 1024);
+                        let hasSignature = false;
+                        for (let i = 0; i <= header.length - 5; i += 1) {
+                            if (header[i] === 0x25 && header[i + 1] === 0x50 && header[i + 2] === 0x44 &&
+                                header[i + 3] === 0x46 && header[i + 4] === 0x2d) {
+                                hasSignature = true;
+                                break;
+                            }
+                        }
+                        if (!hasSignature) return { ok: false, error: 'Current tab content is not a valid PDF' };
+                        const blob = new Blob([bytes], { type: mimeType });
                         const fileDataBase64 = await toBase64(blob);
                         return {
                             ok: true,
@@ -804,16 +934,23 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
                         return { ok: false, error: e?.message || 'Could not read current PDF from tab' };
                     }
                 },
-                args: [pdfUrl],
+                args: [pdfUrl, MAX_PDF_UPLOAD_BYTES],
             });
             payload = injected?.[0]?.result;
         }
 
         if (!payload?.ok || !payload.fileDataBase64) {
+            if (payload?.code === 'PDF_TOO_LARGE' && /^https?:\/\//i.test(pdfUrl || '')) {
+                console.log('[Popup] PDF is too large for the local bridge; using Gemini Notebook URL import');
+                await startPipeline(pdfUrl, pageUrl || tab.url || pdfUrl, 'pdf', pageTitle);
+                return;
+            }
             if (payload?.error === 'FILE_ACCESS_DISABLED') {
                 showFileAccessHint();
             }
-            throw new Error(payload?.error || 'Could not read current PDF from tab');
+            const error = new Error(payload?.error || 'Could not read current PDF from tab');
+            error.code = payload?.code;
+            throw error;
         }
 
         const selectedTitle = choosePdfTitle({
@@ -824,7 +961,7 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
         console.log(`[Popup] Notebook title source: ${selectedTitle.source}`);
 
         if (btn) { btn.textContent = 'Uploading...'; }
-        await chrome.runtime.sendMessage({
+        const response = await chrome.runtime.sendMessage({
             type: 'START_PIPELINE_FILE',
             fileName: payload.fileName || 'local-upload.pdf',
             mimeType: payload.mimeType || 'application/pdf',
@@ -832,8 +969,15 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
             pageUrl: pageUrl || payload.sourceUrl || null,
             sourceTitle: selectedTitle.title,
         });
-        await new Promise(r => setTimeout(r, 300));
+        if (!response?.ok) {
+            const error = new Error(response?.message || 'Could not start PDF pipeline');
+            error.code = response?.code;
+            throw error;
+        }
         const state = await getState();
+        if (state.runId !== response.runId || state.status !== 'running') {
+            throw new Error('The PDF pipeline did not retain ownership after starting.');
+        }
         renderProgress(state);
         startPolling();
     } catch (err) {
@@ -841,6 +985,11 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
         if (btn) {
             btn.disabled = false;
             btn.textContent = btn.id === 'btn-start' ? '🎧 Generate Artifacts' : 'Use Current PDF and Generate';
+        }
+        if (['PIPELINE_ALREADY_RUNNING', 'PIPELINE_NOT_IDLE', 'PDF_TOO_LARGE'].includes(err?.code) ||
+            /retain ownership/i.test(err?.message || '')) {
+            alert(err?.message || 'Another pipeline is already active.');
+            return;
         }
         promptForPdfUpload(pageUrl);
     }

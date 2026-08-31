@@ -12,6 +12,7 @@ $runtimeFiles = @(
     '_locales/ko/messages.json',
     'background.js',
     'content.js',
+    'detection-policy.js',
     'icons/icon16.png',
     'icons/icon48.png',
     'icons/icon128.png',
@@ -20,6 +21,7 @@ $runtimeFiles = @(
     'notebooklm-api.js',
     'offscreen.html',
     'offscreen.js',
+    'pdf-file-policy.js',
     'pdf-metadata.js',
     'popup.html',
     'popup.js',
@@ -35,13 +37,18 @@ foreach ($relativePath in $runtimeFiles) {
 }
 
 New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
-$outputPath = Join-Path $OutputDirectory "scholar-relay-v$($manifest.version)-store.zip"
-$legacyOutputPath = Join-Path $OutputDirectory "chrome-pdf-to-notebooklm-v$($manifest.version)-store.zip"
-if (Test-Path -LiteralPath $legacyOutputPath) {
-    Remove-Item -LiteralPath $legacyOutputPath -Force
-}
-if (Test-Path -LiteralPath $outputPath) {
-    Remove-Item -LiteralPath $outputPath -Force
+$outputPath = Join-Path $OutputDirectory "scholar-relay-v$($manifest.version).zip"
+$checksumPath = "$outputPath.sha256"
+$obsoletePaths = @(
+    (Join-Path $OutputDirectory "scholar-relay-v$($manifest.version)-store.zip"),
+    (Join-Path $OutputDirectory "chrome-pdf-to-notebooklm-v$($manifest.version)-store.zip"),
+    $outputPath,
+    $checksumPath
+)
+foreach ($obsoletePath in $obsoletePaths) {
+    if (Test-Path -LiteralPath $obsoletePath) {
+        Remove-Item -LiteralPath $obsoletePath -Force
+    }
 }
 
 Add-Type -AssemblyName System.IO.Compression
@@ -70,4 +77,18 @@ finally {
     $stream.Dispose()
 }
 
+$sha256 = [Security.Cryptography.SHA256]::Create()
+$zipStream = [IO.File]::OpenRead($outputPath)
+try {
+    $hashBytes = $sha256.ComputeHash($zipStream)
+}
+finally {
+    $zipStream.Dispose()
+    $sha256.Dispose()
+}
+$hash = [BitConverter]::ToString($hashBytes).Replace('-', '').ToLowerInvariant()
+$checksumLine = "$hash  $([IO.Path]::GetFileName($outputPath))`n"
+[IO.File]::WriteAllText($checksumPath, $checksumLine, [Text.UTF8Encoding]::new($false))
+
 Write-Output $outputPath
+Write-Output $checksumPath

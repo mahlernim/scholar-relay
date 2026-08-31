@@ -6,6 +6,7 @@ import {
   PIPELINE_ALARM_NAME,
   PIPELINE_POLL_PERIOD_MINUTES,
   createExclusiveRunner,
+  canStopPipeline,
   interruptedPipelineUpdate,
   pollingElapsedMs,
   runtimeRecoveryAction,
@@ -62,7 +63,11 @@ test('ScholarRelay branding, package identity, and localized store copy stay ali
   assert.match(privacyText, /^# Privacy Policy for ScholarRelay/m);
   assert.match(listingText, /## English listing/);
   assert.match(listingText, /## 한국어 스토어 등록 문구/);
-  assert.match(packageScript, /scholar-relay-v\$\(\$manifest\.version\)-store\.zip/);
+  assert.match(packageScript, /scholar-relay-v\$\(\$manifest\.version\)\.zip/);
+  assert.doesNotMatch(packageScript, /\$outputPath\s*=.*-store\.zip/);
+  assert.match(packageScript, /\$checksumPath = "\$outputPath\.sha256"/);
+  assert.match(packageScript, /detection-policy\.js/);
+  assert.match(packageScript, /pdf-file-policy\.js/);
   assert.match(packageScript, /_locales\/en\/messages\.json/);
   assert.match(packageScript, /_locales\/ko\/messages\.json/);
 });
@@ -86,6 +91,13 @@ test('runtime recovery stops interrupted non-idempotent phases', () => {
   assert.equal(update.status, 'error');
   assert.match(update.error, /avoid duplicate notebooks or artifacts/i);
   assert.match(update.error, /Open the existing notebook/i);
+});
+
+test('pipeline stop is limited to the matching run in polling phases', () => {
+  assert.equal(canStopPipeline({ status: 'running', runId: 'a', step: 'wait_source' }, 'a'), true);
+  assert.equal(canStopPipeline({ status: 'running', runId: 'a', step: 'wait_artifacts' }, 'a'), true);
+  assert.equal(canStopPipeline({ status: 'running', runId: 'a', step: 'generate_artifacts' }, 'a'), false);
+  assert.equal(canStopPipeline({ status: 'running', runId: 'b', step: 'wait_source' }, 'a'), false);
 });
 
 test('delayed alarm timing preserves the original wall-clock timeout', () => {

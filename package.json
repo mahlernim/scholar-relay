@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
+    "smoke:chrome": "node ./scripts/smoke-extension.mjs",
     "capture:assets": "node ./scripts/capture-assets.mjs",
     "package:store": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/package-store.ps1"
   }
