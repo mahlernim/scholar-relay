@@ -92,6 +92,14 @@ async function findExtensionId(port) {
     const worker = targets.find(item => item.type === 'service_worker' && item.url?.endsWith('/background.js'));
     const id = worker?.url?.match(/^chrome-extension:\/\/([^/]+)/)?.[1];
     if (id) return id;
+    try {
+      const preferences = JSON.parse(await readFile(join(profileDir, 'Default', 'Preferences'), 'utf8'));
+      const settings = preferences.extensions?.settings || {};
+      for (const [extensionId, value] of Object.entries(settings)) {
+        if (value?.path && resolve(value.path) === extensionRoot) return extensionId;
+        if (value?.manifest?.name === 'ScholarRelay') return extensionId;
+      }
+    } catch {}
     await delay(100);
   }
   throw new Error('Loaded extension service worker was not found.');
