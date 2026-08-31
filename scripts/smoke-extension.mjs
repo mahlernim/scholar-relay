@@ -122,6 +122,19 @@ async function evaluate(session, expression) {
   return result.result?.value;
 }
 
+async function waitForExtensionPage(session) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    try {
+      const ready = await evaluate(session, `location.protocol === 'chrome-extension:' && document.readyState === 'complete' && typeof chrome?.tabs?.create === 'function'`);
+      if (ready) return;
+    } catch {}
+    await delay(100);
+  }
+  const state = await evaluate(session, `({href:location.href,readyState:document.readyState,hasChrome:typeof chrome !== 'undefined',hasTabs:typeof chrome?.tabs !== 'undefined'})`)
+    .catch(error => ({ evaluationError: error.message }));
+  throw new Error(`Extension popup did not become ready: ${JSON.stringify(state)}`);
+}
+
 async function reload(session) {
   await session.call('Page.reload', { ignoreCache: true });
   await delay(500);
@@ -180,7 +193,7 @@ try {
   const devtoolsPort = await waitForPort();
   const extensionId = await findExtensionId(devtoolsPort);
   popup = await openTarget(devtoolsPort, `chrome-extension://${extensionId}/popup.html`);
-  await delay(400);
+  await waitForExtensionPage(popup);
 
   const tabA = await evaluate(popup, `chrome.tabs.create({url:${JSON.stringify(`${origin}/article`)},active:true})`);
   await delay(300);
