@@ -46,3 +46,8 @@ test('allows NotebookLM to name the notebook when no trustworthy title exists', 
     filename: 's42256-026-01283-z.pdf',
   }), { title: null, source: 'notebooklm' });
 });
+
+test('a useful HTML title avoids inspecting PDF bytes', () => {
+  assert.deepEqual(choosePdfTitle({ pageTitle: 'The actual article title', payload: 'not valid base64' }),
+    { title: 'The actual article title', source: 'page_metadata' });
+});

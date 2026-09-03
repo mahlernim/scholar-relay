@@ -182,15 +182,35 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const server = createServer((request, response) => {
+const imports = { urls: [], uploads: 0, pdfDownloads: 0, notebookTitles: [] };
+const server = createServer(async (request, response) => {
+  const requestUrl = new URL(request.url, 'http://localhost');
+  if (requestUrl.searchParams.has('rpcids')) {
+    let body = '';
+    for await (const chunk of request) body += chunk;
+    const params = JSON.parse(JSON.parse(new URLSearchParams(body).get('f.req'))[0][0][1]);
+    const method = requestUrl.searchParams.get('rpcids');
+    let result = [[null, []]];
+    if (method === 'CCqFvf') { imports.notebookTitles.push(params[0]); result = [['smoke-notebook-id']]; }
+    if (method === 'izAoDd') { imports.urls.push(params[0][0][2][0]); result = [['smoke-url-source-id']]; }
+    if (method === 'o4cbdc') { imports.uploads++; result = [['smoke-file-source-id']]; }
+    response.writeHead(200, { 'content-type': 'application/json' });
+    response.end(`)]}'\n${JSON.stringify([['wrb.fr', method, JSON.stringify(result)]])}`);
+    return;
+  }
+  if (request.url === '/') {
+    response.end('"SNlM0e":"smoke-csrf","FdrFJe":"smoke-session"');
+    return;
+  }
   if (request.url === '/paper.pdf' || request.url === '/paper-two.pdf') {
+    imports.pdfDownloads++;
     response.writeHead(200, { 'content-type': 'application/pdf' });
     response.end('%PDF-1.7\n%%EOF');
     return;
   }
   if (request.url === '/article' || request.url === '/article-next') {
     response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    response.end('<!doctype html><title>Article</title><a id="pdf-link" href="/paper.pdf">Download PDF</a>');
+    response.end('<!doctype html><title>Article</title><meta name="citation_title" content="A scholarly HTML title"><a id="pdf-link" href="/paper.pdf">Download PDF</a>');
     return;
   }
   response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
@@ -216,6 +236,11 @@ try {
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
   manifest.host_permissions.push(`${origin}/*`);
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  // Route the copied test extension to a controlled server. Production files are untouched.
+  const apiPath = join(extensionRoot, 'notebooklm-api.js');
+  await writeFile(apiPath, (await readFile(apiPath, 'utf8'))
+    .replace("const DEFAULT_BASE_URL = 'https://notebook.google.com';", `const DEFAULT_BASE_URL = '${origin}';`)
+    .replace("const LEGACY_BASE_URL = 'https://notebooklm.google.com';", `const LEGACY_BASE_URL = '${origin}';`));
 
   const chromePath = await resolveChrome();
   chrome = spawn(chromePath, [
@@ -277,6 +302,20 @@ try {
   assert(acceptedStop?.ok === true, 'The matching polling run could not be stopped');
   storedState = await evaluate(popup, `chrome.storage.local.get('pipelineState').then(result=>result.pipelineState)`);
   assert(storedState.status === 'idle' && storedState.runId === null, 'Stopped run did not return to idle state');
+
+  await evaluate(popup, `chrome.tabs.update(${tabA.id},{active:true})`);
+  await reload(popup);
+  const downloadsBefore = imports.pdfDownloads;
+  await evaluate(popup, `document.getElementById('btn-start').click()`);
+  for (let attempt = 0; attempt < 50; attempt++) {
+    storedState = await evaluate(popup, `chrome.storage.local.get('pipelineState').then(result=>result.pipelineState)`);
+    if (storedState.step === 'wait_source' || storedState.status === 'error') break;
+    await delay(100);
+  }
+  assert(storedState.step === 'wait_source', `URL import did not reach source polling: ${storedState.error}`);
+  assert(imports.notebookTitles.at(-1) === 'A scholarly HTML title', 'HTML title did not reach notebook creation');
+  assert(imports.urls.at(-1) === `${origin}/paper-two.pdf`, 'Detected PDF URL was not imported');
+  assert(imports.pdfDownloads === downloadsBefore && imports.uploads === 0, 'URL-first import downloaded or uploaded a PDF');
 
   console.log('Chrome extension smoke test passed.');
 } finally {
