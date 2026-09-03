@@ -81,6 +81,38 @@ function reset() {
 
 test.beforeEach(reset);
 
+test('URL import classifies explicit rejection without treating authentication or quota as PDF failures', async () => {
+  for (const status of [400, 401, 403, 422, 429, 500]) {
+    reset();
+    installFetch(url => {
+      if (url.endsWith('/')) return tokenResponse();
+      const method = new URL(url).searchParams.get('rpcids');
+      if (method === __testing.RPCMethod.GET_NOTEBOOK) return rpcResponse(method, [[null, []]]);
+      return mockResponse({ status });
+    });
+    await assert.rejects(addUrlSource('notebook-id-12345', 'https://example.org/paper.pdf'), error =>
+      [400, 422].includes(status) ? error.code === 'SOURCE_IMPORT_REJECTED' : error.code !== 'SOURCE_IMPORT_REJECTED');
+  }
+});
+
+test('malformed URL mutation responses reconcile without repeating the mutation', async () => {
+  let mutations = 0;
+  let reads = 0;
+  installFetch(url => {
+    if (url.endsWith('/')) return tokenResponse();
+    const method = new URL(url).searchParams.get('rpcids');
+    if (method === __testing.RPCMethod.GET_NOTEBOOK) {
+      reads++;
+      return rpcResponse(method, [[null, reads === 1 ? [] : [sourceRow('recovered-source-id', 'https://example.org/paper.pdf')]]]);
+    }
+    mutations++;
+    return mockResponse({ body: 'incomplete response' });
+  });
+  const source = await addUrlSource('notebook-id-12345', 'https://example.org/paper.pdf');
+  assert.equal(source.id, 'recovered-source-id');
+  assert.equal(mutations, 1);
+});
+
 test('request option factories return fresh canonical envelopes', () => {
   const firstTemplate = __testing.requestTemplateOptions();
   const secondTemplate = __testing.requestTemplateOptions();

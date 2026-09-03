@@ -19,7 +19,7 @@ const contentEl = document.getElementById('content');
 // Pipeline steps -- 'keys' maps one or more background state step names to this display row
 const STEPS = [
     { keys: ['auth', 'create_notebook'], label: 'Setup', emoji: '🔑' },
-    { keys: ['add_source'], label: 'Add Source', emoji: '📄' },
+    { keys: ['add_source', 'download_pdf', 'upload_pdf', 'wait_pdf_access'], label: 'Add Source', emoji: '📄' },
     { keys: ['wait_source'], label: 'Processing Source', emoji: '⏳' },
     {
         keys: ['generate_artifacts',
@@ -530,7 +530,11 @@ function renderProgress(state) {
     if (state.status === 'error') {
         bottomHtml += `<div class="pipeline-error-box" role="alert">${escapeHtml(state.error || state.stepDetail || 'The pipeline failed.')}</div>`;
     }
-    if (state.status === 'running' && ['wait_source', 'wait_artifacts'].includes(state.step)) {
+    if (state.status === 'running' && state.step === 'wait_pdf_access') {
+        bottomHtml += `<button class="btn-generate" id="btn-resume-pdf">Allow PDF Download and Retry</button>
+          <button class="btn-secondary" id="btn-fallback-file">Choose PDF for This Notebook</button>`;
+    }
+    if (state.status === 'running' && ['wait_source', 'wait_artifacts', 'wait_pdf_access', 'download_pdf'].includes(state.step)) {
         bottomHtml += `<button class="btn-secondary" id="btn-abort">Stop Monitoring</button>`;
     }
     if (state.status === 'error' || state.status === 'completed') {
@@ -560,6 +564,37 @@ function renderProgress(state) {
         }
     });
     document.getElementById('btn-abort')?.addEventListener('click', () => abortPipeline(state.runId));
+    document.getElementById('btn-resume-pdf')?.addEventListener('click', async () => {
+        try {
+            const pattern = httpOriginPattern(state.originalPdfUrl);
+            if (!pattern || !await chrome.permissions.request({ origins: [pattern] })) return;
+            await resumeFallbackFromPopup(state.runId);
+        } catch (error) { alert(error.message); }
+    });
+    document.getElementById('btn-fallback-file')?.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.pdf,application/pdf';
+        input.addEventListener('change', async () => {
+            try {
+                const file = input.files?.[0];
+                if (!file) return;
+                assertPdfUploadSize(file.size);
+                if (!hasPdfSignature(await file.slice(0, 1024).arrayBuffer())) throw new Error('The selected file is not a PDF.');
+                await resumeFallbackFromPopup(state.runId, {
+                    fileName: file.name, fileDataBase64: await readFileAsBase64(file),
+                });
+            } catch (error) { alert(error.message); }
+        });
+        input.click();
+    });
+}
+
+async function resumeFallbackFromPopup(runId, file = {}) {
+    const response = await chrome.runtime.sendMessage({ type: 'RESUME_PDF_FALLBACK', runId, ...file });
+    if (!response?.ok) throw new Error(response?.message || 'Could not resume PDF upload.');
+    renderProgress(response.state);
+    if (response.state.status === 'running') startPolling();
 }
 
 // =========================================================================

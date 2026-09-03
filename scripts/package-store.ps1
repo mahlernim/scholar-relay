@@ -26,6 +26,7 @@ $runtimeFiles = @(
     'popup.html',
     'popup.js',
     'runtime-policy.js',
+    'source-import.js',
     'site-permissions.js'
 )
 
