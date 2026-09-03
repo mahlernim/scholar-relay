@@ -362,7 +362,10 @@ function extractRpcResult(chunks, rpcId) {
       // Check for error
       if (item[0] === 'er' && item[1] === rpcId) {
         const errorCode = item.length > 2 ? item[2] : null;
-        throw new Error(`RPC error for ${rpcId}: code=${errorCode}`);
+        const error = new Error(`RPC error for ${rpcId}: code=${errorCode}`);
+        error.code = 'RPC_REJECTED';
+        error.rpcCode = errorCode;
+        throw error;
       }
 
       // Check for success
@@ -602,7 +605,9 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false) {
     }
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+      error.httpStatus = response.status;
+      throw error;
     }
 
     return decodeResponse(responseText, methodId, allowNull);
@@ -890,7 +895,18 @@ async function addUrlSource(notebookId, url) {
       RPCMethod.ADD_SOURCE, params,
       `/notebook/${notebookId}`
     );
-  } catch (error) {
+    const id = extractFirstIdFromResult(result);
+    if (!id) throw mutationUncertainError(RPCMethod.ADD_SOURCE, 'The response did not identify a source.');
+    return { id, title: null };
+  } catch (caught) {
+    let error = caught;
+    if ([400, 422].includes(error?.httpStatus) || (error?.code === 'RPC_REJECTED' && error.rpcCode === 3)) {
+      error.code = 'SOURCE_IMPORT_REJECTED';
+      throw error;
+    }
+    if (/No result found for RPC ID|Unexpected token/.test(error?.message || '')) {
+      error = mutationUncertainError(RPCMethod.ADD_SOURCE, 'The source response could not be decoded.');
+    }
     if (error?.code !== 'TRANSIENT_MUTATION_UNCERTAIN') throw error;
 
     // The server can commit an ADD_SOURCE mutation while its streaming response
@@ -924,20 +940,7 @@ async function addUrlSource(notebookId, url) {
     throw error;
   }
 
-  // Parse source from response (shape can drift over time)
-  let sourceId = extractFirstIdFromResult(result);
-  let sourceTitle = null;
-  if (Array.isArray(result)) {
-    if (!sourceId && Array.isArray(result[0])) {
-      sourceId = Array.isArray(result[0][0]) ? result[0][0][0] : result[0][0];
-    }
-    if (result.length > 1) {
-      sourceTitle = result[1];
-    }
-  }
 
-  console.log(`[NotebookLM API] Added source: ${sourceId} (${sourceTitle})`);
-  return { id: sourceId, title: sourceTitle };
 }
 
 /**

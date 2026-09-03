@@ -66,6 +66,7 @@ import {
     pollingElapsedMs,
     runtimeRecoveryAction,
 } from './runtime-policy.js';
+import { createPdfFallback, canFallback, isConfirmedImportRejection } from './source-import.js';
 import { bindDetectionToTab } from './detection-policy.js';
 import {
     MAX_PDF_UPLOAD_BYTES,
@@ -97,6 +98,13 @@ const INITIAL_STATE = {
     notebookUrl: null,
     notebookTitle: null,
     sourceId: null,
+    importMethod: null,
+    originalPdfUrl: null,
+    pdfEvidence: null,
+    fallbackAttempted: false,
+    fallbackUploadStarted: false,
+    failedUrlSourceId: null,
+    replacementSourceId: null,
     collectionAssignment: null, // { collectionId, name, status, error? }
     tasks: [],               // [{ type, taskId, status }] for each artifact being generated
     error: null,
@@ -705,6 +713,10 @@ async function tickSourcePoll(state) {
     }
 
     if (source.status === SourceStatus.ERROR) {
+        if (canFallback(state)) {
+            await fallbackPdf(runId);
+            return;
+        }
         await failPipeline(runId, `${sourceLabel} processing failed.`, state.notebookId);
         return;
     }
@@ -1034,6 +1046,9 @@ async function reconcilePipelineRuntime() {
             setBadge('!', '#e03e3e').catch(badgeError => console.warn('[Badge] Recovery badge failed:', badgeError));
             console.warn('[Recovery] Could not restore polling alarm:', error);
         }
+    } else if (action === 'wait_pdf_access') {
+        await setState({ step: 'wait_pdf_access', stepDetail: 'PDF download was paused. Open the popup to resume or select a PDF.' });
+        await chrome.alarms.clear(ALARM_NAME);
     } else if (action === 'clear_alarm') {
         await chrome.alarms.clear(ALARM_NAME);
     } else if (action === 'interrupt') {
@@ -1042,6 +1057,29 @@ async function reconcilePipelineRuntime() {
         setBadge('!', '#e03e3e').catch(error => console.warn('[Badge] Recovery badge failed:', error));
         console.warn(`[Recovery] Stopped interrupted non-idempotent phase: ${state?.step}`);
     }
+}
+
+const fallbackPdf = createPdfFallback({
+    getState,
+    transition: transitionRun,
+    download: downloadRemotePdfForUpload,
+    upload: (notebookId, file) => addFileSource(notebookId, file.filename, file.fileData, file.mimeType),
+    poll: () => chrome.alarms.create(ALARM_NAME, { periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES }),
+    fail: failPipeline,
+});
+
+async function resumePdfFallback(message) {
+    await bootReconciliationPromise;
+    await requireActiveRun(message.runId, ['wait_pdf_access']);
+    let file = null;
+    if (message.fileDataBase64) {
+        assertPdfUploadSize(decodedBase64ByteLength(message.fileDataBase64));
+        if (!hasBase64PdfSignature(message.fileDataBase64)) throw new Error('The selected file is not a PDF.');
+        file = { filename: message.fileName || 'paper.pdf', fileData: message.fileDataBase64, mimeType: 'application/pdf' };
+    }
+    // Keep the message channel alive until the claimed fallback completes.
+    await fallbackPdf(message.runId, { resume: true, file });
+    return { ok: true, state: await getState() };
 }
 
 const bootReconciliationPromise = reconcilePipelineRuntime()
@@ -1110,38 +1148,16 @@ async function runPipeline(runId, pdfUrl, pageUrl, uploadFile = null, sourceType
             if (typeof pdfUrl === 'string' && pdfUrl.startsWith('file://')) {
                 throw new Error('Local PDF detected. Use local upload mode instead of URL mode.');
             }
-            const canFallbackToPdfUpload = !isWebpageSourceType(effectiveSourceType) && isLikelyPdfUrl(pdfUrl);
             try {
                 await requireActiveRun(runId, ['add_source']);
                 sourceMutationStarted = true;
                 source = await addUrlSource(notebook.id, pdfUrl);
             } catch (urlErr) {
-                if (urlErr?.code === 'PIPELINE_STALE_RUN') throw urlErr;
-                if (!canFallbackToPdfUpload) {
-                    throw urlErr;
+                if (isConfirmedImportRejection(urlErr) && canFallback(await getState())) {
+                    await fallbackPdf(runId);
+                    return;
                 }
-                console.warn('[Pipeline] URL source add failed, trying download+upload fallback:', urlErr?.message || urlErr);
-                await transitionRun(runId, {
-                    stepDetail: 'URL source was blocked. Downloading PDF from the current URL and uploading directly...'
-                }, { expectedSteps: ['add_source'] });
-
-                try {
-                    const fallbackFile = await downloadRemotePdfForUpload(pdfUrl, pageUrl);
-                    await requireActiveRun(runId, ['add_source']);
-                    source = await addFileSource(
-                        notebook.id,
-                        fallbackFile.filename,
-                        fallbackFile.fileData,
-                        fallbackFile.mimeType
-                    );
-                    await requireActiveRun(runId, ['add_source']);
-                    await transitionRun(runId, {
-                        stepDetail: `URL blocked. Fallback upload succeeded (${fallbackFile.filename}).`
-                    }, { expectedSteps: ['add_source'] });
-                } catch (fallbackErr) {
-                    if (fallbackErr?.code === 'PIPELINE_STALE_RUN') throw fallbackErr;
-                    throw new Error(buildFallbackUploadErrorMessage(urlErr, fallbackErr, pdfUrl));
-                }
+                throw urlErr;
             }
         }
 
@@ -1206,6 +1222,9 @@ async function startPipelineRequest(message, uploadFile = null) {
         sourceType,
         pageUrl: message.pageUrl || null,
         sourceTitle: normalizeSourceTitle(message.sourceTitle) || null,
+        importMethod: uploadFile ? 'file' : 'url',
+        originalPdfUrl: uploadFile ? null : message.pdfUrl,
+        pdfEvidence: message.pdfEvidence || null,
         startedAt: new Date().toISOString(),
         stepStartedAt: new Date().toISOString(),
     };
@@ -1258,7 +1277,7 @@ async function stopPipelineRequest(requestedRunId) {
         stepDetail: 'Monitoring stopped. No further work will be started.',
     };
     const stopped = await pipelineState.invalidate(requestedRunId, replacement, {
-        expectedSteps: ['wait_source', 'wait_artifacts'],
+        expectedSteps: ['wait_source', 'wait_artifacts', 'wait_pdf_access', 'download_pdf'],
         afterWrite: async () => {
             await chrome.alarms.clear(ALARM_NAME);
         },
@@ -1277,6 +1296,12 @@ async function stopPipelineRequest(requestedRunId) {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'RESUME_PDF_FALLBACK') {
+        resumePdfFallback(message).then(sendResponse)
+            .catch(error => sendResponse({ ok: false, code: error.code, message: error.message }));
+        return true;
+    }
+
     if (message.type === 'START_PIPELINE') {
         startPipelineRequest(message)
             .then(sendResponse)

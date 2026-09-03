@@ -6,9 +6,10 @@ const NON_IDEMPOTENT_STEPS = new Set([
   'auth',
   'create_notebook',
   'add_source',
+  'upload_pdf',
   'generate_artifacts',
 ]);
-const STOPPABLE_STEPS = new Set(['wait_source', 'wait_artifacts']);
+const STOPPABLE_STEPS = new Set(['wait_source', 'wait_artifacts', 'wait_pdf_access', 'download_pdf']);
 
 export function isActivePipelineRun(state, runId) {
   return !!runId && state?.status === 'running' && state.runId === runId;
@@ -85,10 +86,11 @@ export function createPipelineStateCoordinator({ readState, writeState }) {
       });
     },
 
-    transition(runId, updates, { expectedSteps = null, ...effects } = {}) {
+    transition(runId, updates, { expectedSteps = null, condition = null, ...effects } = {}) {
       return transact(current => {
         if (!isActivePipelineRun(current, runId)) return null;
         if (expectedSteps && !expectedSteps.includes(current.step)) return null;
+        if (condition && !condition(current)) return null;
         return {
           updates: typeof updates === 'function' ? updates(current) : updates,
           ...effects,
@@ -117,6 +119,10 @@ export function runtimeRecoveryAction(state, hasAlarm) {
 
   if (RECOVERABLE_POLLING_STEPS.has(state.step)) {
     return hasAlarm ? 'none' : 'create_alarm';
+  }
+
+  if (state.step === 'wait_pdf_access' || state.step === 'download_pdf') {
+    return 'wait_pdf_access';
   }
 
   if (NON_IDEMPOTENT_STEPS.has(state.step)) {
