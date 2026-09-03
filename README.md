@@ -148,6 +148,8 @@ The consumer integration was heavily informed by [`teng-lin/notebooklm-py`](http
 
 The consumer Gemini Notebook web application does not provide an official public API for this workflow. ScholarRelay uses unsupported internal web endpoints, so service changes may require compatibility updates.
 
+[Developer notes](./docs/DEVELOPMENT.md) cover implementation decisions, release troubleshooting, and the Chrome Web Store submission history.
+
 ## License
 
 MIT. See [LICENSE](./LICENSE).
