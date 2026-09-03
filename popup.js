@@ -502,14 +502,15 @@ function renderProgress(state) {
     }
 
     contentEl.innerHTML = `
-    <div class="pdf-info" style="margin-bottom:10px;">
+    <div class="pdf-info">
       <div class="label">Processing Source</div>
       <div class="pdf-url">${escapeHtml((state.pdfUrl || '').substring(0, 80))}</div>
     </div>
     ${titleHtml}
     ${collectionHtml}
-    <div class="pipeline">${stepsHtml}</div>
-    ${bottomHtml}`;
+    ${state.status === 'completed'
+        ? `${bottomHtml}<details class="workflow-details"><summary>Workflow details</summary><div class="pipeline">${stepsHtml}</div></details>`
+        : `<div class="pipeline">${stepsHtml}</div>${bottomHtml}`}`;
 
     document.getElementById('btn-reset')?.addEventListener('click', async () => {
         try {

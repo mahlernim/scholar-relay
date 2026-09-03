@@ -317,6 +317,21 @@ try {
   assert(imports.urls.at(-1) === `${origin}/paper-two.pdf`, 'Detected PDF URL was not imported');
   assert(imports.pdfDownloads === downloadsBefore && imports.uploads === 0, 'URL-first import downloaded or uploaded a PDF');
 
+  await popup.call('Emulation.setDeviceMetricsOverride', { width: 360, height: 600, deviceScaleFactor: 1, mobile: false });
+  const completedState = { status: 'completed', step: 'done', pdfUrl: 'paper.pdf',
+    notebookTitle: 'Harness-of-Harness: Multi-Day Autonomous Software Development with Continual Improvement',
+    notebookUrl: `${origin}/notebook/smoke`, collectionAssignment: { status: 'completed', name: 'Research papers' },
+    tasks: [{ type: 'audio', status: 'completed' }, { type: 'infographic', status: 'completed' }] };
+  await evaluate(popup, `chrome.storage.local.set({pipelineState:${JSON.stringify(completedState)}})`);
+  await reload(popup);
+  const layout = await evaluate(popup, `({height:document.body.getBoundingClientRect().height,width:document.documentElement.scrollWidth,
+    resultBottom:document.querySelector('.completed-box').getBoundingClientRect().bottom,
+    linkBottom:document.querySelector('.notebook-link').getBoundingClientRect().bottom,
+    collapsed:!document.querySelector('.workflow-details').open})`);
+  assert(layout.height <= 600 && layout.width <= 360, 'Completed popup overflows its viewport');
+  assert(layout.resultBottom < 600 && layout.linkBottom < 600 && layout.collapsed, 'Results are not immediately visible');
+  console.log(`Completed popup layout: ${JSON.stringify(layout)}`);
+
   console.log('Chrome extension smoke test passed.');
 } finally {
   await popup?.close();

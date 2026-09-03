@@ -18,7 +18,7 @@
       --warning: #e8a200;
       --error: #e03e3e;
       --border: rgba(0, 0, 0, 0.08);
-      --radius: 10px;
+      --radius: 4px;
     }
 
     * {
@@ -32,7 +32,7 @@
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
-      padding: 16px;
+      padding: 10px 12px;
     }
 
     /* ---- Header ---- */
@@ -40,8 +40,8 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
       border-bottom: 1px solid var(--border);
     }
 
@@ -49,7 +49,7 @@
       width: 32px;
       height: 32px;
       border-radius: 8px;
-      box-shadow: 0 2px 8px var(--accent-glow);
+      box-shadow: none;
       flex-shrink: 0;
     }
 
@@ -87,11 +87,9 @@
 
     /* ---- PDF info ---- */
     .pdf-info {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 12px;
-      margin-bottom: 14px;
-      border: 1px solid var(--border);
+      padding: 6px 0 8px;
+      margin-bottom: 3px;
+      border-bottom: 1px solid var(--border);
     }
 
     .pdf-info .label {
@@ -132,11 +130,8 @@
 
     /* ---- Notebook title bar ---- */
     .notebook-title-bar {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 8px 12px;
-      margin-bottom: 10px;
-      border: 1px solid var(--border);
+      padding: 4px 0;
+      margin-bottom: 4px;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -163,8 +158,8 @@
     /* ---- Buttons ---- */
     .btn-generate {
       width: 100%;
-      padding: 12px;
-      background: linear-gradient(135deg, var(--accent), #ff6b8a);
+      padding: 9px 10px;
+      background: var(--accent);
       border: none;
       border-radius: var(--radius);
       color: white;
@@ -172,13 +167,13 @@
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
-      box-shadow: 0 3px 12px var(--accent-glow);
+      box-shadow: none;
       letter-spacing: 0.3px;
     }
 
     .btn-generate:hover {
       transform: translateY(-1px);
-      box-shadow: 0 4px 16px var(--accent-glow);
+      box-shadow: none;
     }
 
     .btn-generate:active {
@@ -211,14 +206,14 @@
 
     /* ---- Pipeline ---- */
     .pipeline {
-      margin-top: 14px;
+      margin-top: 6px;
     }
 
     .pipeline-step {
       display: flex;
       align-items: flex-start;
-      gap: 10px;
-      padding: 8px 0;
+      gap: 8px;
+      padding: 4px 0;
       font-size: 12px;
     }
 
@@ -290,14 +285,14 @@
     .notebook-link {
       display: block;
       text-align: center;
-      padding: 10px;
+      padding: 8px;
       background: var(--surface-alt);
       border-radius: var(--radius);
       color: var(--accent);
       text-decoration: none;
       font-size: 12px;
       font-weight: 500;
-      margin-top: 12px;
+      margin-top: 6px;
       border: 1px solid var(--border);
       transition: all 0.2s;
     }
@@ -308,18 +303,17 @@
     }
 
     .completed-box {
-      text-align: center;
-      padding: 16px;
-      background: linear-gradient(135deg, rgba(0, 214, 143, 0.1), rgba(0, 214, 143, 0.05));
-      border-radius: var(--radius);
-      border: 1px solid rgba(0, 214, 143, 0.2);
-      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 0 2px;
+      color: var(--success);
     }
 
-    .completed-box .icon {
-      font-size: 28px;
-      margin-bottom: 6px;
-    }
+    .completed-box .icon { font-size: 15px; }
+
+    .workflow-details { margin-top: 8px; border-top: 1px solid var(--border); padding-top: 6px; }
+    .workflow-details summary { cursor: pointer; font-size: 11px; color: var(--text-dim); }
 
     .completed-box .msg {
       font-size: 13px;
@@ -340,17 +334,17 @@
     }
 
     .collection-status {
-      margin: 8px 0;
-      padding: 7px 9px;
-      border-radius: 6px;
+      margin: 3px 0;
+      padding: 3px 0;
+      border-radius: 0;
       font-size: 11px;
       line-height: 1.35;
     }
 
     .collection-status.success {
       color: var(--success);
-      background: rgba(0, 214, 143, 0.1);
-      border: 1px solid rgba(0, 214, 143, 0.25);
+      background: transparent;
+      border: 0;
     }
 
     .collection-status.warning {
@@ -375,10 +369,14 @@
       display: block;
     }
 
+    #settings-panel.open ~ #content {
+      display: none;
+    }
+
     .settings-header {
       display: flex;
       align-items: center;
-      padding: 10px 14px;
+      padding: 8px 10px;
       border-bottom: 1px solid var(--border);
       background: var(--surface-alt);
     }
@@ -404,7 +402,7 @@
 
     .settings-inner {
       padding: 0;
-      max-height: 420px;
+      max-height: 320px;
       overflow-y: auto;
     }
 
@@ -420,7 +418,7 @@
     .settings-group {
       width: 100%;
       margin: 0;
-      padding: 10px 14px;
+      padding: 8px 10px;
       border: 0;
       border-bottom: 1px solid var(--border);
       border-radius: 0;
@@ -432,7 +430,7 @@
     }
 
     .settings-group-title {
-      margin-bottom: 9px;
+      margin-bottom: 6px;
       font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
@@ -452,7 +450,7 @@
     }
 
     .settings-footer {
-      padding: 10px 14px;
+      padding: 8px 10px;
       border-top: 1px solid var(--border);
       background: var(--surface-alt);
     }
@@ -491,7 +489,7 @@
     .s-section-header {
       display: flex;
       align-items: center;
-      padding: 9px 0;
+      padding: 6px 0;
       cursor: pointer;
       user-select: none;
       gap: 6px;
