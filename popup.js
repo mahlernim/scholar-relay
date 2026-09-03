@@ -1,5 +1,6 @@
+import { inspectPaperPage } from './content.js';
 import { choosePdfTitle } from './pdf-metadata.js';
-import { detectionMatchesTab, directDetectionMatchesTab } from './detection-policy.js';
+import { directDetectionMatchesTab } from './detection-policy.js';
 import {
     MAX_PDF_UPLOAD_BYTES,
     assertPdfUploadSize,
@@ -346,77 +347,34 @@ function cleanDetectedTitle(value) {
 }
 
 async function detectSourceTitleFromTab(tab) {
-    if (!tab?.id) return cleanDetectedTitle(tab?.title);
+    if (!tab?.id) return null;
     try {
-        const injected = await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: () => {
-                const candidates = [
-                    document.querySelector('meta[name="citation_title"]')?.content,
-                    document.querySelector('meta[property="og:title"]')?.content,
-                    document.querySelector('h1.title')?.textContent?.replace(/^Title:\s*/i, ''),
-                    document.title,
-                ];
-                return candidates.find(value => typeof value === 'string' && value.trim()) || null;
-            },
-        });
-        return cleanDetectedTitle(injected?.[0]?.result) || cleanDetectedTitle(tab.title);
-    } catch (_) {
-        return cleanDetectedTitle(tab.title);
-    }
+        const result = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: inspectPaperPage });
+        return result?.[0]?.result?.sourceTitle || null;
+    } catch { return null; }
 }
 
 async function detectAndRender() {
-    let tab = null;
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id || !tab.url) { renderNoPdf(); return; }
     try {
-        [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab?.url) {
-            const url = tab.url;
-            const sourceTitle = await detectSourceTitleFromTab(tab);
-            if (/\.pdf(\?.*)?$/i.test(url)) {
-                const source = /^https?:\/\//i.test(url) ? 'direct_url' : 'local_file';
-                renderDetection({ isPdf: true, pdfUrl: url, pageUrl: url, source, sourceTitle });
-                return;
-            }
-            const arxivAbsMatch = url.match(/^https?:\/\/arxiv\.org\/abs\/([\d.]+)(v\d+)?/);
-            if (arxivAbsMatch) {
-                const pdfUrl = `https://arxiv.org/pdf/${arxivAbsMatch[1]}${arxivAbsMatch[2] || ''}`;
-                renderDetection({ isPdf: true, pdfUrl, pageUrl: url, source: 'arxiv_abstract', sourceTitle });
-                return;
-            }
-            if (/arxiv\.org\/pdf\//.test(url)) {
-                renderDetection({ isPdf: true, pdfUrl: url, pageUrl: url, source: 'arxiv_pdf', sourceTitle });
-                return;
-            }
-            const arxivHtmlMatch = url.match(/^https?:\/\/arxiv\.org\/html\/([\d.]+)(v\d+)?/);
-            if (arxivHtmlMatch) {
-                const pdfUrl = `https://arxiv.org/pdf/${arxivHtmlMatch[1]}${arxivHtmlMatch[2] || ''}`;
-                renderDetection({ isPdf: true, pdfUrl, pageUrl: url, source: 'arxiv_html', sourceTitle });
-                return;
-            }
-        }
-    } catch (_) { /* ignore */ }
-
-    try {
-        const stored = await chrome.storage.local.get('detectedPdf');
-        if (stored.detectedPdf?.isPdf && detectionMatchesTab(stored.detectedPdf, tab)) {
-            renderDetection(stored.detectedPdf);
+        const injected = await chrome.scripting.executeScript({
+            target: { tabId: tab.id }, func: inspectPaperPage, args: [null, null, true],
+        });
+        const result = injected?.[0]?.result;
+        if (result && directDetectionMatchesTab(result, tab)) {
+            if (result.isPdf) renderDetection(result);
+            else renderNoPdf();
             return;
         }
-    } catch (_) { /* ignore */ }
-
-    try {
-        if (tab?.id && tab?.url && !tab.url.startsWith('chrome://')) {
-            await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
-            await new Promise(r => setTimeout(r, 200));
-            const response = await chrome.tabs.sendMessage(tab.id, { type: 'REQUEST_PDF_DETECTION' });
-            if (response?.isPdf && directDetectionMatchesTab(response, tab)) {
-                renderDetection(response);
-                return;
-            }
-        }
-    } catch (_) { /* ignore */ }
-
+    } catch { /* Chrome's PDF viewer can prohibit page injection. */ }
+    const url = tab.url;
+    if (/\.pdf(?:[?#]|$)/i.test(url) || /^https?:\/\/arxiv\.org\/pdf\//i.test(url)) {
+        renderDetection({ isPdf: true, pdfUrl: url, pageUrl: url,
+            source: /arxiv\.org/.test(url) ? 'arxiv_pdf' : 'direct_pdf_url',
+            pdfEvidence: /arxiv\.org/.test(url) ? 'arxiv_pdf' : null, sourceTitle: null });
+        return;
+    }
     renderNoPdf();
 }
 
@@ -427,7 +385,8 @@ async function detectAndRender() {
 function renderDetection(data) {
     const truncated = data.pdfUrl.length > 80 ? data.pdfUrl.substring(0, 77) + '...' : data.pdfUrl;
     const sourceLabel = {
-        direct_pdf_url: 'Direct PDF', embedded_pdf: 'Embedded PDF viewer',
+        direct_pdf_url: 'Direct PDF', pdf_content_type: 'PDF document',
+        citation_pdf_url: 'Publisher PDF metadata', pdf_link: 'Article PDF link', embedded_pdf: 'Embedded PDF viewer',
         arxiv_abstract: 'arXiv abstract page', arxiv_pdf: 'arXiv PDF',
         arxiv_link: 'arXiv PDF link', page_link: 'PDF link on page',
         direct_url: 'Direct PDF URL', local_file: 'Local file',
@@ -457,7 +416,8 @@ function renderDetection(data) {
     </div>
     <button class="btn-generate" id="btn-start">🎧 Generate Artifacts</button>`;
     document.getElementById('btn-start').addEventListener('click', () =>
-        startPipelineFromCurrentTabPdf(data.pageUrl || data.pdfUrl, data.pdfUrl, data.sourceTitle)
+        startPipeline(data.pdfUrl, data.pageUrl, 'pdf', data.sourceTitle, data.pdfEvidence || data.source)
+            .catch(error => alert(error.message))
     );
 }
 
@@ -601,12 +561,12 @@ async function resumeFallbackFromPopup(runId, file = {}) {
 // Pipeline control
 // =========================================================================
 
-async function startPipeline(pdfUrl, pageUrl, sourceType = 'pdf', sourceTitle = null) {
+async function startPipeline(pdfUrl, pageUrl, sourceType = 'pdf', sourceTitle = null, pdfEvidence = null) {
     const btn = document.getElementById('btn-start') || document.getElementById('btn-start-url');
     const originalText = btn?.textContent || '';
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Starting...'; }
     try {
-        const response = await chrome.runtime.sendMessage({ type: 'START_PIPELINE', pdfUrl, pageUrl, sourceType, sourceTitle });
+        const response = await chrome.runtime.sendMessage({ type: 'START_PIPELINE', pdfUrl, pageUrl, sourceType, sourceTitle, pdfEvidence });
         if (!response?.ok) {
             const error = new Error(response?.message || 'Could not start pipeline');
             error.code = response?.code;

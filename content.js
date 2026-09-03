@@ -1,120 +1,83 @@
-/**
- * Content script: detects PDF URLs on the current page.
- * 
- * Detection strategies:
- * 1. Current page IS a PDF (Content-Type or .pdf extension)
- * 2. Links to PDFs on the page (e.g., arxiv abstract page -> PDF link)
- * 3. Known academic sites with predictable PDF URL patterns
- */
-
-(function () {
-    'use strict';
-
-    // Avoid double-injection
-    if (window.__pdfDetectorInjected) return;
-    window.__pdfDetectorInjected = true;
-
-    function detectSourceTitle() {
-        const candidates = [
-            document.querySelector('meta[name="citation_title"]')?.content,
-            document.querySelector('meta[property="og:title"]')?.content,
-            document.querySelector('h1.title')?.textContent?.replace(/^Title:\s*/i, ''),
-            document.title,
-        ];
-        const title = candidates.find(value => typeof value === 'string' && value.trim());
-        return title ? title.replace(/\s+/g, ' ').trim() : null;
-    }
-
-    /**
-     * Detect if the current page is a PDF or has PDF links.
-     * Returns { isPdf, pdfUrl, pageUrl, source }
-     */
-    function detectPdf() {
-        const currentUrl = window.location.href;
-        const pageUrl = currentUrl;
-        const sourceTitle = detectSourceTitle();
-
-        // Strategy 1: Current URL ends with .pdf
-        if (/\.pdf(\?.*)?$/i.test(currentUrl)) {
-            return { isPdf: true, pdfUrl: currentUrl, pageUrl, source: 'direct_pdf_url', sourceTitle };
-        }
-
-        // Strategy 2: Embedded PDF viewer (Chrome shows PDFs in <embed>)
-        const embed = document.querySelector('embed[type="application/pdf"]');
-        if (embed) {
-            return { isPdf: true, pdfUrl: embed.src || currentUrl, pageUrl, source: 'embedded_pdf', sourceTitle };
-        }
-
-        // Strategy 3: arXiv abstract page -> construct PDF link
-        // https://arxiv.org/abs/2511.12529 -> https://arxiv.org/pdf/2511.12529
-        const arxivAbsMatch = currentUrl.match(/^https?:\/\/arxiv\.org\/abs\/([\d.]+)(v\d+)?/);
-        if (arxivAbsMatch) {
-            const arxivId = arxivAbsMatch[1] + (arxivAbsMatch[2] || '');
-            const pdfUrl = `https://arxiv.org/pdf/${arxivId}`;
-            return { isPdf: true, pdfUrl, pageUrl, source: 'arxiv_abstract', sourceTitle };
-        }
-
-        // Strategy 4: arXiv PDF page
-        const arxivPdfMatch = currentUrl.match(/^https?:\/\/arxiv\.org\/pdf\/([\d.]+)/);
-        if (arxivPdfMatch) {
-            return { isPdf: true, pdfUrl: currentUrl, pageUrl, source: 'arxiv_pdf', sourceTitle };
-        }
-
-        // Strategy 5: Any link on the page that points to a PDF
-        const pdfLinks = [];
-        document.querySelectorAll('a[href]').forEach(a => {
-            const href = a.href;
-            if (/\.pdf(\?.*)?$/i.test(href)) {
-                pdfLinks.push({
-                    url: href,
-                    text: (a.textContent || '').trim().substring(0, 80),
-                });
+// Self-contained so Chrome can inject this function into the active tab.
+export function inspectPaperPage(doc = null, pageUrl = null, publish = false) {
+    doc ||= document;
+    pageUrl ||= location.href;
+    const clean = value => {
+        if (typeof value !== 'string') return null;
+        const title = String(value || '').replace(/\s+/g, ' ').trim()
+            .replace(/^Title:\s*/i, '').replace(/^\[[\d.]+(?:v\d+)?\]\s*/, '')
+            .replace(/\s*\|\s*(?:arXiv(?:\.org)?|PLOS One|eLife|The BMJ|Nature|Frontiers).*$/i, '')
+            .replace(/^Frontiers\s*\|\s*/i, '').trim();
+        if (title.length < 4 || /^(?:https?|file|blob|chrome-extension):/i.test(title) ||
+            /\.pdf(?:[?#].*)?$/i.test(title) || /^[\d.]+(?:v\d+)?$/.test(title) ||
+            /^(?:untitled|download|document|article|paper|full[- ]?text|home)$/i.test(title) ||
+            /^(?:log[ -]?in|sign[ -]?in|access denied|client challenge|just a moment|checking your browser|verify (?:you are|you're) human)(?:\b|$)/i.test(title)) return null;
+        return title.substring(0, 300);
+    };
+    const absolute = value => {
+        if (typeof value !== 'string' || !value.trim()) return null;
+        try { const u = new URL(value, pageUrl); return /^https?:$/.test(u.protocol) ? u.href : null; }
+        catch { return null; }
+    };
+    const meta = Array.from(doc.querySelectorAll('meta')).map(el => ({
+        key: (el.getAttribute('name') || el.getAttribute('property') || '').toLowerCase(),
+        value: el.getAttribute('content') || '',
+    }));
+    const values = key => meta.filter(item => item.key === key).map(item => item.value);
+    const candidates = ['citation_title', 'bepress_citation_title', 'prism.title', 'dc.title', 'dcterms.title']
+        .flatMap(values);
+    for (const script of doc.querySelectorAll('script[type="application/ld+json"]')) {
+        if ((script.textContent || '').length > 200000) continue;
+        try {
+            const queue = [JSON.parse(script.textContent)];
+            let inspected = 0;
+            while (queue.length && inspected++ < 1000) {
+                const node = queue.shift();
+                if (!node || typeof node !== 'object') continue;
+                if (Array.isArray(node)) { queue.push(...node); continue; }
+                const types = [].concat(node['@type'] || []);
+                if (types.some(type => /^(?:ScholarlyArticle|Article|MedicalScholarlyArticle)$/.test(type))) {
+                    candidates.push(node.headline, node.name);
+                }
+                if (node['@graph']) queue.push(node['@graph']);
+                if (node.mainEntity) queue.push(node.mainEntity);
             }
-        });
-
-        // Special case: arXiv HTML page with PDF link
-        const arxivPdfLink = document.querySelector('a[href*="/pdf/"]');
-        if (arxivPdfLink && /arxiv\.org/.test(currentUrl)) {
-            return {
-                isPdf: true,
-                pdfUrl: arxivPdfLink.href,
-                pageUrl,
-                source: 'arxiv_link',
-                sourceTitle,
-            };
-        }
-
-        if (pdfLinks.length > 0) {
-            // Return the first PDF link found
-            return {
-                isPdf: true,
-                pdfUrl: pdfLinks[0].url,
-                pageUrl,
-                source: 'page_link',
-                sourceTitle,
-                allPdfLinks: pdfLinks,
-            };
-        }
-
-        return { isPdf: false, pdfUrl: null, pageUrl, source: null, sourceTitle };
+        } catch { /* Malformed structured data is not a title. */ }
     }
-
-    // Run detection and send result to background
-    const result = detectPdf();
-
-    chrome.runtime.sendMessage({
-        type: 'DETECT_PDF',
-        data: result,
-    }).catch(() => {
-        // Extension context may be invalid, ignore
-    });
-
-    // Also listen for the popup asking for detection
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.type === 'REQUEST_PDF_DETECTION') {
-            const result = detectPdf();
-            sendResponse(result);
-            return false;
+    candidates.push(...values('og:title'));
+    candidates.push(doc.querySelector('h1.title, h1.article-title, h1')?.textContent, doc.title);
+    const isPdfDocument = /application\/pdf/i.test(doc.contentType || '');
+    const sourceTitle = isPdfDocument ? null : candidates.map(clean).find(Boolean) || null;
+    let pdfUrl = null;
+    let source = null;
+    const arxiv = pageUrl.match(/^https?:\/\/(?:www\.)?arxiv\.org\/(abs|html|pdf)\/([^?#]+?)(?:\.pdf)?(?:[?#].*)?$/i);
+    if (arxiv) {
+        pdfUrl = `https://arxiv.org/pdf/${arxiv[2]}`;
+        source = arxiv[1] === 'abs' ? 'arxiv_abstract' : `arxiv_${arxiv[1]}`;
+    } else if (/\.pdf(?:[?#]|$)/i.test(pageUrl) || isPdfDocument) {
+        pdfUrl = pageUrl;
+        source = isPdfDocument ? 'pdf_content_type' : 'direct_pdf_url';
+    } else {
+        pdfUrl = values('citation_pdf_url').map(absolute).find(Boolean) || null;
+        if (pdfUrl) source = 'citation_pdf_url';
+        if (!pdfUrl) {
+            const links = Array.from(doc.querySelectorAll('a[href], link[type="application/pdf"]')).map(el => {
+                const href = absolute(el.getAttribute('href'));
+                const label = `${el.textContent || ''} ${el.getAttribute('title') || ''} ${el.getAttribute('aria-label') || ''}`.trim();
+                const supplementary = /(?:[-_/](?:figures?|supplement\w*|supporting)[-_.\/]|\b(?:figures? only|supplement\w*|supporting information)\b)/i.test(`${href || ''} ${label}`);
+                const pdf = /\.pdf(?:[?#]|$)|\/pdf(?:[/?#]|$)/i.test(href || '') || /\bpdf\b/i.test(label) || el.getAttribute('type') === 'application/pdf';
+                return { href, label, supplementary, pdf, score: /(?:download|full[ -]?text|article).*pdf|pdf.*(?:download|full[ -]?text|article)/i.test(label) ? 2 : 1 };
+            }).filter(link => link.href && link.pdf && !link.supplementary).sort((a, b) => b.score - a.score);
+            pdfUrl = links[0]?.href || null;
+            if (pdfUrl) source = 'pdf_link';
         }
-    });
-})();
+        if (!pdfUrl) {
+            const embedded = doc.querySelector('embed[type="application/pdf"]');
+            pdfUrl = embedded ? absolute(embedded.getAttribute('src')) : null;
+            if (pdfUrl) source = 'pdf_content_type';
+        }
+    }
+    const result = { isPdf: !!pdfUrl, pdfUrl, pageUrl, source, sourceTitle, pdfEvidence: source };
+    if (publish) chrome.runtime.sendMessage({ type: 'DETECT_PDF', data: result }).catch(() => {});
+    return result;
+}

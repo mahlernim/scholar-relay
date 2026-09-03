@@ -104,11 +104,11 @@ function titleFromFilename(filename) {
 }
 
 function choosePdfTitle({ payload, pageTitle, filename } = {}) {
-  const metadataTitle = extractPdfMetadataTitle(payload);
-  if (metadataTitle) return { title: metadataTitle, source: 'pdf_metadata' };
-
   const normalizedPageTitle = normalizeTitle(pageTitle);
   if (isUsefulTitle(normalizedPageTitle)) return { title: normalizedPageTitle, source: 'page_metadata' };
+
+  const metadataTitle = extractPdfMetadataTitle(payload);
+  if (metadataTitle) return { title: metadataTitle, source: 'pdf_metadata' };
 
   const filenameTitle = titleFromFilename(filename);
   if (filenameTitle) return { title: filenameTitle, source: 'filename' };
