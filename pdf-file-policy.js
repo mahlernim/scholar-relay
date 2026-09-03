@@ -1,4 +1,4 @@
-export const MAX_PDF_UPLOAD_BYTES = 32 * 1024 * 1024;
+export const MAX_PDF_UPLOAD_BYTES = 40 * 1024 * 1024;
 
 export function decodedBase64ByteLength(value) {
   if (typeof value !== 'string') return 0;
@@ -14,7 +14,7 @@ export function pdfSizeError(size, limit = MAX_PDF_UPLOAD_BYTES) {
   const actualMiB = Number.isFinite(size) ? (size / (1024 * 1024)).toFixed(1) : 'unknown';
   const error = new Error(
     `This PDF is ${actualMiB} MiB. ScholarRelay local uploads are limited to ${limitMiB} MiB ` +
-    'to keep Chrome memory use safe. Use the PDF URL directly or choose a smaller file.'
+    'to bound Chrome memory use. Import the remote PDF URL or upload larger local files directly in Gemini Notebook.'
   );
   error.code = 'PDF_TOO_LARGE';
   return error;

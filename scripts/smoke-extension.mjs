@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 
 const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const tempRoot = await mkdtemp(join(tmpdir(), 'scholar-relay-smoke-'));
@@ -182,9 +183,21 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const imports = { urls: [], uploads: 0, pdfDownloads: 0, notebookTitles: [] };
+const imports = { urls: [], uploads: 0, pdfDownloads: 0, notebookTitles: [], uploadedBytes: 0, uploadedHash: null };
 const server = createServer(async (request, response) => {
   const requestUrl = new URL(request.url, 'http://localhost');
+  if (requestUrl.pathname === '/upload/_/') {
+    response.writeHead(200, { 'x-goog-upload-url': `${origin}/upload-bytes` });
+    response.end();
+    return;
+  }
+  if (requestUrl.pathname === '/upload-bytes') {
+    const hash = createHash('sha256');
+    for await (const chunk of request) { imports.uploadedBytes += chunk.length; hash.update(chunk); }
+    imports.uploadedHash = hash.digest('hex');
+    response.end('ok');
+    return;
+  }
   if (requestUrl.searchParams.has('rpcids')) {
     let body = '';
     for await (const chunk of request) body += chunk;
@@ -331,6 +344,54 @@ try {
   assert(layout.height <= 600 && layout.width <= 360, 'Completed popup overflows its viewport');
   assert(layout.resultBottom < 600 && layout.linkBottom < 600 && layout.collapsed, 'Results are not immediately visible');
   console.log(`Completed popup layout: ${JSON.stringify(layout)}`);
+
+  // Exercise the real Chrome message bridge and the complete file upload client.
+  await evaluate(popup, `chrome.storage.local.set({pipelineState:{status:'idle'}})`);
+  const size = 40 * 1024 * 1024;
+  const expectedBytes = Buffer.alloc(size, 32);
+  expectedBytes.write('%PDF-1.7\n');
+  const expectedHash = createHash('sha256').update(expectedBytes).digest('hex');
+  const started = Date.now();
+  const baselineHeap = await popup.call('Runtime.getHeapUsage');
+  const transfer = await evaluate(popup, `(async()=>{
+    const bytes=new Uint8Array(${size}).fill(32); bytes.set(new TextEncoder().encode('%PDF-1.7\\n'));
+    const fileDataBase64=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result.split(',')[1]);reader.readAsDataURL(new Blob([bytes],{type:'application/pdf'}));});
+    let last=performance.now(),maxGapMs=0,ticks=0;
+    const timer=setInterval(()=>{const now=performance.now();maxGapMs=Math.max(maxGapMs,now-last);last=now;ticks++;},25);
+    const message={type:'START_PIPELINE_FILE',fileName:'large-smoke.pdf',fileDataBase64,sourceTitle:'Large PDF validation'};
+    const messageBytes=new TextEncoder().encode(JSON.stringify(message)).byteLength;
+    const response=await chrome.runtime.sendMessage(message);
+    clearInterval(timer);
+    return {response,messageBytes,maxGapMs,ticks};
+  })()`);
+  assert(transfer.response.ok, `Large PDF start failed: ${JSON.stringify(transfer.response)}`);
+  assert(transfer.messageBytes < 64 * 1024 * 1024, 'Large PDF message exceeds Chrome limit');
+  const targets = await browserConnection.call('Target.getTargets');
+  const workerTarget = targets.targetInfos.find(target => target.type === 'service_worker' && target.url.includes(extensionId));
+  const workerAttachment = workerTarget ? await browserConnection.call('Target.attachToTarget', { targetId: workerTarget.targetId, flatten: true }) : null;
+  const peak = { popupHeap: baselineHeap.usedSize, workerHeap: 0, workerBacking: 0 };
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const heap = await popup.call('Runtime.getHeapUsage');
+    peak.popupHeap = Math.max(peak.popupHeap, heap.usedSize);
+    if (workerAttachment) {
+      const workerHeap = await browserConnection.call('Runtime.getHeapUsage', {}, workerAttachment.sessionId);
+      peak.workerHeap = Math.max(peak.workerHeap, workerHeap.usedSize);
+      peak.workerBacking = Math.max(peak.workerBacking, workerHeap.backingStorageSize || 0);
+    }
+    storedState = await evaluate(popup, `chrome.storage.local.get('pipelineState').then(result=>result.pipelineState)`);
+    if (storedState.step === 'wait_source' || storedState.status === 'error') break;
+    await delay(50);
+  }
+  assert(storedState.step === 'wait_source', `Large upload failed: ${storedState.error || storedState.step}`);
+  assert(imports.uploadedBytes === size && imports.uploadedHash === expectedHash, 'Large uploaded bytes differ from the selected PDF');
+  await evaluate(popup, `chrome.runtime.sendMessage({type:'ABORT_PIPELINE',runId:${JSON.stringify(storedState.runId)}})`);
+  const rejected = await evaluate(popup, `(async()=>{
+    const bytes=new Uint8Array(${size + 1}).fill(32);bytes.set(new TextEncoder().encode('%PDF-1.7\\n'));
+    const b64=await new Promise(resolve=>{const r=new FileReader();r.onload=()=>resolve(r.result.split(',')[1]);r.readAsDataURL(new Blob([bytes]));});
+    return chrome.runtime.sendMessage({type:'START_PIPELINE_FILE',fileName:'too-large.pdf',fileDataBase64:b64});
+  })()`);
+  assert(!rejected.ok && rejected.code === 'PDF_TOO_LARGE', '40 MiB plus one byte was not rejected');
+  console.log(`40 MiB transfer: ${JSON.stringify({messageBytes:transfer.messageBytes,elapsedMs:Date.now()-started,maxTimerGapMs:transfer.maxGapMs,peak,sha256:imports.uploadedHash})}`);
 
   console.log('Chrome extension smoke test passed.');
 } finally {

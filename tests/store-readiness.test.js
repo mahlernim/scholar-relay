@@ -23,7 +23,7 @@ test('store manifest uses minimum permissions and a production-safe alarm baseli
   assert.equal(manifest.name, '__MSG_extensionName__');
   assert.equal(manifest.description, '__MSG_extensionDescription__');
   assert.equal(manifest.default_locale, 'en');
-  assert.equal(manifest.version, '1.2.2');
+  assert.equal(manifest.version, '1.3.0');
   assert.equal(manifest.minimum_chrome_version, '120');
   assert.equal(manifest.permissions.includes('cookies'), false);
   assert.equal(manifest.host_permissions.includes('*://*/*'), false);

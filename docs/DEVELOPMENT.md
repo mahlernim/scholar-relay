@@ -1,6 +1,6 @@
 # ScholarRelay development notes
 
-Recorded on September 3, 2026. This is a retrospective of the engineering problems, decisions, tradeoffs, and Chrome Web Store submission history through v1.2.2. It also explains which development files are worth keeping.
+Recorded on September 3, 2026. This history covers engineering decisions, validation, and Chrome Web Store submissions. Earlier sections describe v1.2.2. The v1.3.0 entry records the subsequent changes. Maintenance rules are in [AGENTS.md](../AGENTS.md).
 
 The account below was reconstructed from commits, pull requests, release assets, recorded development and submission sessions, a targeted search of the maintainer's two mailboxes, and a signed-in developer-console check on September 3. Code links and release links provide publicly inspectable evidence. Session observations are identified where they add information that Git cannot establish. Email bodies, private account links, authentication values, and customer data are not included.
 
@@ -207,3 +207,21 @@ The old local `scholar-relay-v1.2.1.zip` and its checksum sidecar were removed a
 The screenshot capture utility still uses the earlier port-and-flag loading approach and a Windows-specific cleanup guard. It has not received the smoke harness's later DevTools pipe and portable-cleanup changes. Keep its source and existing artwork, but check compatibility before the next asset regeneration. This documentation and cleanup task did not run it or change its behavior.
 
 The project is small enough that removing reusable artwork or release tools would save little space while making future updates harder. Retiring verified duplicate builds is the useful cleanup here.
+
+## v1.3.0 URL import, recovery, and popup update
+
+The previous remote PDF path downloaded and uploaded bytes to obtain metadata even when the article HTML already supplied a useful title. Issues #6 and #7 separate title detection from transfer and add one safe upload fallback. PR #9 merged recovery first, PR #10 then enabled URL-first import. The user subsequently included issue #5, completed in PR #11. Issue #8 raises the upload limit and prepares this release.
+
+Title candidates follow scholarly metadata, article JSON-LD, Open Graph, article heading, and document title. Detection preserves arXiv versions and recognizes publisher metadata and full-paper download links, including eLife. Generic titles, filenames, URLs, challenge pages, figures, and supplements are excluded. A missing HTML title leaves naming to Gemini Notebook. A useful HTML title bypasses PDF metadata decoding.
+
+Confirmed import rejection or a reported source-processing error can claim one upload fallback in the existing notebook. The failed URL source is retained and recorded. Artifact generation uses the replacement source. Authentication, quota errors, ambiguous mutation responses, pending processing, and the ten-minute timeout do not initiate another upload. Downloads that need access pause for a popup permission action or manual file selection. Interrupted uploads with unknown outcomes are never replayed automatically. Older saved states are handled conservatively.
+
+The 40 MiB limit is 41,943,040 bytes. A real Chrome extension smoke transferred that payload through runtime messaging and the resumable upload client to a controlled local server. The server received exactly the expected bytes and SHA-256. The full JSON message was 55,924,172 bytes, below 64 MiB. A 40 MiB plus one byte message was rejected, as was an oversized streaming response without Content-Length.
+
+On the local Windows run, the transfer and oversized-message check took about four seconds. The popup timer observed a 1.02 second maximum gap. Samples reached approximately 109 MiB of popup JavaScript heap, 107 MiB of worker heap, and 133 MiB of worker backing storage. These are sampled categories, not a measurement of total peak browser memory. Large Base64 messages still cause a brief pause and substantial temporary allocations. The cap is an engineering bound, not a guarantee for every device or a Google quota.
+
+Validation includes 69 deterministic tests, real Chrome extension smoke, syntax and package gates, metadata precedence and publisher fixtures, immediate and delayed confirmed failure, permission resumption, overlapping fallback calls, cancellation, restart, ambiguous responses, and rejection above the size bound. Controlled transport uses synthetic PDF bytes and does not claim Google ingestion of a 40 MiB document.
+
+Separately, the signed-in Gemini Notebook UI accepted the arXiv PDF at https://arxiv.org/pdf/1706.03762, the eLife PDF at https://elifesciences.org/articles/91194.pdf, and a small valid local PDF. The eLife source view exposed the full paper, including the Introduction. These live checks establish service acceptance. The isolated Chrome smoke exercises the extension itself against controlled responses.
+
+The completed popup measured 344 pixels high at 360 pixels wide. Results and the notebook link remain visible, completed workflow details are collapsed, and settings use a bounded scroll area. README and store screenshots were regenerated and visually inspected. Korean and English release notes are in [v1.3.0](releases/v1.3.0.md).
