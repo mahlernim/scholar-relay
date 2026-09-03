@@ -2,7 +2,7 @@
 
 Send a PDF, research paper, or webpage to Gemini Notebook (formerly NotebookLM), organize the notebook, and generate the artifacts you choose in one workflow.
 
-[Download the latest install-ready release](https://github.com/mahlernim/scholar-relay/releases/latest) · [Privacy](./PRIVACY.md) · [한국어](#한국어) · [English](#english)
+[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/epopghhfmpokhbalmnfcopmplffphdbb) · [Support](https://github.com/mahlernim/scholar-relay/issues) · [Privacy](./PRIVACY.md) · [한국어](#한국어) · [English](#english)
 
 > ScholarRelay is an independent open-source extension and is not affiliated with, authorized by, or endorsed by Google. It uses your existing signed-in Gemini Notebook browser session and never asks for your Google password or verification code.
 
@@ -29,15 +29,28 @@ ScholarRelay는 PDF, 연구 논문 또는 웹페이지를 Gemini Notebook(이전
 
 ### 설치
 
-1. [최신 릴리스](https://github.com/mahlernim/scholar-relay/releases/latest)의 **Assets**에서 설치용 ZIP을 다운로드합니다. v1.2.1부터 파일명은 `scholar-relay-vX.Y.Z.zip` 형식이며, v1.2.0 이전 릴리스는 이전 프로젝트 이름을 사용합니다. GitHub가 자동 제공하는 **Source code** ZIP은 설치용 파일이 아닙니다.
+Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합니다.
+
+1. [Chrome 웹 스토어](https://chromewebstore.google.com/detail/epopghhfmpokhbalmnfcopmplffphdbb)에서 **Chrome에 추가**를 클릭합니다.
+2. Chrome 도구 모음의 **확장 프로그램** 메뉴에서 ScholarRelay를 고정합니다.
+3. [Gemini Notebook](https://notebook.google.com)에 로그인합니다.
+
+스토어에서 설치한 확장 프로그램은 Chrome이 자동으로 업데이트합니다.
+
+<details>
+<summary>ZIP으로 수동 설치 및 업데이트</summary>
+
+1. [최신 릴리스](https://github.com/mahlernim/scholar-relay/releases/latest)의 **Assets**에서 `scholar-relay-vX.Y.Z.zip`을 다운로드합니다. GitHub가 자동 제공하는 **Source code** ZIP은 설치용 파일이 아닙니다.
 2. ZIP을 계속 사용할 폴더에 압축 해제합니다.
 3. Chrome에서 `chrome://extensions`를 열고 **개발자 모드**를 켭니다.
 4. **압축해제된 확장 프로그램을 로드**를 클릭하고 `manifest.json`이 들어 있는 폴더를 선택합니다.
 5. [Gemini Notebook](https://notebook.google.com)에 로그인합니다.
 
-### 업데이트
-
 새 릴리스 ZIP의 파일을 기존 확장 프로그램 폴더에 덮어쓴 다음 `chrome://extensions`에서 확장 프로그램의 **새로고침** 버튼을 클릭합니다. 같은 폴더를 사용하면 기존 설정이 유지됩니다.
+
+수동 설치본에서 스토어 버전으로 전환할 때는 기존 설정을 확인해 두고, 수동 설치본을 사용 중지한 뒤 스토어 버전을 설치하세요. 설정은 자동으로 이전되지 않을 수 있습니다.
+
+</details>
 
 ### 사용 방법
 
@@ -80,15 +93,28 @@ ScholarRelay는 PDF, 연구 논문 또는 웹페이지를 Gemini Notebook(이전
 
 ### Install
 
-1. Under **Assets** on the [latest release](https://github.com/mahlernim/scholar-relay/releases/latest), download the install-ready ZIP. Starting with v1.2.1, its filename follows `scholar-relay-vX.Y.Z.zip`; v1.2.0 and earlier use the former project name. GitHub's automatically generated **Source code** archives are not install-ready extensions.
+Requires Chrome 120 or newer and a Google account signed in to Gemini Notebook.
+
+1. Visit the [Chrome Web Store](https://chromewebstore.google.com/detail/epopghhfmpokhbalmnfcopmplffphdbb) and click **Add to Chrome**.
+2. Pin ScholarRelay from the **Extensions** menu in the Chrome toolbar.
+3. Sign in to [Gemini Notebook](https://notebook.google.com).
+
+Chrome automatically updates extensions installed from the store.
+
+<details>
+<summary>Manual ZIP installation and updates</summary>
+
+1. Under **Assets** on the [latest release](https://github.com/mahlernim/scholar-relay/releases/latest), download `scholar-relay-vX.Y.Z.zip`. GitHub's automatically generated **Source code** archives are not install-ready extensions.
 2. Extract the ZIP into a folder you will keep.
 3. Open `chrome://extensions` and enable **Developer mode**.
 4. Click **Load unpacked** and select the extracted folder containing `manifest.json`.
 5. Sign in to [Gemini Notebook](https://notebook.google.com).
 
-### Update
-
 Extract the new release over the existing extension folder, then click the extension's **Reload** button on `chrome://extensions`. Reusing the same folder preserves your settings.
+
+When switching from a manual installation to the store version, note your settings and disable the manual copy before installing from the store. Settings may not transfer automatically.
+
+</details>
 
 ### Use
 
@@ -125,7 +151,3 @@ The consumer Gemini Notebook web application does not provide an official public
 ## License
 
 MIT. See [LICENSE](./LICENSE).
-
-## Maintainer: store package
-
-Run `npm run package:store` to create the canonical allowlisted ZIP and SHA-256 sidecar in `dist/`. The same ZIP is used for GitHub releases and Chrome Web Store upload. Store copy, privacy declarations, reviewer instructions, and required asset paths are maintained in [`docs/chrome-web-store-listing.md`](./docs/chrome-web-store-listing.md).

@@ -32,8 +32,8 @@ test('store manifest uses minimum permissions and a production-safe alarm baseli
   assert.equal(PIPELINE_POLL_PERIOD_MINUTES, 0.5);
 });
 
-test('ScholarRelay branding, package identity, and localized store copy stay aligned', async () => {
-  const [manifestText, packageText, englishLocaleText, koreanLocaleText, popupText, backgroundText, readmeText, privacyText, listingText, packageScript] =
+test('ScholarRelay branding and package identity stay aligned', async () => {
+  const [manifestText, packageText, englishLocaleText, koreanLocaleText, popupText, backgroundText, readmeText, privacyText, packageScript] =
     await Promise.all([
       readFile(new URL('../manifest.json', import.meta.url), 'utf8'),
       readFile(new URL('../package.json', import.meta.url), 'utf8'),
@@ -43,7 +43,6 @@ test('ScholarRelay branding, package identity, and localized store copy stay ali
       readFile(new URL('../background.js', import.meta.url), 'utf8'),
       readFile(new URL('../README.md', import.meta.url), 'utf8'),
       readFile(new URL('../PRIVACY.md', import.meta.url), 'utf8'),
-      readFile(new URL('../docs/chrome-web-store-listing.md', import.meta.url), 'utf8'),
       readFile(new URL('../scripts/package-store.ps1', import.meta.url), 'utf8'),
     ]);
 
@@ -61,8 +60,6 @@ test('ScholarRelay branding, package identity, and localized store copy stay ali
   assert.match(popupText, /Open in Gemini Notebook|Gemini Notebook chooses/);
   assert.match(readmeText, /formerly NotebookLM/);
   assert.match(privacyText, /^# Privacy Policy for ScholarRelay/m);
-  assert.match(listingText, /## English listing/);
-  assert.match(listingText, /## 한국어 스토어 등록 문구/);
   assert.match(packageScript, /scholar-relay-v\$\(\$manifest\.version\)\.zip/);
   assert.doesNotMatch(packageScript, /\$outputPath\s*=.*-store\.zip/);
   assert.match(packageScript, /\$checksumPath = "\$outputPath\.sha256"/);
