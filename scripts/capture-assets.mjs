@@ -178,7 +178,7 @@ async function capturePopup(port, extensionId) {
   await evaluate(setup, `chrome.storage.local.set({pipelineState:${JSON.stringify(pipelineState)}})`);
   await sessionReload(setup);
   await hidePageScrollbars(setup);
-  await capture(setup, join(extensionRoot, 'docs', 'screenshots', 'workflow.png'), 360, 680);
+  await capture(setup, join(extensionRoot, 'docs', 'screenshots', 'workflow.png'), 360, 350);
   setup.close();
 
   const settings = await openTarget(port, `chrome-extension://${extensionId}/popup.html`);
@@ -188,8 +188,9 @@ async function capturePopup(port, extensionId) {
   await evaluate(settings, `document.getElementById('btn-gear').click()`);
   await delay(500);
   await evaluate(settings, `(() => { const select=document.getElementById('s-collectionId'); select.replaceChildren(new Option('Do not add to a collection',''),new Option('📚 Research Papers (2)','research-papers')); select.value='research-papers'; document.getElementById('collection-load-status').textContent='3 collections available.'; })()`);
+  await evaluate(settings, `document.querySelectorAll('.s-section.expanded').forEach(section => section.classList.remove('expanded'))`);
   await hidePageScrollbars(settings);
-  await capture(settings, join(extensionRoot, 'docs', 'screenshots', 'settings.png'), 360, 592);
+  await capture(settings, join(extensionRoot, 'docs', 'screenshots', 'settings.png'), 360, 480);
   settings.close();
 }
 
