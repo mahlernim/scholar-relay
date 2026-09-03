@@ -818,7 +818,7 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
                 await startPipeline(pdfUrl, pageUrl || tab.url || pdfUrl, 'pdf', pageTitle);
                 return;
             }
-            const error = new Error(payload.error || 'This local PDF exceeds the 32 MiB safe upload limit.');
+            const error = new Error(payload.error || 'This local PDF exceeds the 40 MiB safe upload limit.');
             error.code = payload.code;
             throw error;
         }

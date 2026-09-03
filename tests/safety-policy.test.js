@@ -39,7 +39,7 @@ test('PDF size and base64 guards enforce a bounded local bridge', () => {
   assert.equal(assertPdfUploadSize(MAX_PDF_UPLOAD_BYTES), MAX_PDF_UPLOAD_BYTES);
   assert.throws(
     () => assertPdfUploadSize(MAX_PDF_UPLOAD_BYTES + 1),
-    error => error?.code === 'PDF_TOO_LARGE' && /32 MiB/.test(error.message)
+    error => error?.code === 'PDF_TOO_LARGE' && /40 MiB/.test(error.message)
   );
   assert.equal(decodedBase64ByteLength('TQ=='), 1);
   assert.equal(decodedBase64ByteLength('TWE='), 2);
@@ -76,6 +76,19 @@ test('streaming PDF reads stop before an unbounded response is allocated', async
     () => readResponseWithinLimit(oversized, 5),
     error => error?.code === 'PDF_TOO_LARGE'
   );
+});
+
+test('40 MiB streaming boundary is enforced without a Content-Length header', async () => {
+  const chunk = new Uint8Array(1024 * 1024);
+  let reads = 0;
+  const response = new Response(new ReadableStream({
+    pull(controller) {
+      if (reads++ < 40) controller.enqueue(chunk);
+      else { controller.enqueue(new Uint8Array(1)); controller.close(); }
+    },
+  }));
+  await assert.rejects(readResponseWithinLimit(response), error => error.code === 'PDF_TOO_LARGE');
+  assert.equal(reads, 41);
 });
 
 test('serialized pipeline claims allow exactly one active run', async () => {

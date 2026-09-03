@@ -21,7 +21,7 @@ ScholarRelay는 PDF, 연구 논문 또는 웹페이지를 Gemini Notebook(이전
 ### 주요 기능
 
 - 현재 탭에서 PDF, arXiv 논문, 웹페이지를 감지해 Gemini Notebook 소스로 추가합니다.
-- 원격 PDF와 로컬 PDF 업로드를 지원하며, PDF 메타데이터에서 신뢰할 수 있는 논문 제목을 찾습니다.
+- HTML 메타데이터에서 논문 제목과 PDF 링크를 먼저 찾고 URL로 가져옵니다. 가져오기가 실패한 경우에만 PDF를 내려받아 업로드하며, 로컬 PDF도 지원합니다.
 - 새 노트북을 선택한 기존 컬렉션에 자동으로 추가할 수 있습니다.
 - 감지한 논문 제목을 우선 사용하거나 Gemini Notebook의 자동 제목 생성을 선택할 수 있습니다.
 - 오디오, 비디오, 보고서, 퀴즈, 플래시카드, 인포그래픽, 슬라이드, 마인드맵, 데이터 표를 원하는 조합으로 생성합니다.
@@ -71,12 +71,12 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 
 ### 권한 및 문제 해결
 
-- 현재 페이지와 다른 사이트에 있는 PDF를 직접 내려받아야 할 때만 해당 PDF 사이트에 대한 Chrome 권한을 요청합니다. 거부하면 Gemini Notebook URL 가져오기를 시도하며, 필요하면 파일을 직접 업로드할 수 있습니다.
+- 현재 페이지와 다른 사이트에 있는 PDF를 직접 내려받아야 할 때만 해당 PDF 사이트에 대한 Chrome 권한을 요청합니다. URL 가져오기는 다운로드 권한 없이 먼저 시도하며, 업로드가 필요할 때만 권한을 요청합니다. 권한을 거부하면 파일을 직접 선택할 수 있습니다.
 - 로컬 `file://` PDF를 읽으려면 확장 프로그램 세부정보에서 **파일 URL에 대한 액세스 허용**을 켜야 할 수 있습니다.
 - 실행되지 않으면 [Gemini Notebook](https://notebook.google.com)에 로그인되어 있는지 확인하고 다시 시도합니다.
 - 컬렉션이 보이지 않으면 Gemini Notebook에서 컬렉션을 만든 뒤 설정의 새로고침 버튼을 클릭합니다.
-- URL 소스를 추가하지 못하면 **Upload Local PDF**로 파일을 직접 업로드합니다.
-- Chrome 메모리를 안전하게 유지하기 위해 직접 내려받기 및 로컬 업로드는 32 MiB로 제한됩니다. 더 큰 원격 PDF는 URL 가져오기를 사용하고, 더 큰 로컬 파일은 Gemini Notebook에서 직접 업로드합니다.
+- PDF URL 가져오기나 처리 실패가 확인되면 같은 노트북에 PDF 업로드를 한 번 시도합니다. 다운로드 권한이 필요하면 팝업에서 허용하거나 PDF를 직접 선택하세요. 시간 초과나 결과가 불확실한 응답에서는 추가 업로드를 실행하지 않습니다.
+- Chrome 메모리를 안전하게 유지하기 위해 직접 내려받기 및 로컬 업로드는 40 MiB로 제한됩니다. 더 큰 원격 PDF는 URL 가져오기를 사용하고, 더 큰 로컬 파일은 Gemini Notebook에서 직접 업로드합니다.
 
 ---
 
@@ -85,7 +85,7 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 ### Highlights
 
 - Detects PDFs, arXiv papers, and webpages in the current tab and adds them to Gemini Notebook.
-- Supports remote and local PDF uploads and extracts trustworthy paper titles from PDF metadata.
+- Reads paper titles and PDF links from HTML first, then imports the PDF URL. Downloads and uploads only after a confirmed import failure, with local PDF uploads also supported.
 - Can automatically add each new notebook to a selected existing collection.
 - Can prefer the detected paper title or let Gemini Notebook choose the notebook title.
 - Generates any combination of audio, video, reports, quizzes, flashcards, infographics, slide decks, mind maps, and data tables.
@@ -135,12 +135,12 @@ Source processing and artifact generation continue if collection assignment fail
 
 ### Permissions and troubleshooting
 
-- Chrome asks for access to a specific PDF website only when the PDF is hosted on a different site and must be downloaded directly. If you decline, ScholarRelay tries Gemini Notebook URL import and keeps manual upload available.
+- Chrome asks for access to a specific PDF website only when the PDF is hosted on a different site and must be downloaded directly. URL import is tried first without download access. If upload fallback needs permission, you can grant it or select the PDF manually.
 - To read local `file://` PDFs, enable **Allow access to file URLs** in the extension's details.
 - If a run does not start, confirm that you are signed in at [Gemini Notebook](https://notebook.google.com) and retry.
 - If a collection is missing, create it in Gemini Notebook and use the refresh button in Settings.
-- If a URL source cannot be added, use **Upload Local PDF** to upload the file directly.
-- Direct downloads and local uploads are limited to 32 MiB to keep Chrome memory use safe. Larger remote PDFs use URL import, while larger local files should be uploaded directly in Gemini Notebook.
+- Confirmed PDF URL import or processing failures trigger one upload fallback in the same notebook. If download access is needed, reopen the popup to grant it or select the PDF manually. Timeouts and uncertain responses do not trigger another upload.
+- Direct downloads and local uploads are limited to 40 MiB to keep Chrome memory use safe. Larger remote PDFs use URL import, while larger local files should be uploaded directly in Gemini Notebook.
 
 ## Credits and compatibility
 
