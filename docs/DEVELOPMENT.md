@@ -225,3 +225,19 @@ Validation includes 69 deterministic tests, real Chrome extension smoke, syntax 
 Separately, the signed-in Gemini Notebook UI accepted the arXiv PDF at https://arxiv.org/pdf/1706.03762, the eLife PDF at https://elifesciences.org/articles/91194.pdf, and a small valid local PDF. The eLife source view exposed the full paper, including the Introduction. These live checks establish service acceptance. The isolated Chrome smoke exercises the extension itself against controlled responses.
 
 The completed popup measured 344 pixels high at 360 pixels wide. Results and the notebook link remain visible, completed workflow details are collapsed, and settings use a bounded scroll area. README and store screenshots were regenerated and visually inspected. Korean and English release notes are in [v1.3.0](releases/v1.3.0.md).
+
+### v1.3.0 release and store submission
+
+Released and submitted on September 3, 2026. The final implementation is commit `26a2a9b1278e8a9bd2d2c3ab75ebeab0177c06db`. Each implementation PR passed CI on its exact final head. Both merged-main jobs passed in [run 33743568257](https://github.com/mahlernim/scholar-relay/actions/runs/33743568257) before [v1.3.0](https://github.com/mahlernim/scholar-relay/releases/tag/v1.3.0) was tagged and published with equivalent Korean and English notes.
+
+The canonical `scholar-relay-v1.3.0.zip` contains 20 allowlisted runtime files and is 66,238 bytes. Its embedded version and every extracted file matched the release checkout. The local digest and GitHub release asset digest both matched the following SHA-256. This exact ZIP was uploaded to the existing store item `epopghhfmpokhbalmnfcopmplffphdbb`.
+
+```text
+ebb85fa25e405c4e28a2dfeea06ed950dff38c8c415d9a0b47e8c4f7ae47a310
+```
+
+The dashboard verified draft package 1.3.0 with English and Korean before submission. Both descriptions now explain HTML titles, URL-first import, one confirmed-failure fallback, manual permission resumption, the compact popup, and 40 MiB. Global and Korean screenshots and the promotional tile were replaced with current artwork. Reviewer instructions were updated, and existing privacy declarations remained applicable.
+
+At approximately 19:24 KST, the dashboard confirmed that the extension was submitted for review and displayed `Pending review`. Automatic publication after approval was checked. This records successful submission, not approval or public availability of v1.3.0. The subsequent publication result must be confirmed on both the dashboard and public listing and appended here.
+
+The live eLife check also accepted its selected version-specific `elife-91194-v1.pdf` download link. It reached a selectable source after processing. The validation notebook retains the arXiv, both eLife URL forms, and local PDF sources.
