@@ -2,11 +2,11 @@
 
 Recorded on September 3, 2026. This is a retrospective of the engineering problems, decisions, tradeoffs, and Chrome Web Store submission history through v1.2.2. It also explains which development files are worth keeping.
 
-The account below was reconstructed from commits, pull requests, release assets, recorded development and submission sessions, and a targeted search of the maintainer's two mailboxes. Code links and release links provide publicly inspectable evidence. Session observations are identified where they add information that Git cannot establish. Email bodies, private account links, authentication values, and customer data are not included.
+The account below was reconstructed from commits, pull requests, release assets, recorded development and submission sessions, a targeted search of the maintainer's two mailboxes, and a signed-in developer-console check on September 3. Code links and release links provide publicly inspectable evidence. Session observations are identified where they add information that Git cannot establish. Email bodies, private account links, authentication values, and customer data are not included.
 
 ## Timeline and evidence
 
-Dates below use Korea Standard Time. A release date, submission date, and publication observation describe different events.
+Commit and session dates below use Korea Standard Time. Store dates are transcribed as displayed, without an exposed timezone or time of day. A release date, submission date, and publication observation describe different events.
 
 | Date | Milestone | Evidence |
 | --- | --- | --- |
@@ -18,9 +18,9 @@ Dates below use Korea Standard Time. A release date, submission date, and public
 | August 30 | Store setup generated a payment receipt and a contact-email confirmation request. English and Korean listing resources were prepared. | Mailbox search performed September 3, [localizations](https://github.com/mahlernim/scholar-relay/commit/954d181) |
 | August 31 | Hardened detection caching, pipeline ownership, cancellation, PDF ingestion, packaging, and browser smoke coverage. Several CI harness revisions were necessary. | [PR #2](https://github.com/mahlernim/scholar-relay/pull/2), [PR #3](https://github.com/mahlernim/scholar-relay/pull/3) |
 | August 31 | Published the finalized v1.2.2 GitHub package. Canceled the older v1.2.1 store review and submitted v1.2.2 on the same item with automatic publication enabled. Dashboard observation was `Pending review`. | [PR #4](https://github.com/mahlernim/scholar-relay/pull/4), [v1.2.2](https://github.com/mahlernim/scholar-relay/releases/tag/v1.2.2), recorded submission session |
-| September 3 | Confirmed a public ScholarRelay listing with `Add to Chrome` and version 1.2.2. Updated the README to lead with store installation. | [Public listing](https://chromewebstore.google.com/detail/epopghhfmpokhbalmnfcopmplffphdbb), [README change](https://github.com/mahlernim/scholar-relay/commit/eef28e1) |
+| September 3 | Confirmed a public ScholarRelay listing with `Add to Chrome` and version 1.2.2. Updated the README to lead with store installation. The signed-in console separately confirmed `Published - public` and published package version 1.2.2. | [Public listing](https://chromewebstore.google.com/detail/epopghhfmpokhbalmnfcopmplffphdbb), [README change](https://github.com/mahlernim/scholar-relay/commit/eef28e1), developer-console observation |
 
-The store displayed August 31 as its update date when publication was checked on September 3. That field does not establish the exact approval timestamp. Searches in both maintainer mailboxes, including Spam and Trash, found no approval or rejection notice. The supported account is that v1.2.2 was pending on August 31 and publicly available by September 3. There is no evidence here of a reviewer rejection or its cause.
+The store displayed August 31 as its update date when publication was checked on September 3. The signed-in console's Items table showed creation on August 30 and last update on August 31. These fields do not establish the exact approval timestamp, and the inspected Status and Package pages did not expose one. Searches in both maintainer mailboxes, including Spam and Trash, found no approval or rejection notice. The supported account is that v1.2.2 was pending on August 31 and publicly available by September 3. There is no evidence here of a reviewer rejection or its cause.
 
 ## Product direction and architecture
 
@@ -151,6 +151,17 @@ Automatic publication after approval was selected. The final observed dashboard 
 ### Confirming publication and retiring the draft document
 
 On September 3 the public listing exposed `Add to Chrome` for version 1.2.2. The README then changed from ZIP-first installation to store-first installation in both languages, with toolbar pinning, automatic updates, a support link and collapsed manual-install instructions.
+
+The subsequent signed-in check under the MahlerLab publisher confirmed the following visible fields.
+
+| Console surface | Observed state on September 3 |
+| --- | --- |
+| Items table | ScholarRelay 1.2.2, created August 30, last updated August 31, `Published - public` |
+| Status, Published tab | The revision is published and available to the public |
+| Package, Published table | Version 1.2.2 with English and Korean |
+| Draft surfaces | A separate unpublished draft and draft package version 1.2.2 were visible alongside the published revision |
+
+The unpublished-draft label describes the draft surface and does not override the published revision's status. No upload, save, submission, rollback or distribution change was performed during this inspection. The visible fields confirm publication but leave the exact approval time unresolved.
 
 The old `Maintainer: store package` section and live submission-preparation document were removed. They were useful during application but had become a second copy of store content that could drift. Their historical versions remain in Git. This retrospective preserves the reasons and evidence without presenting an obsolete application draft as the current listing.
 
