@@ -1,10 +1,10 @@
 {
   "extensionName": {
-    "message": "ScholarRelay",
+    "message": "ScholarRelay - PDF Importer for Gemini Notebook",
     "description": "Formal product name"
   },
   "extensionDescription": {
-    "message": "Send PDFs, research papers, and webpages to Gemini Notebook and generate organized artifacts.",
+    "message": "Import PDFs, arXiv papers, and webpages into Gemini Notebook (NotebookLM). Generate audio overviews and study materials.",
     "description": "Short extension and Chrome Web Store summary"
   }
 }

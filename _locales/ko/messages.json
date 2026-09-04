@@ -1,10 +1,10 @@
 {
   "extensionName": {
-    "message": "ScholarRelay",
+    "message": "ScholarRelay - Gemini Notebook PDF 가져오기",
     "description": "Formal product name"
   },
   "extensionDescription": {
-    "message": "PDF, 연구 논문 및 웹페이지를 Gemini Notebook으로 보내고 정리된 아티팩트를 생성합니다.",
+    "message": "PDF, arXiv 논문, 웹페이지를 Gemini Notebook(NotebookLM)으로 가져오고 오디오 개요와 학습 자료를 생성합니다.",
     "description": "Short extension and Chrome Web Store summary"
   }
 }

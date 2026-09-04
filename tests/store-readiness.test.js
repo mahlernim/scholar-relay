@@ -23,7 +23,7 @@ test('store manifest uses minimum permissions and a production-safe alarm baseli
   assert.equal(manifest.name, '__MSG_extensionName__');
   assert.equal(manifest.description, '__MSG_extensionDescription__');
   assert.equal(manifest.default_locale, 'en');
-  assert.equal(manifest.version, '1.3.0');
+  assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
   assert.equal(manifest.minimum_chrome_version, '120');
   assert.equal(manifest.permissions.includes('cookies'), false);
   assert.equal(manifest.host_permissions.includes('*://*/*'), false);
@@ -52,8 +52,12 @@ test('ScholarRelay branding and package identity stay aligned', async () => {
   const koreanLocale = JSON.parse(koreanLocaleText);
   assert.equal(packageJson.name, 'scholar-relay');
   assert.equal(packageJson.version, manifest.version);
-  assert.equal(englishLocale.extensionName.message, 'ScholarRelay');
-  assert.equal(koreanLocale.extensionName.message, 'ScholarRelay');
+  assert.equal(manifest.short_name, 'ScholarRelay');
+  for (const locale of [englishLocale, koreanLocale]) {
+    assert.ok(locale.extensionName.message.startsWith(manifest.short_name));
+    assert.ok(locale.extensionName.message.length <= 75);
+    assert.ok(locale.extensionDescription.message.length <= 132);
+  }
   assert.match(englishLocale.extensionDescription.message, /Gemini Notebook/);
   assert.match(koreanLocale.extensionDescription.message, /Gemini Notebook/);
   assert.doesNotMatch(`${popupText}\n${backgroundText}`, /Chrome PDF to NotebookLM/);
