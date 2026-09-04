@@ -1,4 +1,5 @@
-import { access, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { messageKey } from '../i18n.js';
 import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -35,6 +36,7 @@ async function resolveCaptureBrowser() {
 
 const chrome = spawn(chromePath, [
   '--disable-gpu',
+  '--lang=en',
   '--no-first-run',
   '--no-default-browser-check',
   '--window-position=-32000,-32000',
@@ -157,8 +159,15 @@ async function hidePageScrollbars(session) {
   await evaluate(session, `(() => { const style=document.createElement('style'); style.textContent='html,body{overflow:hidden!important}'; document.head.appendChild(style); })()`);
 }
 
-async function capturePopup(port, extensionId) {
+async function capturePopup(port, extensionId, locale = 'en') {
+  const output = join(extensionRoot, 'docs', 'screenshots', ...(locale === 'en' ? [] : [locale]));
+  await mkdir(output, { recursive: true });
+  const catalog = JSON.parse(await readFile(join(extensionRoot, '_locales', locale, 'messages.json'), 'utf8'));
+  const translated = (source, values = []) => catalog[messageKey(source)]?.message.replace(/\$(\d+)/g, (_, index) => values[index - 1]) || source;
+  const localeScript = `chrome.i18n.getUILanguage=()=>${JSON.stringify(locale.replace('_', '-'))};
+    chrome.i18n.getMessage=(key,values=[])=>(${JSON.stringify(catalog)})[key]?.message.replace(/\\$(\\d+)/g,(_,index)=>values[index-1]??'')||'';`;
   const setup = await openTarget(port, `chrome-extension://${extensionId}/popup.html`);
+  await setup.call('Page.addScriptToEvaluateOnNewDocument', { source: localeScript });
   await delay(400);
   const pipelineState = {
     status: 'completed',
@@ -178,19 +187,21 @@ async function capturePopup(port, extensionId) {
   await evaluate(setup, `chrome.storage.local.set({pipelineState:${JSON.stringify(pipelineState)}})`);
   await sessionReload(setup);
   await hidePageScrollbars(setup);
-  await capture(setup, join(extensionRoot, 'docs', 'screenshots', 'workflow.png'), 360, 350);
+  await capture(setup, join(output, 'workflow.png'), 360, 350);
   setup.close();
 
   const settings = await openTarget(port, `chrome-extension://${extensionId}/popup.html`);
+  await settings.call('Page.addScriptToEvaluateOnNewDocument', { source: localeScript });
   await delay(400);
   await evaluate(settings, `chrome.storage.local.set({pipelineState:{status:'idle'},userSettings:{generateAudio:true,audioLength:'long',language:'en',generateInfographic:true,useSourceTitleForNotebook:true,notificationEnabled:true,chimeEnabled:true,autoOpenNotebook:false,collectionId:'research-papers'}})`);
   await sessionReload(settings);
   await evaluate(settings, `document.getElementById('btn-gear').click()`);
   await delay(500);
-  await evaluate(settings, `(() => { const select=document.getElementById('s-collectionId'); select.replaceChildren(new Option('Do not add to a collection',''),new Option('📚 Research Papers (2)','research-papers')); select.value='research-papers'; document.getElementById('collection-load-status').textContent='3 collections available.'; })()`);
+  await evaluate(settings, `(() => { const select=document.getElementById('s-collectionId'); select.replaceChildren(new Option(${JSON.stringify(translated('No collection'))},''),new Option('📚 Research Papers (2)','research-papers')); select.value='research-papers'; document.getElementById('collection-load-status').textContent=${JSON.stringify(translated('Collections available: $1.', ['3']))}; })()`);
   await evaluate(settings, `document.querySelectorAll('.s-section.expanded').forEach(section => section.classList.remove('expanded'))`);
+  await evaluate(settings, `(() => { const pane=document.querySelector('.settings-inner'); pane.scrollTop+=document.querySelector('.settings-group-artifacts').getBoundingClientRect().top-pane.getBoundingClientRect().top; })()`);
   await hidePageScrollbars(settings);
-  await capture(settings, join(extensionRoot, 'docs', 'screenshots', 'settings.png'), 360, 480);
+  await capture(settings, join(output, 'settings.png'), 360, 480);
   settings.close();
 }
 
@@ -199,10 +210,42 @@ async function sessionReload(session) {
   await delay(500);
 }
 
-async function captureStoreAsset(port, relativeSource, relativeOutput, width, height) {
+async function captureStoreAsset(port, relativeSource, relativeOutput, width, height, localized = null) {
   const url = pathToFileURL(join(extensionRoot, relativeSource)).href;
   const session = await openTarget(port, url);
   await delay(500);
+  if (!relativeSource.endsWith('promo.html')) {
+    await evaluate(session, `(() => {
+      document.querySelector('.layout').style.gridTemplateColumns=${JSON.stringify(relativeSource.endsWith('settings.html') ? '460px minmax(0, 1fr)' : 'minmax(0, 1fr) 460px')};
+      document.querySelector('.copy').style.minWidth='0';
+      document.querySelector('.copy h1').style.overflowWrap='anywhere';
+    })()`);
+  }
+  if (localized) {
+    await evaluate(session, `(() => {
+      const {locale,kind,copy}=${JSON.stringify(localized)};
+      document.documentElement.lang=locale.replace('_','-');
+      document.querySelector('.shot img').src='../../screenshots/'+locale+'/'+kind+'.png';
+      document.querySelector('.kicker').textContent=copy[0];
+      document.querySelector('.copy h1').textContent=copy[1];
+      document.querySelector('.copy p').textContent=copy[2];
+      document.querySelectorAll('.tag,.row').forEach((el,index)=>{
+        if(el.classList.contains('row')) el.lastChild.textContent=copy[index+3];
+        else el.textContent=copy[index+3];
+      });
+      document.querySelector('.copy h1').style.fontSize='44px';
+      document.querySelector('.copy p').style.fontSize='21px';
+      document.querySelector('.kicker').style.letterSpacing='normal';
+      if(locale==='ko') document.querySelector('.copy h1').style.wordBreak='keep-all';
+    })()`);
+    await delay(300);
+  }
+  if (!relativeSource.endsWith('promo.html')) {
+    const clipped = await evaluate(session, `Array.from(document.querySelectorAll('.copy,.copy h1,.copy p,.row,.tag,.shot img'))
+      .filter(el=>{const r=el.getBoundingClientRect();return r.right>1280||r.bottom>800||r.left<0||r.top<0||el.scrollWidth>el.clientWidth+1;})
+      .map(el=>el.className||el.tagName)`);
+    if(clipped.length) throw new Error('Store asset overflow '+relativeOutput+': '+clipped.join(', '));
+  }
   await capture(session, join(extensionRoot, relativeOutput), width, height);
   session.close();
 }
@@ -214,6 +257,15 @@ try {
   await captureStoreAsset(port, 'docs/store-assets/source/workflow.html', 'docs/store-assets/screenshot-workflow-1280x800.png', 1280, 800);
   await captureStoreAsset(port, 'docs/store-assets/source/settings.html', 'docs/store-assets/screenshot-settings-1280x800.png', 1280, 800);
   await captureStoreAsset(port, 'docs/store-assets/source/promo.html', 'docs/store-assets/small-promo-440x280.png', 440, 280);
+  const localizedCopy = JSON.parse(await readFile(join(extensionRoot, 'docs', 'localization', 'asset-copy.json'), 'utf8'));
+  for (const [locale, copy] of Object.entries(localizedCopy)) {
+    await capturePopup(port, extensionId, locale);
+    await mkdir(join(extensionRoot, 'docs', 'store-assets', locale), { recursive: true });
+    for (const kind of ['workflow', 'settings']) {
+      await captureStoreAsset(port, `docs/store-assets/source/${kind}.html`,
+        `docs/store-assets/${locale}/screenshot-${kind}-1280x800.png`, 1280, 800, {locale,kind,copy:copy[kind]});
+    }
+  }
   console.log('Captured ScholarRelay README and Chrome Web Store assets.');
 } finally {
   chrome.kill();

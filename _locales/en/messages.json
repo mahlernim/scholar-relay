@@ -1,10 +1,796 @@
 {
   "extensionName": {
-    "message": "ScholarRelay - PDF Importer for Gemini Notebook",
-    "description": "Formal product name"
+    "message": "ScholarRelay - PDF Importer for Gemini Notebook"
   },
   "extensionDescription": {
-    "message": "Import PDFs, arXiv papers, and webpages into Gemini Notebook (NotebookLM). Generate audio overviews and study materials.",
-    "description": "Short extension and Chrome Web Store summary"
+    "message": "Import PDFs, arXiv papers, and webpages into Gemini Notebook (NotebookLM). Generate audio overviews and study materials."
+  },
+  "ui_bca3294": {
+    "message": "Ready",
+    "description": "Ready"
+  },
+  "ui_5579c3d4": {
+    "message": "Failed",
+    "description": "Failed"
+  },
+  "ui_71fcc075": {
+    "message": "Generating",
+    "description": "Generating"
+  },
+  "ui_c9450e48": {
+    "message": "Waiting",
+    "description": "Waiting"
+  },
+  "ui_ce74e943": {
+    "message": "Artifact",
+    "description": "Artifact"
+  },
+  "ui_85cc8e29": {
+    "message": "Elapsed time: $1 min.",
+    "description": "Elapsed time: $1 min."
+  },
+  "ui_5495106b": {
+    "message": "Choose at least one artifact in Settings before starting.",
+    "description": "Choose at least one artifact in Settings before starting."
+  },
+  "ui_af966070": {
+    "message": "A workflow is already active. Check its progress before starting another.",
+    "description": "A workflow is already active. Check its progress before starting another."
+  },
+  "ui_74a7ea81": {
+    "message": "Enable Allow access to file URLs in Chrome extension settings, or choose Upload Local PDF.",
+    "description": "Enable Allow access to file URLs in Chrome extension settings, or choose Upload Local PDF."
+  },
+  "ui_a788ccba": {
+    "message": "Direct PDF",
+    "description": "Direct PDF"
+  },
+  "ui_8212a19a": {
+    "message": "PDF document",
+    "description": "PDF document"
+  },
+  "ui_86fe33ed": {
+    "message": "Publisher PDF",
+    "description": "Publisher PDF"
+  },
+  "ui_fd7e7e2b": {
+    "message": "Article PDF",
+    "description": "Article PDF"
+  },
+  "ui_9a142465": {
+    "message": "Embedded PDF viewer",
+    "description": "Embedded PDF viewer"
+  },
+  "ui_be4342c0": {
+    "message": "arXiv abstract page",
+    "description": "arXiv abstract page"
+  },
+  "ui_1ae2ab63": {
+    "message": "arXiv PDF",
+    "description": "arXiv PDF"
+  },
+  "ui_5a02480d": {
+    "message": "arXiv PDF link",
+    "description": "arXiv PDF link"
+  },
+  "ui_fbb8c667": {
+    "message": "PDF link on page",
+    "description": "PDF link on page"
+  },
+  "ui_747f5a5f": {
+    "message": "Direct PDF URL",
+    "description": "Direct PDF URL"
+  },
+  "ui_e4668cae": {
+    "message": "Local file",
+    "description": "Local file"
+  },
+  "ui_102eb56b": {
+    "message": "Send papers to Gemini Notebook",
+    "description": "Send papers to Gemini Notebook"
+  },
+  "ui_4b058728": {
+    "message": "Settings",
+    "description": "Settings"
+  },
+  "ui_b62eeb9e": {
+    "message": "⚙️ Settings",
+    "description": "⚙️ Settings"
+  },
+  "ui_546c8007": {
+    "message": "⚠️ Choose at least one artifact",
+    "description": "⚠️ Choose at least one artifact"
+  },
+  "ui_fd3f8fe8": {
+    "message": "📓 Notebook Settings",
+    "description": "📓 Notebook Settings"
+  },
+  "ui_e0ab2da5": {
+    "message": "Add new notebooks to",
+    "description": "Add new notebooks to"
+  },
+  "ui_7ed65126": {
+    "message": "No collection",
+    "description": "No collection"
+  },
+  "ui_5cdf8229": {
+    "message": "Refresh collections",
+    "description": "Refresh collections"
+  },
+  "ui_655bdb8c": {
+    "message": "Collections load from your signed-in Gemini Notebook account.",
+    "description": "Collections load from your signed-in Gemini Notebook account."
+  },
+  "ui_2775c98c": {
+    "message": "Use paper title for notebook",
+    "description": "Use paper title for notebook"
+  },
+  "ui_23c94c30": {
+    "message": "If off or no title is found, Gemini Notebook names it.",
+    "description": "If off or no title is found, Gemini Notebook names it."
+  },
+  "ui_e46cfd94": {
+    "message": "🎨 Artifact Settings",
+    "description": "🎨 Artifact Settings"
+  },
+  "ui_68dc958f": {
+    "message": "Artifact language",
+    "description": "Artifact language"
+  },
+  "ui_1b9ae0bb": {
+    "message": "English",
+    "description": "English"
+  },
+  "ui_ad70bf21": {
+    "message": "Korean",
+    "description": "Korean"
+  },
+  "ui_940c2e0a": {
+    "message": "Japanese",
+    "description": "Japanese"
+  },
+  "ui_b819825b": {
+    "message": "Spanish",
+    "description": "Spanish"
+  },
+  "ui_7cbd6ca5": {
+    "message": "French",
+    "description": "French"
+  },
+  "ui_11100833": {
+    "message": "German",
+    "description": "German"
+  },
+  "ui_e6d67d5c": {
+    "message": "Portuguese",
+    "description": "Portuguese"
+  },
+  "ui_5ecc8eb6": {
+    "message": "Applies to audio, video, reports, infographics, slide decks, and data tables.",
+    "description": "Applies to audio, video, reports, infographics, slide decks, and data tables."
+  },
+  "ui_b7a1a59b": {
+    "message": "The interface follows Chrome's language. Artifact language is independent.",
+    "description": "The interface follows Chrome's language. Artifact language is independent."
+  },
+  "ui_63435037": {
+    "message": "🎧 Audio Overview",
+    "description": "🎧 Audio Overview"
+  },
+  "ui_5e4b9b33": {
+    "message": "🎬 Video Overview",
+    "description": "🎬 Video Overview"
+  },
+  "ui_1c876167": {
+    "message": "📄 Report",
+    "description": "📄 Report"
+  },
+  "ui_a742b583": {
+    "message": "❓ Quiz",
+    "description": "❓ Quiz"
+  },
+  "ui_13be9b37": {
+    "message": "🃏 Flashcards",
+    "description": "🃏 Flashcards"
+  },
+  "ui_853abe6f": {
+    "message": "🖼 Infographic",
+    "description": "🖼 Infographic"
+  },
+  "ui_871b8541": {
+    "message": "📊 Slide Deck",
+    "description": "📊 Slide Deck"
+  },
+  "ui_768c9843": {
+    "message": "🧠 Mind Map",
+    "description": "🧠 Mind Map"
+  },
+  "ui_c1a0dcce": {
+    "message": "📋 Data Table",
+    "description": "📋 Data Table"
+  },
+  "ui_ffb0ff72": {
+    "message": "Format",
+    "description": "Format"
+  },
+  "ui_fff5af1f": {
+    "message": "Deep Dive",
+    "description": "Deep Dive"
+  },
+  "ui_b3c47c3f": {
+    "message": "Brief",
+    "description": "Brief"
+  },
+  "ui_78edea29": {
+    "message": "Critique",
+    "description": "Critique"
+  },
+  "ui_61a5d5c0": {
+    "message": "Debate",
+    "description": "Debate"
+  },
+  "ui_cc5e1935": {
+    "message": "Length",
+    "description": "Length"
+  },
+  "ui_5fdddd75": {
+    "message": "Short",
+    "description": "Short"
+  },
+  "ui_19dc307e": {
+    "message": "Default",
+    "description": "Default"
+  },
+  "ui_45939473": {
+    "message": "Long",
+    "description": "Long"
+  },
+  "ui_cda1cf1f": {
+    "message": "Custom instructions",
+    "description": "Custom instructions"
+  },
+  "ui_c75093e": {
+    "message": "e.g. Focus on methodology and summarize key findings simply.",
+    "description": "e.g. Focus on methodology and summarize key findings simply."
+  },
+  "ui_1c96f10b": {
+    "message": "Explainer",
+    "description": "Explainer"
+  },
+  "ui_d3110b7c": {
+    "message": "Visual style",
+    "description": "Visual style"
+  },
+  "ui_76422ffa": {
+    "message": "Auto Select",
+    "description": "Auto Select"
+  },
+  "ui_9525b78e": {
+    "message": "Custom",
+    "description": "Custom"
+  },
+  "ui_7b47b1f3": {
+    "message": "Classic",
+    "description": "Classic"
+  },
+  "ui_29db3ade": {
+    "message": "Whiteboard",
+    "description": "Whiteboard"
+  },
+  "ui_642fd4b": {
+    "message": "Kawaii",
+    "description": "Kawaii"
+  },
+  "ui_3e234f0f": {
+    "message": "Anime",
+    "description": "Anime"
+  },
+  "ui_9f0aff47": {
+    "message": "Watercolor",
+    "description": "Watercolor"
+  },
+  "ui_1a272890": {
+    "message": "Retro Print",
+    "description": "Retro Print"
+  },
+  "ui_838b5730": {
+    "message": "Heritage",
+    "description": "Heritage"
+  },
+  "ui_4b4de48f": {
+    "message": "Paper Craft",
+    "description": "Paper Craft"
+  },
+  "ui_ecf7487f": {
+    "message": "e.g. Use a documentary style with emphasis on visuals.",
+    "description": "e.g. Use a documentary style with emphasis on visuals."
+  },
+  "ui_45bb4d7b": {
+    "message": "Custom visual style prompt",
+    "description": "Custom visual style prompt"
+  },
+  "ui_f1d64ff0": {
+    "message": "Used when Visual style is Custom.",
+    "description": "Used when Visual style is Custom."
+  },
+  "ui_4d9b6fff": {
+    "message": "Briefing Doc",
+    "description": "Briefing Doc"
+  },
+  "ui_82cda65a": {
+    "message": "Study Guide",
+    "description": "Study Guide"
+  },
+  "ui_540782c5": {
+    "message": "Blog Post",
+    "description": "Blog Post"
+  },
+  "ui_48d33564": {
+    "message": "Instructions",
+    "description": "Instructions"
+  },
+  "ui_28e8828a": {
+    "message": "(appended for built-in formats)",
+    "description": "(appended for built-in formats)"
+  },
+  "ui_89963e82": {
+    "message": "(required for Custom format)",
+    "description": "(required for Custom format)"
+  },
+  "ui_23b244d3": {
+    "message": "e.g. Write a clinical summary for non-specialist physicians.",
+    "description": "e.g. Write a clinical summary for non-specialist physicians."
+  },
+  "ui_2bf732f8": {
+    "message": "Quantity",
+    "description": "Quantity"
+  },
+  "ui_8bca10b2": {
+    "message": "Fewer",
+    "description": "Fewer"
+  },
+  "ui_16ab68": {
+    "message": "Standard",
+    "description": "Standard"
+  },
+  "ui_4f34d900": {
+    "message": "More",
+    "description": "More"
+  },
+  "ui_8520a210": {
+    "message": "Difficulty",
+    "description": "Difficulty"
+  },
+  "ui_6c33113b": {
+    "message": "Easy",
+    "description": "Easy"
+  },
+  "ui_9be5f96": {
+    "message": "Medium",
+    "description": "Medium"
+  },
+  "ui_64efa7fc": {
+    "message": "Hard",
+    "description": "Hard"
+  },
+  "ui_23c5022f": {
+    "message": "e.g. Focus on clinical reasoning for medical students.",
+    "description": "e.g. Focus on clinical reasoning for medical students."
+  },
+  "ui_a5dcb66a": {
+    "message": "e.g. Emphasize key terms and definitions.",
+    "description": "e.g. Emphasize key terms and definitions."
+  },
+  "ui_c551d9c1": {
+    "message": "Orientation",
+    "description": "Orientation"
+  },
+  "ui_2bfbe892": {
+    "message": "Landscape",
+    "description": "Landscape"
+  },
+  "ui_29092ffa": {
+    "message": "Portrait",
+    "description": "Portrait"
+  },
+  "ui_fac98c66": {
+    "message": "Square",
+    "description": "Square"
+  },
+  "ui_344473b4": {
+    "message": "Detail",
+    "description": "Detail"
+  },
+  "ui_ae1f484f": {
+    "message": "Concise",
+    "description": "Concise"
+  },
+  "ui_60e7b825": {
+    "message": "Detailed",
+    "description": "Detailed"
+  },
+  "ui_27129566": {
+    "message": "Layout preset",
+    "description": "Layout preset"
+  },
+  "ui_126befb6": {
+    "message": "Auto",
+    "description": "Auto"
+  },
+  "ui_4d7b957e": {
+    "message": "Editorial",
+    "description": "Editorial"
+  },
+  "ui_3953c530": {
+    "message": "Minimal",
+    "description": "Minimal"
+  },
+  "ui_6f955d7e": {
+    "message": "Data Dense",
+    "description": "Data Dense"
+  },
+  "ui_c7131496": {
+    "message": "Playful",
+    "description": "Playful"
+  },
+  "ui_772d3068": {
+    "message": "Technical",
+    "description": "Technical"
+  },
+  "ui_30d783f6": {
+    "message": "Timeline",
+    "description": "Timeline"
+  },
+  "ui_ed6bcd64": {
+    "message": "Comparison",
+    "description": "Comparison"
+  },
+  "ui_78f9b63c": {
+    "message": "Poster",
+    "description": "Poster"
+  },
+  "ui_4c4c7c4b": {
+    "message": "Sketch Note",
+    "description": "Sketch Note"
+  },
+  "ui_f838ade2": {
+    "message": "Professional",
+    "description": "Professional"
+  },
+  "ui_2f33ced9": {
+    "message": "Bento Grid",
+    "description": "Bento Grid"
+  },
+  "ui_d0a9d3e2": {
+    "message": "Instructional",
+    "description": "Instructional"
+  },
+  "ui_d0670c2b": {
+    "message": "Bricks",
+    "description": "Bricks"
+  },
+  "ui_ca5154a8": {
+    "message": "Clay",
+    "description": "Clay"
+  },
+  "ui_e2a4f948": {
+    "message": "Scientific",
+    "description": "Scientific"
+  },
+  "ui_872f8bff": {
+    "message": "e.g. Use a horizontal timeline layout with large icons.",
+    "description": "e.g. Use a horizontal timeline layout with large icons."
+  },
+  "ui_2b961f3b": {
+    "message": "Presenter",
+    "description": "Presenter"
+  },
+  "ui_d5672d4e": {
+    "message": "e.g. Design for a 15-minute conference presentation.",
+    "description": "e.g. Design for a 15-minute conference presentation."
+  },
+  "ui_ebce5073": {
+    "message": "e.g. Extract all numerical results into a comparison table.",
+    "description": "e.g. Extract all numerical results into a comparison table."
+  },
+  "ui_beebc079": {
+    "message": "✨ Experience",
+    "description": "✨ Experience"
+  },
+  "ui_4aa812c3": {
+    "message": "Desktop notifications",
+    "description": "Desktop notifications"
+  },
+  "ui_d13e25a7": {
+    "message": "Completion chime",
+    "description": "Completion chime"
+  },
+  "ui_5ef31b9a": {
+    "message": "Auto-open notebook when done",
+    "description": "Auto-open notebook when done"
+  },
+  "ui_f1435584": {
+    "message": "✓ Save Settings",
+    "description": "✓ Save Settings"
+  },
+  "ui_f835ea8d": {
+    "message": "Scanning page for PDFs...",
+    "description": "Scanning page for PDFs..."
+  },
+  "ui_837a3d6": {
+    "message": "Setup",
+    "description": "Setup"
+  },
+  "ui_f3ddb69": {
+    "message": "Add Source",
+    "description": "Add Source"
+  },
+  "ui_f0bfd7ef": {
+    "message": "Processing Source",
+    "description": "Processing Source"
+  },
+  "ui_1a359bf5": {
+    "message": "Generate Artifacts",
+    "description": "Generate Artifacts"
+  },
+  "ui_628ea1a2": {
+    "message": "Complete",
+    "description": "Complete"
+  },
+  "ui_74b6158": {
+    "message": "Previously selected collection",
+    "description": "Previously selected collection"
+  },
+  "ui_caa12099": {
+    "message": "Previously selected collection (unavailable)",
+    "description": "Previously selected collection (unavailable)"
+  },
+  "ui_9cd3026e": {
+    "message": "Previously selected collection (could not refresh)",
+    "description": "Previously selected collection (could not refresh)"
+  },
+  "ui_9fde4674": {
+    "message": "Loading collections...",
+    "description": "Loading collections..."
+  },
+  "ui_ad9295c6": {
+    "message": "Collections available: $1.",
+    "description": "Collections available: $1."
+  },
+  "ui_71b89b88": {
+    "message": "No collections found. Create one in Gemini Notebook first.",
+    "description": "No collections found. Create one in Gemini Notebook first."
+  },
+  "ui_3417b8bd": {
+    "message": "Could not load collections. Open Gemini Notebook and check your sign-in.",
+    "description": "Could not load collections. Open Gemini Notebook and check your sign-in."
+  },
+  "ui_46a25e8a": {
+    "message": "Detected Local PDF",
+    "description": "Detected Local PDF"
+  },
+  "ui_96195221": {
+    "message": "Detected PDF",
+    "description": "Detected PDF"
+  },
+  "ui_f142f1c5": {
+    "message": "Upload & Generate",
+    "description": "Upload & Generate"
+  },
+  "ui_b3573353": {
+    "message": "Choose Different PDF",
+    "description": "Choose Different PDF"
+  },
+  "ui_3fac81f6": {
+    "message": "🎧 Generate Artifacts",
+    "description": "🎧 Generate Artifacts"
+  },
+  "ui_c277b27a": {
+    "message": "No PDF detected on this page.",
+    "description": "No PDF detected on this page."
+  },
+  "ui_f9bbdfd0": {
+    "message": "You can still try importing this page URL directly.",
+    "description": "You can still try importing this page URL directly."
+  },
+  "ui_f544e784": {
+    "message": "Import Page & Generate",
+    "description": "Import Page & Generate"
+  },
+  "ui_c108fead": {
+    "message": "Upload Local PDF",
+    "description": "Upload Local PDF"
+  },
+  "ui_9388d923": {
+    "message": "This file isn't a valid PDF. Choose another file.",
+    "description": "This file isn't a valid PDF. Choose another file."
+  },
+  "ui_b06fbcc0": {
+    "message": "The result could not be confirmed. Check Gemini Notebook before starting again.",
+    "description": "The result could not be confirmed. Check Gemini Notebook before starting again."
+  },
+  "ui_97c517c8": {
+    "message": "This PDF exceeds the upload limit. Upload it directly in Gemini Notebook.",
+    "description": "This PDF exceeds the upload limit. Upload it directly in Gemini Notebook."
+  },
+  "ui_3f0f4b44": {
+    "message": "Sign in to Gemini Notebook, then reopen this popup.",
+    "description": "Sign in to Gemini Notebook, then reopen this popup."
+  },
+  "ui_e5c255ed": {
+    "message": "Gemini Notebook has reached a limit. Wait before starting more work.",
+    "description": "Gemini Notebook has reached a limit. Wait before starting more work."
+  },
+  "ui_1c310fdf": {
+    "message": "This workflow needs attention. Check the details before continuing.",
+    "description": "This workflow needs attention. Check the details before continuing."
+  },
+  "ui_ec24245": {
+    "message": "Details",
+    "description": "Details"
+  },
+  "ui_811b0256": {
+    "message": "Notebook title",
+    "description": "Notebook title"
+  },
+  "ui_d9259b7d": {
+    "message": "Added to $1",
+    "description": "Added to $1"
+  },
+  "ui_9cebccf3": {
+    "message": "Collection assignment failed.",
+    "description": "Collection assignment failed."
+  },
+  "ui_7fad8491": {
+    "message": "collection",
+    "description": "collection"
+  },
+  "ui_c4a69ed0": {
+    "message": "Open in Gemini Notebook",
+    "description": "Open in Gemini Notebook"
+  },
+  "ui_285dfd14": {
+    "message": "Source imported. No artifacts requested.",
+    "description": "Source imported. No artifacts requested."
+  },
+  "ui_e65751d2": {
+    "message": "$1/$2 artifacts ready ($3 failed).",
+    "description": "$1/$2 artifacts ready ($3 failed)."
+  },
+  "ui_f59ae8c5": {
+    "message": "Artifacts ready: $1!",
+    "description": "Artifacts ready: $1!"
+  },
+  "ui_1aadce96": {
+    "message": "Allow the download or choose a PDF to continue in this notebook.",
+    "description": "Allow the download or choose a PDF to continue in this notebook."
+  },
+  "ui_f5943c95": {
+    "message": "You can close this popup. Work continues.",
+    "description": "You can close this popup. Work continues."
+  },
+  "ui_26242fbd": {
+    "message": "Allow Download & Continue",
+    "description": "Allow Download & Continue"
+  },
+  "ui_dd6a9d74": {
+    "message": "Upload PDF Instead",
+    "description": "Upload PDF Instead"
+  },
+  "ui_9d9a1d5b": {
+    "message": "Download details",
+    "description": "Download details"
+  },
+  "ui_92de1569": {
+    "message": "Stop Monitoring",
+    "description": "Stop Monitoring"
+  },
+  "ui_59ba73c4": {
+    "message": "Stops this workflow. Work already started in Gemini Notebook may continue.",
+    "description": "Stops this workflow. Work already started in Gemini Notebook may continue."
+  },
+  "ui_a455e487": {
+    "message": "Start Over",
+    "description": "Start Over"
+  },
+  "ui_61e2a3f8": {
+    "message": "Source",
+    "description": "Source"
+  },
+  "ui_d87cff14": {
+    "message": "Source replacement",
+    "description": "Source replacement"
+  },
+  "ui_18b524fa": {
+    "message": "Upload fallback uses this notebook. The failed URL source is kept. Artifacts use the replacement PDF.",
+    "description": "Upload fallback uses this notebook. The failed URL source is kept. Artifacts use the replacement PDF."
+  },
+  "ui_79f5dd9e": {
+    "message": "Workflow details",
+    "description": "Workflow details"
+  },
+  "ui_6cac833d": {
+    "message": "Starting...",
+    "description": "Starting..."
+  },
+  "ui_25185cf8": {
+    "message": "⏳ Starting...",
+    "description": "⏳ Starting..."
+  },
+  "ui_dfcc9e32": {
+    "message": "Uploading...",
+    "description": "Uploading..."
+  },
+  "ui_1fb8851e": {
+    "message": "Reading current PDF...",
+    "description": "Reading current PDF..."
+  },
+  "ui_435bb9d2": {
+    "message": "Connecting to Gemini Notebook...",
+    "description": "Connecting to Gemini Notebook..."
+  },
+  "ui_8022dbaf": {
+    "message": "Creating notebook...",
+    "description": "Creating notebook..."
+  },
+  "ui_357652bd": {
+    "message": "Adding source...",
+    "description": "Adding source..."
+  },
+  "ui_d2697109": {
+    "message": "Downloading PDF...",
+    "description": "Downloading PDF..."
+  },
+  "ui_36e593a8": {
+    "message": "Uploading PDF...",
+    "description": "Uploading PDF..."
+  },
+  "ui_a5712967": {
+    "message": "Waiting for source processing. Checking about every 30 seconds.",
+    "description": "Waiting for source processing. Checking about every 30 seconds."
+  },
+  "ui_a31472dd": {
+    "message": "Requesting artifacts...",
+    "description": "Requesting artifacts..."
+  },
+  "ui_864fcfa3": {
+    "message": "Workflow complete.",
+    "description": "Workflow complete."
+  },
+  "ui_5549811c": {
+    "message": "Work in progress...",
+    "description": "Work in progress..."
+  },
+  "ui_70571b43": {
+    "message": "$1 of $2 artifacts ready.",
+    "description": "$1 of $2 artifacts ready."
+  },
+  "ui_cf65f42b": {
+    "message": "Gemini Notebook Ready!",
+    "description": "Gemini Notebook Ready!"
+  },
+  "ui_ed59a0d6": {
+    "message": "Open Notebook",
+    "description": "Open Notebook"
+  },
+  "ui_265915f3": {
+    "message": "Dismiss",
+    "description": "Dismiss"
+  },
+  "ui_10c52774": {
+    "message": "ScholarRelay Error",
+    "description": "ScholarRelay Error"
+  },
+  "ui_5a963259": {
+    "message": "Notebook $1 is ready. Source imported without artifacts. Click to open.",
+    "description": "Notebook $1 is ready. Source imported without artifacts. Click to open."
+  },
+  "ui_1290e46e": {
+    "message": "Notebook $1 is ready with $2 artifacts. Click to open.",
+    "description": "Notebook $1 is ready with $2 artifacts. Click to open."
+  },
+  "ui_67fd3b38": {
+    "message": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open.",
+    "description": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open."
   }
 }

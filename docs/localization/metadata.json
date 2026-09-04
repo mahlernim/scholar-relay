@@ -1,0 +1,9 @@
+{
+  "en": ["ScholarRelay - PDF Importer for Gemini Notebook", "Import PDFs, arXiv papers, and webpages into Gemini Notebook (NotebookLM). Generate audio overviews and study materials."],
+  "ko": ["ScholarRelay - Gemini Notebook PDF 가져오기", "PDF, arXiv 논문, 웹페이지를 Gemini Notebook(NotebookLM)으로 가져오고 AI 오디오 오버뷰와 학습 자료를 생성합니다."],
+  "ja": ["ScholarRelay - Gemini Notebook に PDF をインポート", "PDF、arXiv 論文、ウェブページを Gemini Notebook（NotebookLM）にインポートし、音声解説や学習資料を生成します。"],
+  "es": ["ScholarRelay - Importar PDF a Gemini Notebook", "Importa PDF, artículos de arXiv y páginas a Gemini Notebook (NotebookLM). Genera resúmenes de audio y materiales de estudio."],
+  "fr": ["ScholarRelay - Importer des PDF dans Gemini Notebook", "Importez PDF, articles arXiv et pages dans Gemini Notebook (NotebookLM). Créez des résumés audio et supports d’étude."],
+  "de": ["ScholarRelay - PDF-Import für Gemini Notebook", "PDFs, arXiv-Artikel und Webseiten in Gemini Notebook (NotebookLM) importieren. Audio-Zusammenfassungen und Lernmaterial erstellen."],
+  "pt_BR": ["ScholarRelay - Importar PDFs para Gemini Notebook", "Importe PDFs, artigos arXiv e páginas para o Gemini Notebook (NotebookLM). Crie Resumos em Áudio e materiais de estudo."]
+}

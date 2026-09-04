@@ -20,6 +20,7 @@
  * 7. Notify + chime on completion
  */
 
+import { t, errorSummary } from './i18n.js';
 import {
     fetchTokens,
     getNotebookUrl,
@@ -589,14 +590,11 @@ async function completePipeline(runId) {
     }
 
     const nbTitle = state.notebookTitle ? `"${state.notebookTitle}" ` : '';
-    const artifactLabel = allSucceeded
-        ? (completedCount === 1 ? '1 artifact' : `${completedCount} artifacts`)
-        : `${completedCount}/${totalCount} artifacts`;
     const notificationMessage = totalCount === 0
-        ? `Notebook ${nbTitle}is ready. Source imported without artifacts. Click to open.`
+        ? t('Notebook $1 is ready. Source imported without artifacts. Click to open.', [nbTitle.trim()])
         : allSucceeded
-        ? `Notebook ${nbTitle}is ready with ${artifactLabel}. Click to open.`
-        : `Notebook ${nbTitle}is partially ready with ${artifactLabel} (${failedCount} failed). Click to open.`;
+        ? t('Notebook $1 is ready with $2 artifacts. Click to open.', [nbTitle.trim(), completedCount])
+        : t('Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open.', [nbTitle.trim(), completedCount, totalCount, failedCount]);
 
     if (settings.notificationEnabled !== false) {
         const notificationId = `pipeline-complete:${runId}`;
@@ -605,13 +603,13 @@ async function completePipeline(runId) {
         chrome.notifications.create(notificationId, {
             type: 'basic',
             iconUrl: 'icons/icon128.png',
-            title: `\uD83C\uDFD9 Gemini Notebook Ready!`,
+            title: t('Gemini Notebook Ready!'),
             message: notificationMessage,
             priority: 2,
             requireInteraction: true,
             buttons: [
-                { title: '\uD83D\uDCD3 Open Notebook' },
-                { title: 'Dismiss' },
+                { title: t('Open Notebook') },
+                { title: t('Dismiss') },
             ],
         });
     }
@@ -657,8 +655,8 @@ async function failPipeline(runId, errorMsg, notebookId = null, canDeleteBlankNo
         chrome.notifications.create(`pipeline-error:${runId}`, {
             type: 'basic',
             iconUrl: 'icons/icon128.png',
-            title: 'ScholarRelay Error',
-            message: finalError.substring(0, 140) || 'Unknown error',
+            title: t('ScholarRelay Error'),
+            message: errorSummary(finalError),
             priority: 2,
         });
     }

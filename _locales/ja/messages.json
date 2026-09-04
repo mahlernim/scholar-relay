@@ -1,0 +1,796 @@
+{
+  "extensionName": {
+    "message": "ScholarRelay - Gemini Notebook に PDF をインポート"
+  },
+  "extensionDescription": {
+    "message": "PDF、arXiv 論文、ウェブページを Gemini Notebook（NotebookLM）にインポートし、音声解説や学習資料を生成します。"
+  },
+  "ui_bca3294": {
+    "message": "完了",
+    "description": "Ready"
+  },
+  "ui_5579c3d4": {
+    "message": "失敗",
+    "description": "Failed"
+  },
+  "ui_71fcc075": {
+    "message": "生成中",
+    "description": "Generating"
+  },
+  "ui_c9450e48": {
+    "message": "待機中",
+    "description": "Waiting"
+  },
+  "ui_ce74e943": {
+    "message": "アーティファクト",
+    "description": "Artifact"
+  },
+  "ui_85cc8e29": {
+    "message": "経過時間 $1 分。",
+    "description": "Elapsed time: $1 min."
+  },
+  "ui_5495106b": {
+    "message": "開始前に設定でアーティファクトを1つ以上選んでください。",
+    "description": "Choose at least one artifact in Settings before starting."
+  },
+  "ui_af966070": {
+    "message": "処理がすでに進行中です。新しく始める前に進行状況を確認してください。",
+    "description": "A workflow is already active. Check its progress before starting another."
+  },
+  "ui_74a7ea81": {
+    "message": "Chrome の拡張機能設定でファイルの URL へのアクセスを許可するか、ローカル PDF のアップロードを選んでください。",
+    "description": "Enable Allow access to file URLs in Chrome extension settings, or choose Upload Local PDF."
+  },
+  "ui_a788ccba": {
+    "message": "直接 PDF",
+    "description": "Direct PDF"
+  },
+  "ui_8212a19a": {
+    "message": "PDF ドキュメント",
+    "description": "PDF document"
+  },
+  "ui_86fe33ed": {
+    "message": "出版社の PDF",
+    "description": "Publisher PDF"
+  },
+  "ui_fd7e7e2b": {
+    "message": "論文の PDF",
+    "description": "Article PDF"
+  },
+  "ui_9a142465": {
+    "message": "埋め込み PDF ビューア",
+    "description": "Embedded PDF viewer"
+  },
+  "ui_be4342c0": {
+    "message": "arXiv の概要ページ",
+    "description": "arXiv abstract page"
+  },
+  "ui_1ae2ab63": {
+    "message": "arXiv PDF",
+    "description": "arXiv PDF"
+  },
+  "ui_5a02480d": {
+    "message": "arXiv PDF リンク",
+    "description": "arXiv PDF link"
+  },
+  "ui_fbb8c667": {
+    "message": "ページ内の PDF リンク",
+    "description": "PDF link on page"
+  },
+  "ui_747f5a5f": {
+    "message": "直接 PDF URL",
+    "description": "Direct PDF URL"
+  },
+  "ui_e4668cae": {
+    "message": "ローカルファイル",
+    "description": "Local file"
+  },
+  "ui_102eb56b": {
+    "message": "論文を Gemini Notebook に送信",
+    "description": "Send papers to Gemini Notebook"
+  },
+  "ui_4b058728": {
+    "message": "設定",
+    "description": "Settings"
+  },
+  "ui_b62eeb9e": {
+    "message": "⚙️ 設定",
+    "description": "⚙️ Settings"
+  },
+  "ui_546c8007": {
+    "message": "⚠️ アーティファクトを1つ以上選択してください",
+    "description": "⚠️ Choose at least one artifact"
+  },
+  "ui_fd3f8fe8": {
+    "message": "📓 ノートブック設定",
+    "description": "📓 Notebook Settings"
+  },
+  "ui_e0ab2da5": {
+    "message": "新しいノートブックの追加先",
+    "description": "Add new notebooks to"
+  },
+  "ui_7ed65126": {
+    "message": "コレクションなし",
+    "description": "No collection"
+  },
+  "ui_5cdf8229": {
+    "message": "コレクションを更新",
+    "description": "Refresh collections"
+  },
+  "ui_655bdb8c": {
+    "message": "ログイン中の Gemini Notebook アカウントからコレクションを読み込みます。",
+    "description": "Collections load from your signed-in Gemini Notebook account."
+  },
+  "ui_2775c98c": {
+    "message": "論文タイトルをノートブック名に使用",
+    "description": "Use paper title for notebook"
+  },
+  "ui_23c94c30": {
+    "message": "オフの場合やタイトルが見つからない場合は Gemini Notebook が名前を付けます。",
+    "description": "If off or no title is found, Gemini Notebook names it."
+  },
+  "ui_e46cfd94": {
+    "message": "🎨 アーティファクト設定",
+    "description": "🎨 Artifact Settings"
+  },
+  "ui_68dc958f": {
+    "message": "アーティファクトの言語",
+    "description": "Artifact language"
+  },
+  "ui_1b9ae0bb": {
+    "message": "英語",
+    "description": "English"
+  },
+  "ui_ad70bf21": {
+    "message": "韓国語",
+    "description": "Korean"
+  },
+  "ui_940c2e0a": {
+    "message": "日本語",
+    "description": "Japanese"
+  },
+  "ui_b819825b": {
+    "message": "スペイン語",
+    "description": "Spanish"
+  },
+  "ui_7cbd6ca5": {
+    "message": "フランス語",
+    "description": "French"
+  },
+  "ui_11100833": {
+    "message": "ドイツ語",
+    "description": "German"
+  },
+  "ui_e6d67d5c": {
+    "message": "ポルトガル語",
+    "description": "Portuguese"
+  },
+  "ui_5ecc8eb6": {
+    "message": "音声、動画、レポート、インフォグラフィック、スライド資料、データテーブルに適用します。",
+    "description": "Applies to audio, video, reports, infographics, slide decks, and data tables."
+  },
+  "ui_b7a1a59b": {
+    "message": "画面の言語は Chrome の設定に従い、アーティファクトの言語とは別です。",
+    "description": "The interface follows Chrome's language. Artifact language is independent."
+  },
+  "ui_63435037": {
+    "message": "🎧 音声解説",
+    "description": "🎧 Audio Overview"
+  },
+  "ui_5e4b9b33": {
+    "message": "🎬 動画解説",
+    "description": "🎬 Video Overview"
+  },
+  "ui_1c876167": {
+    "message": "📄 レポート",
+    "description": "📄 Report"
+  },
+  "ui_a742b583": {
+    "message": "❓ クイズ",
+    "description": "❓ Quiz"
+  },
+  "ui_13be9b37": {
+    "message": "🃏 フラッシュカード",
+    "description": "🃏 Flashcards"
+  },
+  "ui_853abe6f": {
+    "message": "🖼 インフォグラフィック",
+    "description": "🖼 Infographic"
+  },
+  "ui_871b8541": {
+    "message": "📊 スライド資料",
+    "description": "📊 Slide Deck"
+  },
+  "ui_768c9843": {
+    "message": "🧠 マインドマップ",
+    "description": "🧠 Mind Map"
+  },
+  "ui_c1a0dcce": {
+    "message": "📋 データテーブル",
+    "description": "📋 Data Table"
+  },
+  "ui_ffb0ff72": {
+    "message": "形式",
+    "description": "Format"
+  },
+  "ui_fff5af1f": {
+    "message": "詳細",
+    "description": "Deep Dive"
+  },
+  "ui_b3c47c3f": {
+    "message": "概要",
+    "description": "Brief"
+  },
+  "ui_78edea29": {
+    "message": "批評",
+    "description": "Critique"
+  },
+  "ui_61a5d5c0": {
+    "message": "議論",
+    "description": "Debate"
+  },
+  "ui_cc5e1935": {
+    "message": "長さ",
+    "description": "Length"
+  },
+  "ui_5fdddd75": {
+    "message": "短め",
+    "description": "Short"
+  },
+  "ui_19dc307e": {
+    "message": "デフォルト",
+    "description": "Default"
+  },
+  "ui_45939473": {
+    "message": "長め",
+    "description": "Long"
+  },
+  "ui_cda1cf1f": {
+    "message": "カスタム指示",
+    "description": "Custom instructions"
+  },
+  "ui_c75093e": {
+    "message": "例：研究方法を中心に、主な結果を簡潔にまとめてください。",
+    "description": "e.g. Focus on methodology and summarize key findings simply."
+  },
+  "ui_1c96f10b": {
+    "message": "解説",
+    "description": "Explainer"
+  },
+  "ui_d3110b7c": {
+    "message": "ビジュアル スタイル",
+    "description": "Visual style"
+  },
+  "ui_76422ffa": {
+    "message": "自動選択",
+    "description": "Auto Select"
+  },
+  "ui_9525b78e": {
+    "message": "カスタム",
+    "description": "Custom"
+  },
+  "ui_7b47b1f3": {
+    "message": "クラシック",
+    "description": "Classic"
+  },
+  "ui_29db3ade": {
+    "message": "ホワイトボード",
+    "description": "Whiteboard"
+  },
+  "ui_642fd4b": {
+    "message": "カワイイ",
+    "description": "Kawaii"
+  },
+  "ui_3e234f0f": {
+    "message": "アニメ",
+    "description": "Anime"
+  },
+  "ui_9f0aff47": {
+    "message": "水彩画",
+    "description": "Watercolor"
+  },
+  "ui_1a272890": {
+    "message": "レトロプリント",
+    "description": "Retro Print"
+  },
+  "ui_838b5730": {
+    "message": "ヘリテージ",
+    "description": "Heritage"
+  },
+  "ui_4b4de48f": {
+    "message": "ペーパークラフト",
+    "description": "Paper Craft"
+  },
+  "ui_ecf7487f": {
+    "message": "例：映像を重視したドキュメンタリー形式にしてください。",
+    "description": "e.g. Use a documentary style with emphasis on visuals."
+  },
+  "ui_45bb4d7b": {
+    "message": "カスタムスタイルのプロンプト",
+    "description": "Custom visual style prompt"
+  },
+  "ui_f1d64ff0": {
+    "message": "ビジュアル スタイルがカスタムの場合に使用します。",
+    "description": "Used when Visual style is Custom."
+  },
+  "ui_4d9b6fff": {
+    "message": "ブリーフィング ドキュメント",
+    "description": "Briefing Doc"
+  },
+  "ui_82cda65a": {
+    "message": "学習ガイド",
+    "description": "Study Guide"
+  },
+  "ui_540782c5": {
+    "message": "ブログ投稿",
+    "description": "Blog Post"
+  },
+  "ui_48d33564": {
+    "message": "指示",
+    "description": "Instructions"
+  },
+  "ui_28e8828a": {
+    "message": "（組み込み形式に追加）",
+    "description": "(appended for built-in formats)"
+  },
+  "ui_89963e82": {
+    "message": "（カスタム形式では必須）",
+    "description": "(required for Custom format)"
+  },
+  "ui_23b244d3": {
+    "message": "例：専門外の医師向けに臨床概要を作成してください。",
+    "description": "e.g. Write a clinical summary for non-specialist physicians."
+  },
+  "ui_2bf732f8": {
+    "message": "数",
+    "description": "Quantity"
+  },
+  "ui_8bca10b2": {
+    "message": "少なめ",
+    "description": "Fewer"
+  },
+  "ui_16ab68": {
+    "message": "標準",
+    "description": "Standard"
+  },
+  "ui_4f34d900": {
+    "message": "多め",
+    "description": "More"
+  },
+  "ui_8520a210": {
+    "message": "難易度",
+    "description": "Difficulty"
+  },
+  "ui_6c33113b": {
+    "message": "初級",
+    "description": "Easy"
+  },
+  "ui_9be5f96": {
+    "message": "中級",
+    "description": "Medium"
+  },
+  "ui_64efa7fc": {
+    "message": "上級",
+    "description": "Hard"
+  },
+  "ui_23c5022f": {
+    "message": "例：医学生向けの臨床推論を中心にしてください。",
+    "description": "e.g. Focus on clinical reasoning for medical students."
+  },
+  "ui_a5dcb66a": {
+    "message": "例：重要な用語と定義を重視してください。",
+    "description": "e.g. Emphasize key terms and definitions."
+  },
+  "ui_c551d9c1": {
+    "message": "向き",
+    "description": "Orientation"
+  },
+  "ui_2bfbe892": {
+    "message": "横向き",
+    "description": "Landscape"
+  },
+  "ui_29092ffa": {
+    "message": "縦向き",
+    "description": "Portrait"
+  },
+  "ui_fac98c66": {
+    "message": "正方形",
+    "description": "Square"
+  },
+  "ui_344473b4": {
+    "message": "詳しさ",
+    "description": "Detail"
+  },
+  "ui_ae1f484f": {
+    "message": "簡潔",
+    "description": "Concise"
+  },
+  "ui_60e7b825": {
+    "message": "詳細",
+    "description": "Detailed"
+  },
+  "ui_27129566": {
+    "message": "レイアウトプリセット",
+    "description": "Layout preset"
+  },
+  "ui_126befb6": {
+    "message": "自動",
+    "description": "Auto"
+  },
+  "ui_4d7b957e": {
+    "message": "エディトリアル",
+    "description": "Editorial"
+  },
+  "ui_3953c530": {
+    "message": "ミニマル",
+    "description": "Minimal"
+  },
+  "ui_6f955d7e": {
+    "message": "データ重視",
+    "description": "Data Dense"
+  },
+  "ui_c7131496": {
+    "message": "遊び心",
+    "description": "Playful"
+  },
+  "ui_772d3068": {
+    "message": "技術的",
+    "description": "Technical"
+  },
+  "ui_30d783f6": {
+    "message": "タイムライン",
+    "description": "Timeline"
+  },
+  "ui_ed6bcd64": {
+    "message": "比較",
+    "description": "Comparison"
+  },
+  "ui_78f9b63c": {
+    "message": "ポスター",
+    "description": "Poster"
+  },
+  "ui_4c4c7c4b": {
+    "message": "スケッチノート",
+    "description": "Sketch Note"
+  },
+  "ui_f838ade2": {
+    "message": "プロフェッショナル",
+    "description": "Professional"
+  },
+  "ui_2f33ced9": {
+    "message": "弁当グリッド",
+    "description": "Bento Grid"
+  },
+  "ui_d0a9d3e2": {
+    "message": "説明用",
+    "description": "Instructional"
+  },
+  "ui_d0670c2b": {
+    "message": "ブロック",
+    "description": "Bricks"
+  },
+  "ui_ca5154a8": {
+    "message": "粘土",
+    "description": "Clay"
+  },
+  "ui_e2a4f948": {
+    "message": "科学的",
+    "description": "Scientific"
+  },
+  "ui_872f8bff": {
+    "message": "例：大きなアイコン付きの横向きタイムラインにしてください。",
+    "description": "e.g. Use a horizontal timeline layout with large icons."
+  },
+  "ui_2b961f3b": {
+    "message": "プレゼンター用",
+    "description": "Presenter"
+  },
+  "ui_d5672d4e": {
+    "message": "例：15分間の学会発表向けに構成してください。",
+    "description": "e.g. Design for a 15-minute conference presentation."
+  },
+  "ui_ebce5073": {
+    "message": "例：すべての数値結果を比較表にまとめてください。",
+    "description": "e.g. Extract all numerical results into a comparison table."
+  },
+  "ui_beebc079": {
+    "message": "✨ 使い勝手",
+    "description": "✨ Experience"
+  },
+  "ui_4aa812c3": {
+    "message": "デスクトップ通知",
+    "description": "Desktop notifications"
+  },
+  "ui_d13e25a7": {
+    "message": "完了音",
+    "description": "Completion chime"
+  },
+  "ui_5ef31b9a": {
+    "message": "完了時にノートブックを自動で開く",
+    "description": "Auto-open notebook when done"
+  },
+  "ui_f1435584": {
+    "message": "✓ 設定を保存",
+    "description": "✓ Save Settings"
+  },
+  "ui_f835ea8d": {
+    "message": "ページ内の PDF を確認中...",
+    "description": "Scanning page for PDFs..."
+  },
+  "ui_837a3d6": {
+    "message": "準備",
+    "description": "Setup"
+  },
+  "ui_f3ddb69": {
+    "message": "ソースを追加",
+    "description": "Add Source"
+  },
+  "ui_f0bfd7ef": {
+    "message": "ソースを処理",
+    "description": "Processing Source"
+  },
+  "ui_1a359bf5": {
+    "message": "アーティファクトを生成",
+    "description": "Generate Artifacts"
+  },
+  "ui_628ea1a2": {
+    "message": "完了",
+    "description": "Complete"
+  },
+  "ui_74b6158": {
+    "message": "前回選択したコレクション",
+    "description": "Previously selected collection"
+  },
+  "ui_caa12099": {
+    "message": "前回のコレクション（利用不可）",
+    "description": "Previously selected collection (unavailable)"
+  },
+  "ui_9cd3026e": {
+    "message": "前回のコレクション（更新失敗）",
+    "description": "Previously selected collection (could not refresh)"
+  },
+  "ui_9fde4674": {
+    "message": "コレクションを読み込み中...",
+    "description": "Loading collections..."
+  },
+  "ui_ad9295c6": {
+    "message": "利用可能なコレクションは $1 件です。",
+    "description": "Collections available: $1."
+  },
+  "ui_71b89b88": {
+    "message": "コレクションがありません。先に Gemini Notebook で作成してください。",
+    "description": "No collections found. Create one in Gemini Notebook first."
+  },
+  "ui_3417b8bd": {
+    "message": "コレクションを読み込めません。Gemini Notebook でログイン状態を確認してください。",
+    "description": "Could not load collections. Open Gemini Notebook and check your sign-in."
+  },
+  "ui_46a25e8a": {
+    "message": "ローカル PDF を検出",
+    "description": "Detected Local PDF"
+  },
+  "ui_96195221": {
+    "message": "PDF を検出",
+    "description": "Detected PDF"
+  },
+  "ui_f142f1c5": {
+    "message": "アップロードして生成",
+    "description": "Upload & Generate"
+  },
+  "ui_b3573353": {
+    "message": "別の PDF を選択",
+    "description": "Choose Different PDF"
+  },
+  "ui_3fac81f6": {
+    "message": "🎧 アーティファクトを生成",
+    "description": "🎧 Generate Artifacts"
+  },
+  "ui_c277b27a": {
+    "message": "このページに PDF が見つかりません。",
+    "description": "No PDF detected on this page."
+  },
+  "ui_f9bbdfd0": {
+    "message": "このページの URL を直接インポートできます。",
+    "description": "You can still try importing this page URL directly."
+  },
+  "ui_f544e784": {
+    "message": "ページをインポートして生成",
+    "description": "Import Page & Generate"
+  },
+  "ui_c108fead": {
+    "message": "ローカル PDF をアップロード",
+    "description": "Upload Local PDF"
+  },
+  "ui_9388d923": {
+    "message": "有効な PDF ではありません。別のファイルを選んでください。",
+    "description": "This file isn't a valid PDF. Choose another file."
+  },
+  "ui_b06fbcc0": {
+    "message": "結果を確認できませんでした。再実行する前に Gemini Notebook を確認してください。",
+    "description": "The result could not be confirmed. Check Gemini Notebook before starting again."
+  },
+  "ui_97c517c8": {
+    "message": "アップロード上限を超えています。Gemini Notebook で直接アップロードしてください。",
+    "description": "This PDF exceeds the upload limit. Upload it directly in Gemini Notebook."
+  },
+  "ui_3f0f4b44": {
+    "message": "Gemini Notebook にログインしてから、このポップアップを開き直してください。",
+    "description": "Sign in to Gemini Notebook, then reopen this popup."
+  },
+  "ui_e5c255ed": {
+    "message": "Gemini Notebook の上限に達しました。時間を置いてから再開してください。",
+    "description": "Gemini Notebook has reached a limit. Wait before starting more work."
+  },
+  "ui_1c310fdf": {
+    "message": "この処理の確認が必要です。続行前に詳細を確認してください。",
+    "description": "This workflow needs attention. Check the details before continuing."
+  },
+  "ui_ec24245": {
+    "message": "詳細",
+    "description": "Details"
+  },
+  "ui_811b0256": {
+    "message": "ノートブックのタイトル",
+    "description": "Notebook title"
+  },
+  "ui_d9259b7d": {
+    "message": "$1 に追加しました",
+    "description": "Added to $1"
+  },
+  "ui_9cebccf3": {
+    "message": "コレクションへの追加に失敗しました。",
+    "description": "Collection assignment failed."
+  },
+  "ui_7fad8491": {
+    "message": "コレクション",
+    "description": "collection"
+  },
+  "ui_c4a69ed0": {
+    "message": "Gemini Notebook で開く",
+    "description": "Open in Gemini Notebook"
+  },
+  "ui_285dfd14": {
+    "message": "ソースをインポートしました。アーティファクトのリクエストはありません。",
+    "description": "Source imported. No artifacts requested."
+  },
+  "ui_e65751d2": {
+    "message": "アーティファクト $1/$2 件完了（$3 件失敗）。",
+    "description": "$1/$2 artifacts ready ($3 failed)."
+  },
+  "ui_f59ae8c5": {
+    "message": "アーティファクト $1 件完了！",
+    "description": "Artifacts ready: $1!"
+  },
+  "ui_1aadce96": {
+    "message": "このノートブックで続けるにはダウンロードを許可するか PDF を選んでください。",
+    "description": "Allow the download or choose a PDF to continue in this notebook."
+  },
+  "ui_f5943c95": {
+    "message": "このポップアップを閉じても処理は続きます。",
+    "description": "You can close this popup. Work continues."
+  },
+  "ui_26242fbd": {
+    "message": "ダウンロードを許可して続行",
+    "description": "Allow Download & Continue"
+  },
+  "ui_dd6a9d74": {
+    "message": "代わりに PDF をアップロード",
+    "description": "Upload PDF Instead"
+  },
+  "ui_9d9a1d5b": {
+    "message": "ダウンロードの詳細",
+    "description": "Download details"
+  },
+  "ui_92de1569": {
+    "message": "モニタリングを停止",
+    "description": "Stop Monitoring"
+  },
+  "ui_59ba73c4": {
+    "message": "この処理を停止します。Gemini Notebook で開始済みの作業は続く場合があります。",
+    "description": "Stops this workflow. Work already started in Gemini Notebook may continue."
+  },
+  "ui_a455e487": {
+    "message": "最初から",
+    "description": "Start Over"
+  },
+  "ui_61e2a3f8": {
+    "message": "ソース",
+    "description": "Source"
+  },
+  "ui_d87cff14": {
+    "message": "ソースの差し替え",
+    "description": "Source replacement"
+  },
+  "ui_18b524fa": {
+    "message": "代替 PDF はこのノートブックにアップロードされます。失敗した URL ソースは残り、生成には代替 PDF を使います。",
+    "description": "Upload fallback uses this notebook. The failed URL source is kept. Artifacts use the replacement PDF."
+  },
+  "ui_79f5dd9e": {
+    "message": "処理の詳細",
+    "description": "Workflow details"
+  },
+  "ui_6cac833d": {
+    "message": "開始中...",
+    "description": "Starting..."
+  },
+  "ui_25185cf8": {
+    "message": "⏳ 開始中...",
+    "description": "⏳ Starting..."
+  },
+  "ui_dfcc9e32": {
+    "message": "アップロード中...",
+    "description": "Uploading..."
+  },
+  "ui_1fb8851e": {
+    "message": "現在の PDF を読み込み中...",
+    "description": "Reading current PDF..."
+  },
+  "ui_435bb9d2": {
+    "message": "Gemini Notebook に接続中...",
+    "description": "Connecting to Gemini Notebook..."
+  },
+  "ui_8022dbaf": {
+    "message": "ノートブックを作成中...",
+    "description": "Creating notebook..."
+  },
+  "ui_357652bd": {
+    "message": "ソースを追加中...",
+    "description": "Adding source..."
+  },
+  "ui_d2697109": {
+    "message": "PDF をダウンロード中...",
+    "description": "Downloading PDF..."
+  },
+  "ui_36e593a8": {
+    "message": "PDF をアップロード中...",
+    "description": "Uploading PDF..."
+  },
+  "ui_a5712967": {
+    "message": "ソースの処理を待機中。約30秒ごとに確認します。",
+    "description": "Waiting for source processing. Checking about every 30 seconds."
+  },
+  "ui_a31472dd": {
+    "message": "アーティファクトをリクエスト中...",
+    "description": "Requesting artifacts..."
+  },
+  "ui_864fcfa3": {
+    "message": "処理が完了しました。",
+    "description": "Workflow complete."
+  },
+  "ui_5549811c": {
+    "message": "処理中...",
+    "description": "Work in progress..."
+  },
+  "ui_70571b43": {
+    "message": "アーティファクト $2 件中 $1 件完了。",
+    "description": "$1 of $2 artifacts ready."
+  },
+  "ui_cf65f42b": {
+    "message": "Gemini Notebook の準備完了！",
+    "description": "Gemini Notebook Ready!"
+  },
+  "ui_ed59a0d6": {
+    "message": "ノートブックを開く",
+    "description": "Open Notebook"
+  },
+  "ui_265915f3": {
+    "message": "閉じる",
+    "description": "Dismiss"
+  },
+  "ui_10c52774": {
+    "message": "ScholarRelay エラー",
+    "description": "ScholarRelay Error"
+  },
+  "ui_5a963259": {
+    "message": "ノートブック $1 の準備完了。ソースのみインポートしました。クリックして開きます。",
+    "description": "Notebook $1 is ready. Source imported without artifacts. Click to open."
+  },
+  "ui_1290e46e": {
+    "message": "ノートブック $1 のアーティファクト $2 件が完了しました。クリックして開きます。",
+    "description": "Notebook $1 is ready with $2 artifacts. Click to open."
+  },
+  "ui_67fd3b38": {
+    "message": "ノートブック $1 は一部完了。$2/$3 件完了、$4 件失敗。クリックして開きます。",
+    "description": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open."
+  }
+}
