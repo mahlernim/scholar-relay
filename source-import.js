@@ -25,7 +25,7 @@ export function createPdfFallback({ getState, transition, download, upload, poll
       step: 'download_pdf',
       fallbackAttempted: true,
       failedUrlSourceId: state.sourceId || null,
-      stepDetail: file ? 'Preparing the selected PDF...' : 'URL import failed. Downloading the PDF for upload...',
+      stepDetail: file ? 'Preparing the selected PDF...' : 'URL import failed. Downloading the PDF for this notebook...',
     }, {
       expectedSteps: steps,
       condition: current => resume
@@ -37,7 +37,7 @@ export function createPdfFallback({ getState, transition, download, upload, poll
       const payload = file || await download(state.originalPdfUrl, state.pageUrl);
       const uploading = await transition(runId, {
         step: 'upload_pdf', fallbackUploadStarted: true,
-        stepDetail: 'Uploading the replacement PDF. Any failed URL source is retained.',
+        stepDetail: 'Uploading the PDF into the same notebook. The failed URL source is kept.',
       }, { expectedSteps: ['download_pdf'] });
       if (!uploading) return false;
       const source = await upload(state.notebookId, payload);

@@ -299,8 +299,31 @@ try {
   const errorText = 'Smoke test visible pipeline error';
   await evaluate(popup, `chrome.storage.local.set({pipelineState:{status:'error',runId:'smoke',step:'error',stepDetail:${JSON.stringify(errorText)},error:${JSON.stringify(errorText)},pdfUrl:'smoke.pdf',tasks:[]}})`);
   await reload(popup);
-  view = await evaluate(popup, `document.querySelector('.pipeline-error-box')?.innerText`);
-  assert(view === errorText, 'Pipeline error was not visibly rendered');
+  view = await evaluate(popup, `({summary:document.querySelector('.pipeline-error-box')?.innerText,details:document.querySelector('.workflow-details')?.textContent,collapsed:!document.querySelector('.workflow-details')?.open})`);
+  assert(view.summary && view.details.includes(errorText) && view.collapsed, 'Error summary and collapsed diagnostics were not preserved');
+  await evaluate(popup, `document.querySelector('.workflow-details').open=true`);
+  assert((await evaluate(popup, `document.getElementById('content').innerText`)).includes(errorText), 'Expanded error diagnostics are inaccessible');
+
+  await evaluate(popup, `document.getElementById('btn-gear').click()`);
+  await delay(150);
+  await evaluate(popup, `document.getElementById('s-generateAudio').checked=false;document.getElementById('sec-audio').classList.remove('expanded');document.getElementById('s-language').value='ko';document.getElementById('btn-save-close').click()`);
+  await delay(150);
+  await reload(popup);
+  await evaluate(popup, `document.getElementById('btn-gear').click()`);
+  view = await evaluate(popup, `({language:document.getElementById('s-language').value,audio:document.getElementById('s-generateAudio').checked,shared:!document.getElementById('s-language').closest('#sec-audio'),visible:document.getElementById('s-language').getBoundingClientRect().height>0})`);
+  assert(view.language==='ko' && !view.audio && view.shared && view.visible, 'Shared language is not accessible and persistent with Audio disabled');
+  await evaluate(popup, `document.getElementById('btn-gear').click()`);
+
+  await popup.call('Emulation.setDeviceMetricsOverride', { width: 360, height: 600, deviceScaleFactor: 1, mobile: false });
+  for (const step of ['wait_source','wait_pdf_access']) {
+    await evaluate(popup, `chrome.storage.local.set({pipelineState:{status:'running',runId:'ui-state',step:${JSON.stringify(step)},stepDetail:'Permission diagnostic',pdfUrl:'paper.pdf',originalPdfUrl:'${origin}/paper.pdf',notebookUrl:'${origin}/notebook/smoke',failedUrlSourceId:'failed-source',tasks:[]}})`);
+    await reload(popup);
+    view = await evaluate(popup, `({text:document.getElementById('content').innerText,resume:!!document.getElementById('btn-resume-pdf'),file:!!document.getElementById('btn-fallback-file'),stop:!!document.getElementById('btn-abort'),width:document.documentElement.scrollWidth})`);
+    assert(view.stop && view.width<=360, 'Running popup lacks stop control or clips horizontally');
+    assert(!view.text.includes('failed-source'), 'Internal source ID leaked into primary wording');
+    assert(step==='wait_pdf_access' ? view.resume && view.file && !view.text.includes('Work continues.') : view.text.includes('Work continues.'), 'Permission wait incorrectly presents background progress');
+  }
+
 
   await evaluate(popup, `chrome.storage.local.set({pipelineState:{status:'running',runId:'existing-run',step:'auth',stepDetail:'Busy',pdfUrl:'busy.pdf',tasks:[]}})`);
   const busyResponse = await evaluate(popup, `chrome.runtime.sendMessage({type:'START_PIPELINE',pdfUrl:${JSON.stringify(`${origin}/plain`)},pageUrl:${JSON.stringify(`${origin}/plain`)},sourceType:'webpage'})`);

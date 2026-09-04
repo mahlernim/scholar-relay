@@ -149,7 +149,7 @@ async function refreshCollections() {
         const response = await chrome.runtime.sendMessage({ type: 'LIST_COLLECTIONS' });
         if (!response?.ok) throw new Error(response?.message || 'Could not load collections');
 
-        select.replaceChildren(new Option('Do not add to a collection', ''));
+        select.replaceChildren(new Option('No collection', ''));
         for (const collection of response.collections || []) {
             const emoji = collection.emoji ? `${collection.emoji} ` : '';
             const count = Array.isArray(collection.notebookIds) ? collection.notebookIds.length : 0;
@@ -167,7 +167,7 @@ async function refreshCollections() {
                 : 'No collections found. Create one in Gemini Notebook first.';
         }
     } catch (error) {
-        select.replaceChildren(new Option('Do not add to a collection', ''));
+        select.replaceChildren(new Option('No collection', ''));
         if (selectedId) {
             select.add(new Option('Previously selected collection (could not refresh)', selectedId));
             select.value = selectedId;
@@ -386,7 +386,7 @@ function renderDetection(data) {
     const truncated = data.pdfUrl.length > 80 ? data.pdfUrl.substring(0, 77) + '...' : data.pdfUrl;
     const sourceLabel = {
         direct_pdf_url: 'Direct PDF', pdf_content_type: 'PDF document',
-        citation_pdf_url: 'Publisher PDF metadata', pdf_link: 'Article PDF link', embedded_pdf: 'Embedded PDF viewer',
+        citation_pdf_url: 'Publisher PDF', pdf_link: 'Article PDF', embedded_pdf: 'Embedded PDF viewer',
         arxiv_abstract: 'arXiv abstract page', arxiv_pdf: 'arXiv PDF',
         arxiv_link: 'arXiv PDF link', page_link: 'PDF link on page',
         direct_url: 'Direct PDF URL', local_file: 'Local file',
@@ -401,7 +401,7 @@ function renderDetection(data) {
       <div class="pdf-url">${escapeHtml(truncated)}</div>
       <div class="pdf-source">via ${escapeHtml(sourceLabel)}</div>
     </div>
-    <button class="btn-generate" id="btn-upload-start">Use Current PDF and Generate</button>
+    <button class="btn-generate" id="btn-upload-start">Upload & Generate</button>
     <button class="btn-secondary" id="btn-upload-other">Choose Different PDF</button>`;
         document.getElementById('btn-upload-start').addEventListener('click', () => startPipelineFromCurrentTabPdf(data.pageUrl || data.pdfUrl));
         document.getElementById('btn-upload-other').addEventListener('click', () => promptForPdfUpload(data.pageUrl || data.pdfUrl));
@@ -417,7 +417,7 @@ function renderDetection(data) {
     <button class="btn-generate" id="btn-start">🎧 Generate Artifacts</button>`;
     document.getElementById('btn-start').addEventListener('click', () =>
         startPipeline(data.pdfUrl, data.pageUrl, 'pdf', data.sourceTitle, data.pdfEvidence || data.source)
-            .catch(error => alert(error.message))
+            .catch(error => showError(error.message))
     );
 }
 
@@ -428,13 +428,35 @@ function renderNoPdf() {
       No PDF detected on this page.<br>
       <span style="font-size:11px; color:var(--text-dim)">You can still try importing this page URL directly.</span>
     </div>
-    <button class="btn-generate" id="btn-start-url">Use Current Webpage URL</button>
+    <button class="btn-generate" id="btn-start-url">Import Page & Generate</button>
     <button class="btn-secondary" id="btn-upload-manual">Upload Local PDF</button>`;
     document.getElementById('btn-start-url').addEventListener('click', startPipelineFromCurrentPageUrl);
     document.getElementById('btn-upload-manual').addEventListener('click', () => promptForPdfUpload(null));
 }
 
+function errorHtml(detail) {
+    const invalidPdf = /isn't a valid PDF|not a PDF|not a valid PDF|PDF signature/i.test(detail);
+    const unknown = /unknown|uncertain|unconfirmed|timed? ?out|timeout|no source ID|did not respond|malformed/i.test(detail);
+    const summary = invalidPdf ? "This file isn't a valid PDF. Choose another file."
+        : unknown ? 'The result could not be confirmed. Check Gemini Notebook before starting again.'
+        : /40 MiB|too large|size limit/i.test(detail) ? 'This PDF exceeds the upload limit. Upload it directly in Gemini Notebook.'
+        : /sign.?in|authentication|logged in/i.test(detail) ? 'Sign in to Gemini Notebook, then reopen this popup.'
+        : /quota|rate.?limit/i.test(detail) ? 'Gemini Notebook has reached a limit. Wait before starting more work.'
+        : 'This workflow needs attention. Check the details before continuing.';
+    return `<div class="pipeline-error-box" role="alert">${escapeHtml(summary)}</div>
+      ${detail !== summary ? `<details class="workflow-details"><summary>Details</summary><div class="step-detail">${escapeHtml(detail)}</div></details>` : ''}`;
+}
+
+function showError(detail) {
+    document.getElementById('popup-error')?.remove();
+    const box = document.createElement('div');
+    box.id = 'popup-error';
+    box.innerHTML = errorHtml(String(detail));
+    contentEl.append(box);
+}
+
 function renderProgress(state) {
+    const openDetails = new Set([...contentEl.querySelectorAll('details[open]')].map(el => el.querySelector('summary')?.textContent));
     const currentStepIndex = STEPS.findIndex(s => s.keys.includes(state.step));
 
     const stepsHtml = STEPS.map((step, idx) => {
@@ -442,7 +464,7 @@ function renderProgress(state) {
         if (state.status === 'error' && idx === currentStepIndex) { cls = 'error'; content = '!'; }
         else if (idx < currentStepIndex || state.step === 'done') { cls = 'done'; content = '✓'; }
         else if (idx === currentStepIndex) { cls = 'active'; content = '●'; }
-        const detail = idx === currentStepIndex ? state.stepDetail : '';
+        const detail = idx === currentStepIndex && state.status !== 'error' && state.step !== 'wait_pdf_access' ? state.stepDetail : '';
         return `
       <div class="pipeline-step">
         <div class="step-indicator ${cls}">${content}</div>
@@ -488,14 +510,20 @@ function renderProgress(state) {
       </div>`;
     }
     if (state.status === 'error') {
-        bottomHtml += `<div class="pipeline-error-box" role="alert">${escapeHtml(state.error || state.stepDetail || 'The pipeline failed.')}</div>`;
+        bottomHtml += errorHtml(state.error || state.stepDetail || 'The workflow stopped.');
+    }
+    if (state.status === 'running') {
+        bottomHtml += `<p class="s-help" role="status">${state.step === 'wait_pdf_access'
+            ? 'Allow the download or choose a PDF to continue in this notebook.'
+            : 'You can close this popup. Work continues.'}</p>`;
     }
     if (state.status === 'running' && state.step === 'wait_pdf_access') {
-        bottomHtml += `<button class="btn-generate" id="btn-resume-pdf">Allow PDF Download and Retry</button>
-          <button class="btn-secondary" id="btn-fallback-file">Choose PDF for This Notebook</button>`;
+        bottomHtml += `<button class="btn-generate" id="btn-resume-pdf">Allow Download & Continue</button>
+          <button class="btn-secondary" id="btn-fallback-file">Upload PDF Instead</button>
+          ${state.stepDetail ? `<details class="workflow-details"><summary>Download details</summary><div class="step-detail">${escapeHtml(state.stepDetail)}</div></details>` : ''}`;
     }
     if (state.status === 'running' && ['wait_source', 'wait_artifacts', 'wait_pdf_access', 'download_pdf'].includes(state.step)) {
-        bottomHtml += `<button class="btn-secondary" id="btn-abort">Stop Monitoring</button>`;
+        bottomHtml += `<button class="btn-secondary" id="btn-abort" aria-describedby="stop-help">Stop Monitoring</button><p class="s-help" id="stop-help">Stops this workflow. Work already started in Gemini Notebook may continue.</p>`;
     }
     if (state.status === 'error' || state.status === 'completed') {
         bottomHtml += `<button class="btn-secondary" id="btn-reset">Start Over</button>`;
@@ -503,25 +531,30 @@ function renderProgress(state) {
 
     contentEl.innerHTML = `
     <div class="pdf-info">
-      <div class="label">Processing Source</div>
+      <div class="label">Source</div>
       <div class="pdf-url">${escapeHtml((state.pdfUrl || '').substring(0, 80))}</div>
     </div>
     ${titleHtml}
     ${collectionHtml}
+    ${state.failedUrlSourceId ? '<details class="workflow-details"><summary>Source replacement</summary><div class="step-detail">The PDF is uploaded into this notebook. The failed URL source is kept. Artifacts use the replacement PDF.</div></details>' : ''}
     ${state.status === 'completed'
         ? `${bottomHtml}<details class="workflow-details"><summary>Workflow details</summary><div class="pipeline">${stepsHtml}</div></details>`
         : `<div class="pipeline">${stepsHtml}</div>${bottomHtml}`}`;
+
+    contentEl.querySelectorAll('details').forEach(el => {
+        el.open = openDetails.has(el.querySelector('summary')?.textContent);
+    });
 
     document.getElementById('btn-reset')?.addEventListener('click', async () => {
         try {
             const response = await chrome.runtime.sendMessage({ type: 'RESET_STATE' });
             if (!response?.ok) {
-                alert(response?.message || 'Could not reset pipeline state.');
+                showError(response?.message || 'Could not reset pipeline state.');
                 return;
             }
             await detectAndRender();
         } catch (error) {
-            alert(error?.message || 'The service worker did not respond. Reopen the popup and try again.');
+            showError(error?.message || 'The service worker did not respond. Reopen the popup and try again.');
         }
     });
     document.getElementById('btn-abort')?.addEventListener('click', () => abortPipeline(state.runId));
@@ -530,7 +563,7 @@ function renderProgress(state) {
             const pattern = httpOriginPattern(state.originalPdfUrl);
             if (!pattern || !await chrome.permissions.request({ origins: [pattern] })) return;
             await resumeFallbackFromPopup(state.runId);
-        } catch (error) { alert(error.message); }
+        } catch (error) { showError(error.message); }
     });
     document.getElementById('btn-fallback-file')?.addEventListener('click', () => {
         const input = document.createElement('input');
@@ -541,11 +574,11 @@ function renderProgress(state) {
                 const file = input.files?.[0];
                 if (!file) return;
                 assertPdfUploadSize(file.size);
-                if (!hasPdfSignature(await file.slice(0, 1024).arrayBuffer())) throw new Error('The selected file is not a PDF.');
+                if (!hasPdfSignature(await file.slice(0, 1024).arrayBuffer())) throw new Error("This file isn't a valid PDF. Choose another file.");
                 await resumeFallbackFromPopup(state.runId, {
                     fileName: file.name, fileDataBase64: await readFileAsBase64(file),
                 });
-            } catch (error) { alert(error.message); }
+            } catch (error) { showError(error.message); }
         });
         input.click();
     });
@@ -603,8 +636,8 @@ async function startPipelineFromCurrentPageUrl() {
         await startPipeline(currentUrl, currentUrl, 'webpage', sourceTitle);
     } catch (err) {
         console.warn('[Popup] Could not start webpage URL pipeline:', err?.message || err);
-        if (btn) { btn.disabled = false; btn.textContent = 'Use Current Webpage URL'; }
-        alert(err?.message || 'Could not use current webpage URL as a source.');
+        if (btn) { btn.disabled = false; btn.textContent = 'Import Page & Generate'; }
+        showError(err?.message || 'Could not use current webpage URL as a source.');
     }
 }
 
@@ -615,13 +648,13 @@ async function abortPipeline(runId) {
             const current = response?.state || await getState();
             renderProgress(current);
             if (current.status === 'running') startPolling();
-            alert(response?.message || 'The pipeline could not be stopped.');
+            showError(response?.message || 'The pipeline could not be stopped.');
             return;
         }
         stopPolling();
         await detectAndRender();
     } catch (error) {
-        alert(error?.message || 'The service worker did not respond. Reopen the popup and try again.');
+        showError(error?.message || 'The service worker did not respond. Reopen the popup and try again.');
     }
 }
 
@@ -632,7 +665,7 @@ async function startPipelineFile(file, pageUrl, sourceTitle = null) {
     try {
         assertPdfUploadSize(file.size);
         const signature = await file.slice(0, 1024).arrayBuffer();
-        if (!hasPdfSignature(signature)) throw new Error('The selected file does not contain a PDF signature.');
+        if (!hasPdfSignature(signature)) throw new Error("This file isn't a valid PDF. Choose another file.");
         const fileDataBase64 = await readFileAsBase64(file);
         const selectedTitle = choosePdfTitle({
             payload: fileDataBase64,
@@ -665,7 +698,7 @@ async function startPipelineFile(file, pageUrl, sourceTitle = null) {
             btn.disabled = false;
             btn.textContent = originalText;
         }
-        alert(error?.message || 'Could not upload the selected PDF.');
+        showError(error?.message || 'Could not upload the selected PDF.');
         return false;
     }
 }
@@ -729,8 +762,8 @@ function isAllowedFileSchemeAccess() {
 }
 
 function showFileAccessHint() {
-    alert(
-        'To use "Use Current PDF" for local files, enable file access:\n\n' +
+    showError(
+        'To use "Upload & Generate" for local files, enable file access.\n\n' +
         '1) Open chrome://extensions\n' +
         '2) Find this extension\n' +
         '3) Enable "Allow access to file URLs"\n' +
@@ -826,7 +859,7 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
             showFileAccessHint();
             if (btn) {
                 btn.disabled = false;
-                btn.textContent = btn.id === 'btn-start' ? '🎧 Generate Artifacts' : 'Use Current PDF and Generate';
+                btn.textContent = btn.id === 'btn-start' ? '🎧 Generate Artifacts' : 'Upload & Generate';
             }
             return;
         }
@@ -980,11 +1013,11 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
         console.warn('[Popup] Direct local PDF read failed, falling back to file picker:', err?.message || err);
         if (btn) {
             btn.disabled = false;
-            btn.textContent = btn.id === 'btn-start' ? '🎧 Generate Artifacts' : 'Use Current PDF and Generate';
+            btn.textContent = btn.id === 'btn-start' ? '🎧 Generate Artifacts' : 'Upload & Generate';
         }
         if (['PIPELINE_ALREADY_RUNNING', 'PIPELINE_NOT_IDLE', 'PDF_TOO_LARGE'].includes(err?.code) ||
             /retain ownership/i.test(err?.message || '')) {
-            alert(err?.message || 'Another pipeline is already active.');
+            showError(err?.message || 'Another pipeline is already active.');
             return;
         }
         promptForPdfUpload(pageUrl);
