@@ -16,7 +16,9 @@ ScholarRelay (Scholar Relay) imports PDFs, arXiv research papers, and webpages i
 
 ## 한국어
 
-ScholarRelay(Scholar Relay)는 PDF, arXiv 연구 논문, 웹페이지를 Gemini Notebook(이전 명칭 NotebookLM)으로 가져옵니다. 노트북을 정리하고 오디오 개요, 학습 자료 등 원하는 아티팩트를 한 번에 생성합니다.
+ScholarRelay(Scholar Relay)는 PDF, arXiv 연구 논문, 웹페이지를 Gemini Notebook(이전 명칭 NotebookLM)으로 가져옵니다. 노트북을 정리하고 AI 오디오 오버뷰, 학습 자료 등 원하는 아티팩트를 한 번에 생성합니다.
+
+v1.3.2에서는 화면과 알림을 영어, 한국어, 일본어, 스페인어, 프랑스어, 독일어, 브라질 포르투갈어로 제공합니다. 화면 언어는 Chrome 설정을 따르며 지원하지 않는 언어에서는 영어를 사용합니다. 아티팩트 생성 언어는 별도 설정이며 기존 선택값은 유지됩니다. 기술 진단은 상세 내용에 원문으로 표시됩니다.
 
 ### 주요 기능
 
@@ -56,21 +58,21 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 ### 사용 방법
 
 1. PDF, arXiv 논문 또는 웹페이지를 열고 ScholarRelay 아이콘을 클릭합니다.
-2. 필요하면 **Settings**에서 노트북, 아티팩트, 사용 환경 설정을 조정합니다.
+2. 필요하면 **설정**에서 노트북, 아티팩트, 사용 환경 설정을 조정합니다.
 3. 감지된 소스를 사용하거나 로컬 PDF를 선택해 생성을 시작합니다.
-4. 진행 상태를 확인하고 완료 후 **Open in Gemini Notebook**을 클릭합니다.
+4. 진행 상태를 확인하고 완료 후 **Gemini Notebook에서 열기**를 클릭합니다.
 
 ### 설정
 
 | 영역 | 기능 |
 | --- | --- |
-| **Notebook Settings** | 새 노트북을 추가할 컬렉션과 감지한 논문 제목 사용 여부 |
-| **Artifact Settings** | 아티팩트 선택, 형식, 길이, 언어, 스타일, 사용자 지침 |
-| **Experience** | 데스크톱 알림, 완료 차임, 완료된 노트북 자동 열기 |
+| **노트북 설정** | 새 노트북을 추가할 컬렉션과 감지한 논문 제목 사용 여부 |
+| **아티팩트 설정** | 아티팩트 선택, 형식, 길이, 언어, 스타일, 맞춤 안내 |
+| **사용 환경** | 데스크톱 알림, 완료 차임, 완료된 노트북 자동 열기 |
 
 컬렉션 추가에 실패해도 소스 처리와 아티팩트 생성은 계속됩니다. 컬렉션 목록은 현재 로그인한 Gemini Notebook 계정에서 불러옵니다.
 
-아티팩트 언어는 오디오를 끈 상태에서도 오디오, 동영상, 보고서, 인포그래픽, 슬라이드, 데이터 표에 공통으로 적용됩니다. 작업 중 팝업을 닫아도 계속 진행됩니다. Stop Monitoring은 이 워크플로를 중지하지만 Gemini Notebook에서 이미 시작된 작업은 계속될 수 있습니다.
+아티팩트 언어는 오디오를 끈 상태에서도 오디오, 동영상, 보고서, 인포그래픽, 슬라이드 자료, 데이터 표에 공통으로 적용됩니다. 작업 중 팝업을 닫아도 계속 진행됩니다. 모니터링 중지는 이 워크플로를 중지하지만 Gemini Notebook에서 이미 시작된 작업은 계속될 수 있습니다.
 
 ### 권한 및 문제 해결
 
@@ -84,6 +86,8 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 ---
 
 ## English
+
+Version 1.3.2 localizes the interface and notifications in English, Korean, Japanese, Spanish, French, German, and Brazilian Portuguese. The interface follows Chrome's language with English fallback. Artifact output language is a separate setting and existing choices are preserved. Original technical diagnostics remain available in Details.
 
 ### Highlights
 

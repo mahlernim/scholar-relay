@@ -1,3 +1,4 @@
+import { t, localizeStaticDocument, progressDetail, errorSummary } from './i18n.js';
 import { inspectPaperPage } from './content.js';
 import { choosePdfTitle, choosePdfFileTitle } from './pdf-metadata.js';
 import { directDetectionMatchesTab } from './detection-policy.js';
@@ -15,18 +16,19 @@ import { httpOriginPattern, needsOptionalPdfAccess } from './site-permissions.js
  * All persistent state lives in chrome.storage.local.
  */
 
+localizeStaticDocument();
 const contentEl = document.getElementById('content');
 
 // Pipeline steps -- 'keys' maps one or more background state step names to this display row
 const STEPS = [
-    { keys: ['auth', 'create_notebook'], label: 'Setup', emoji: '🔑' },
-    { keys: ['add_source', 'download_pdf', 'upload_pdf', 'wait_pdf_access'], label: 'Add Source', emoji: '📄' },
-    { keys: ['wait_source'], label: 'Processing Source', emoji: '⏳' },
+    { keys: ['auth', 'create_notebook'], label: t("Setup"), emoji: '🔑' },
+    { keys: ['add_source', 'download_pdf', 'upload_pdf', 'wait_pdf_access'], label: t("Add Source"), emoji: '📄' },
+    { keys: ['wait_source'], label: t("Processing Source"), emoji: '⏳' },
     {
         keys: ['generate_artifacts',
-            'wait_artifacts'], label: 'Generate Artifacts', emoji: '🎧'
+            'wait_artifacts'], label: t("Generate Artifacts"), emoji: '🎧'
     },
-    { keys: ['done'], label: 'Complete', emoji: '✅' },
+    { keys: ['done'], label: t("Complete"), emoji: '✅' },
 ];
 
 
@@ -114,7 +116,7 @@ async function loadSettings() {
         if (!el) continue;
         const value = s[key] ?? DEFAULTS[key];
         if (id === 's-collectionId' && value && !Array.from(el.options).some(opt => opt.value === value)) {
-            el.add(new Option('Previously selected collection', value));
+            el.add(new Option(t("Previously selected collection"), value));
         }
         el.value = value;
     }
@@ -143,13 +145,13 @@ async function refreshCollections() {
 
     const selectedId = select.value;
     select.disabled = true;
-    if (status) status.textContent = 'Loading collections...';
+    if (status) status.textContent = t("Loading collections...");
 
     try {
         const response = await chrome.runtime.sendMessage({ type: 'LIST_COLLECTIONS' });
         if (!response?.ok) throw new Error(response?.message || 'Could not load collections');
 
-        select.replaceChildren(new Option('No collection', ''));
+        select.replaceChildren(new Option(t("No collection"), ''));
         for (const collection of response.collections || []) {
             const emoji = collection.emoji ? `${collection.emoji} ` : '';
             const count = Array.isArray(collection.notebookIds) ? collection.notebookIds.length : 0;
@@ -157,22 +159,33 @@ async function refreshCollections() {
         }
 
         if (selectedId && !Array.from(select.options).some(opt => opt.value === selectedId)) {
-            select.add(new Option('Previously selected collection (unavailable)', selectedId));
+            select.add(new Option(t("Previously selected collection (unavailable)"), selectedId));
         }
         select.value = selectedId;
         if (status) {
             const count = response.collections?.length || 0;
             status.textContent = count
-                ? `${count} collection${count === 1 ? '' : 's'} available.`
-                : 'No collections found. Create one in Gemini Notebook first.';
+                ? t('Collections available: $1.', [count])
+                : t("No collections found. Create one in Gemini Notebook first.");
         }
     } catch (error) {
-        select.replaceChildren(new Option('No collection', ''));
+        select.replaceChildren(new Option(t("No collection"), ''));
         if (selectedId) {
-            select.add(new Option('Previously selected collection (could not refresh)', selectedId));
+            select.add(new Option(t("Previously selected collection (could not refresh)"), selectedId));
             select.value = selectedId;
         }
-        if (status) status.textContent = error?.message || 'Could not load collections.';
+        if (status) {
+            status.textContent = t('Could not load collections. Open Gemini Notebook and check your sign-in.');
+            if (error?.message) {
+                const details = document.createElement('details');
+                const summary = document.createElement('summary');
+                summary.textContent = t('Details');
+                const diagnostic = document.createElement('div');
+                diagnostic.textContent = error.message;
+                details.append(summary, diagnostic);
+                status.append(details);
+            }
+        }
     } finally {
         select.disabled = false;
     }
@@ -390,19 +403,19 @@ function renderDetection(data) {
         arxiv_abstract: 'arXiv abstract page', arxiv_pdf: 'arXiv PDF',
         arxiv_link: 'arXiv PDF link', page_link: 'PDF link on page',
         direct_url: 'Direct PDF URL', local_file: 'Local file',
-    }[data.source] || data.source;
+    }[data.source] || 'PDF document';
 
     const isUploadRequired = typeof data.pdfUrl === 'string' && !/^https?:\/\//i.test(data.pdfUrl);
 
     if (isUploadRequired) {
         contentEl.innerHTML = `
     <div class="pdf-info">
-      <div class="label">Detected Local PDF</div>
+      <div class="label">${escapeHtml(t("Detected Local PDF"))}</div>
       <div class="pdf-url">${escapeHtml(truncated)}</div>
-      <div class="pdf-source">via ${escapeHtml(sourceLabel)}</div>
+      <div class="pdf-source">${escapeHtml(t(sourceLabel))}</div>
     </div>
-    <button class="btn-generate" id="btn-upload-start">Upload & Generate</button>
-    <button class="btn-secondary" id="btn-upload-other">Choose Different PDF</button>`;
+    <button class="btn-generate" id="btn-upload-start">${escapeHtml(t("Upload & Generate"))}</button>
+    <button class="btn-secondary" id="btn-upload-other">${escapeHtml(t("Choose Different PDF"))}</button>`;
         document.getElementById('btn-upload-start').addEventListener('click', () => startPipelineFromCurrentTabPdf(data.pageUrl || data.pdfUrl));
         document.getElementById('btn-upload-other').addEventListener('click', () => promptForPdfUpload(data.pageUrl || data.pdfUrl));
         return;
@@ -410,11 +423,11 @@ function renderDetection(data) {
 
     contentEl.innerHTML = `
     <div class="pdf-info">
-      <div class="label">Detected PDF</div>
+      <div class="label">${escapeHtml(t("Detected PDF"))}</div>
       <div class="pdf-url">${escapeHtml(truncated)}</div>
-      <div class="pdf-source">via ${escapeHtml(sourceLabel)}</div>
+      <div class="pdf-source">${escapeHtml(t(sourceLabel))}</div>
     </div>
-    <button class="btn-generate" id="btn-start">🎧 Generate Artifacts</button>`;
+    <button class="btn-generate" id="btn-start">${escapeHtml(t("🎧 Generate Artifacts"))}</button>`;
     document.getElementById('btn-start').addEventListener('click', () =>
         startPipeline(data.pdfUrl, data.pageUrl, 'pdf', data.sourceTitle, data.pdfEvidence || data.source)
             .catch(error => showError(error.message))
@@ -425,26 +438,19 @@ function renderNoPdf() {
     contentEl.innerHTML = `
     <div class="no-pdf">
       <div class="icon">📄</div>
-      No PDF detected on this page.<br>
-      <span style="font-size:11px; color:var(--text-dim)">You can still try importing this page URL directly.</span>
+      ${escapeHtml(t("No PDF detected on this page."))}<br>
+      <span style="font-size:11px; color:var(--text-dim)">${escapeHtml(t("You can still try importing this page URL directly."))}</span>
     </div>
-    <button class="btn-generate" id="btn-start-url">Import Page & Generate</button>
-    <button class="btn-secondary" id="btn-upload-manual">Upload Local PDF</button>`;
+    <button class="btn-generate" id="btn-start-url">${escapeHtml(t("Import Page & Generate"))}</button>
+    <button class="btn-secondary" id="btn-upload-manual">${escapeHtml(t("Upload Local PDF"))}</button>`;
     document.getElementById('btn-start-url').addEventListener('click', startPipelineFromCurrentPageUrl);
     document.getElementById('btn-upload-manual').addEventListener('click', () => promptForPdfUpload(null));
 }
 
 function errorHtml(detail) {
-    const invalidPdf = /isn't a valid PDF|not a PDF|not a valid PDF|PDF signature/i.test(detail);
-    const unknown = /unknown|uncertain|unconfirmed|timed? ?out|timeout|no source ID|did not respond|malformed/i.test(detail);
-    const summary = invalidPdf ? "This file isn't a valid PDF. Choose another file."
-        : unknown ? 'The result could not be confirmed. Check Gemini Notebook before starting again.'
-        : /40 MiB|too large|size limit/i.test(detail) ? 'This PDF exceeds the upload limit. Upload it directly in Gemini Notebook.'
-        : /sign.?in|authentication|logged in/i.test(detail) ? 'Sign in to Gemini Notebook, then reopen this popup.'
-        : /quota|rate.?limit/i.test(detail) ? 'Gemini Notebook has reached a limit. Wait before starting more work.'
-        : 'This workflow needs attention. Check the details before continuing.';
+    const summary = errorSummary(detail);
     return `<div class="pipeline-error-box" role="alert">${escapeHtml(summary)}</div>
-      ${detail !== summary ? `<details class="workflow-details"><summary>Details</summary><div class="step-detail">${escapeHtml(detail)}</div></details>` : ''}`;
+      ${detail !== summary ? `<details class="workflow-details"><summary>${escapeHtml(t("Details"))}</summary><div class="step-detail">${escapeHtml(detail)}</div></details>` : ''}`;
 }
 
 function showError(detail) {
@@ -464,12 +470,12 @@ function renderProgress(state) {
         if (state.status === 'error' && idx === currentStepIndex) { cls = 'error'; content = '!'; }
         else if (idx < currentStepIndex || state.step === 'done') { cls = 'done'; content = '✓'; }
         else if (idx === currentStepIndex) { cls = 'active'; content = '●'; }
-        const detail = idx === currentStepIndex && state.status !== 'error' && state.step !== 'wait_pdf_access' ? state.stepDetail : '';
+        const detail = idx === currentStepIndex && state.status !== 'error' && state.step !== 'wait_pdf_access' ? progressDetail(state) : '';
         return `
       <div class="pipeline-step">
         <div class="step-indicator ${cls}">${content}</div>
         <div class="step-content">
-          <div class="step-name">${step.emoji} ${step.label}</div>
+          <div class="step-name">${step.emoji} ${escapeHtml(step.label)}</div>
           ${detail ? `<div class="step-detail">${escapeHtml(detail)}</div>` : ''}
         </div>
       </div>`;
@@ -479,21 +485,21 @@ function renderProgress(state) {
     <div class="notebook-title-bar">
       <span class="nb-icon">📓</span>
       <div>
-        <div class="nb-label">Notebook title</div>
+        <div class="nb-label">${escapeHtml(t("Notebook title"))}</div>
         <div class="nb-title" title="${escapeHtml(state.notebookTitle)}">${escapeHtml(state.notebookTitle)}</div>
       </div>
     </div>` : '';
 
     const collection = state.collectionAssignment;
     const collectionHtml = collection?.status === 'completed' ? `
-    <div class="collection-status success">🗂 Added to ${escapeHtml(collection.name || 'collection')}</div>`
+    <div class="collection-status success">🗂 ${escapeHtml(t('Added to $1', [collection.name || t('collection')]))}</div>`
         : collection?.status === 'failed' ? `
-    <div class="collection-status warning">⚠️ Collection assignment failed: ${escapeHtml(collection.error || 'Unknown error')}</div>`
+    <div class="collection-status warning">⚠️ ${escapeHtml(t('Collection assignment failed.'))}${collection.error ? `<details><summary>${escapeHtml(t('Details'))}</summary>${escapeHtml(collection.error)}</details>` : ''}</div>`
             : '';
 
     let bottomHtml = '';
     if (state.notebookUrl) {
-        bottomHtml += `<a class="notebook-link" href="${escapeHtml(state.notebookUrl)}" target="_blank" rel="noopener noreferrer">📓 Open in Gemini Notebook</a>`;
+        bottomHtml += `<a class="notebook-link" href="${escapeHtml(state.notebookUrl)}" target="_blank" rel="noopener noreferrer">📓 ${escapeHtml(t("Open in Gemini Notebook"))}</a>`;
     }
     if (state.status === 'completed') {
         const tasks = state.tasks || [];
@@ -501,14 +507,14 @@ function renderProgress(state) {
         const completedCount = tasks.filter(t => t.status === 'completed').length;
         const failedCount = tasks.filter(t => t.status === 'failed').length;
         const summaryMsg = totalCount === 0
-            ? 'Source imported. No artifacts requested.'
+            ? t("Source imported. No artifacts requested.")
             : failedCount > 0
-            ? `${completedCount}/${totalCount} artifacts ready (${failedCount} failed).`
-            : `${completedCount} artifact${completedCount !== 1 ? 's' : ''} ready!`;
+            ? t('$1/$2 artifacts ready ($3 failed).', [completedCount, totalCount, failedCount])
+            : t('Artifacts ready: $1!', [completedCount]);
         bottomHtml += `
       <div class="completed-box">
         <div class="icon">🎉</div>
-        <div class="msg">${summaryMsg}</div>
+        <div class="msg">${escapeHtml(summaryMsg)}</div>
       </div>`;
     }
     if (state.status === 'error') {
@@ -516,31 +522,31 @@ function renderProgress(state) {
     }
     if (state.status === 'running') {
         bottomHtml += `<p class="s-help" role="status">${state.step === 'wait_pdf_access'
-            ? 'Allow the download or choose a PDF to continue in this notebook.'
-            : 'You can close this popup. Work continues.'}</p>`;
+            ? t("Allow the download or choose a PDF to continue in this notebook.")
+            : t("You can close this popup. Work continues.")}</p>`;
     }
     if (state.status === 'running' && state.step === 'wait_pdf_access') {
-        bottomHtml += `<button class="btn-generate" id="btn-resume-pdf">Allow Download & Continue</button>
-          <button class="btn-secondary" id="btn-fallback-file">Upload PDF Instead</button>
-          ${state.stepDetail ? `<details class="workflow-details"><summary>Download details</summary><div class="step-detail">${escapeHtml(state.stepDetail)}</div></details>` : ''}`;
+        bottomHtml += `<button class="btn-generate" id="btn-resume-pdf">${escapeHtml(t("Allow Download & Continue"))}</button>
+          <button class="btn-secondary" id="btn-fallback-file">${escapeHtml(t("Upload PDF Instead"))}</button>
+          ${state.stepDetail ? `<details class="workflow-details"><summary>${escapeHtml(t("Download details"))}</summary><div class="step-detail">${escapeHtml(state.stepDetail)}</div></details>` : ''}`;
     }
     if (state.status === 'running' && ['wait_source', 'wait_artifacts', 'wait_pdf_access', 'download_pdf'].includes(state.step)) {
-        bottomHtml += `<button class="btn-secondary" id="btn-abort" aria-describedby="stop-help">Stop Monitoring</button><p class="s-help" id="stop-help">Stops this workflow. Work already started in Gemini Notebook may continue.</p>`;
+        bottomHtml += `<button class="btn-secondary" id="btn-abort" aria-describedby="stop-help">${escapeHtml(t("Stop Monitoring"))}</button><p class="s-help" id="stop-help">${escapeHtml(t("Stops this workflow. Work already started in Gemini Notebook may continue."))}</p>`;
     }
     if (state.status === 'error' || state.status === 'completed') {
-        bottomHtml += `<button class="btn-secondary" id="btn-reset">Start Over</button>`;
+        bottomHtml += `<button class="btn-secondary" id="btn-reset">${escapeHtml(t("Start Over"))}</button>`;
     }
 
     contentEl.innerHTML = `
     <div class="pdf-info">
-      <div class="label">Source</div>
+      <div class="label">${escapeHtml(t("Source"))}</div>
       <div class="pdf-url">${escapeHtml((state.pdfUrl || '').substring(0, 80))}</div>
     </div>
     ${titleHtml}
     ${collectionHtml}
-    ${state.failedUrlSourceId ? '<details class="workflow-details"><summary>Source replacement</summary><div class="step-detail">Upload fallback uses this notebook. The failed URL source is kept. Artifacts use the replacement PDF.</div></details>' : ''}
+    ${state.failedUrlSourceId ? `<details class="workflow-details"><summary>${escapeHtml(t("Source replacement"))}</summary><div class="step-detail">${escapeHtml(t("Upload fallback uses this notebook. The failed URL source is kept. Artifacts use the replacement PDF."))}</div></details>` : ''}
     ${state.status === 'completed'
-        ? `${bottomHtml}<details class="workflow-details"><summary>Workflow details</summary><div class="pipeline">${stepsHtml}</div></details>`
+        ? `${bottomHtml}<details class="workflow-details"><summary>${escapeHtml(t("Workflow details"))}</summary><div class="pipeline">${stepsHtml}</div></details>`
         : `<div class="pipeline">${stepsHtml}</div>${bottomHtml}`}`;
 
     contentEl.querySelectorAll('details').forEach(el => {
@@ -600,7 +606,7 @@ async function resumeFallbackFromPopup(runId, file = {}) {
 async function startPipeline(pdfUrl, pageUrl, sourceType = 'pdf', sourceTitle = null, pdfEvidence = null) {
     const btn = document.getElementById('btn-start') || document.getElementById('btn-start-url');
     const originalText = btn?.textContent || '';
-    if (btn) { btn.disabled = true; btn.textContent = '⏳ Starting...'; }
+    if (btn) { btn.disabled = true; btn.textContent = t("⏳ Starting..."); }
     try {
         const response = await chrome.runtime.sendMessage({ type: 'START_PIPELINE', pdfUrl, pageUrl, sourceType, sourceTitle, pdfEvidence });
         if (!response?.ok) {
@@ -626,7 +632,7 @@ async function startPipeline(pdfUrl, pageUrl, sourceType = 'pdf', sourceTitle = 
 
 async function startPipelineFromCurrentPageUrl() {
     const btn = document.getElementById('btn-start-url');
-    if (btn) { btn.disabled = true; btn.textContent = 'Starting...'; }
+    if (btn) { btn.disabled = true; btn.textContent = t("Starting..."); }
 
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -638,7 +644,7 @@ async function startPipelineFromCurrentPageUrl() {
         await startPipeline(currentUrl, currentUrl, 'webpage', sourceTitle);
     } catch (err) {
         console.warn('[Popup] Could not start webpage URL pipeline:', err?.message || err);
-        if (btn) { btn.disabled = false; btn.textContent = 'Import Page & Generate'; }
+        if (btn) { btn.disabled = false; btn.textContent = t("Import Page & Generate"); }
         showError(err?.message || 'Could not use current webpage URL as a source.');
     }
 }
@@ -663,7 +669,7 @@ async function abortPipeline(runId) {
 async function startPipelineFile(file, pageUrl, sourceTitle = null) {
     const btn = document.getElementById('btn-upload-start') || document.getElementById('btn-upload-manual');
     const originalText = btn?.textContent || '';
-    if (btn) { btn.disabled = true; btn.textContent = 'Uploading...'; }
+    if (btn) { btn.disabled = true; btn.textContent = t("Uploading..."); }
     try {
         assertPdfUploadSize(file.size);
         const signature = await file.slice(0, 1024).arrayBuffer();
@@ -814,7 +820,7 @@ async function requestPdfOriginAccess(pageUrl, pdfUrl) {
 
 async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSourceTitle = null) {
     const btn = document.getElementById('btn-upload-start') || document.getElementById('btn-start');
-    if (btn) { btn.disabled = true; btn.textContent = 'Reading current PDF...'; }
+    if (btn) { btn.disabled = true; btn.textContent = t("Reading current PDF..."); }
 
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -847,7 +853,7 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
             showFileAccessHint();
             if (btn) {
                 btn.disabled = false;
-                btn.textContent = btn.id === 'btn-start' ? '🎧 Generate Artifacts' : 'Upload & Generate';
+                btn.textContent = btn.id === 'btn-start' ? t("🎧 Generate Artifacts") : t("Upload & Generate");
             }
             return;
         }
@@ -977,7 +983,7 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
         });
         console.log(`[Popup] Notebook title source: ${selectedTitle.source}`);
 
-        if (btn) { btn.textContent = 'Uploading...'; }
+        if (btn) { btn.textContent = t("Uploading..."); }
         const response = await chrome.runtime.sendMessage({
             type: 'START_PIPELINE_FILE',
             fileName: payload.fileName || 'local-upload.pdf',
@@ -1001,7 +1007,7 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
         console.warn('[Popup] Direct local PDF read failed, falling back to file picker:', err?.message || err);
         if (btn) {
             btn.disabled = false;
-            btn.textContent = btn.id === 'btn-start' ? '🎧 Generate Artifacts' : 'Upload & Generate';
+            btn.textContent = btn.id === 'btn-start' ? t("🎧 Generate Artifacts") : t("Upload & Generate");
         }
         if (['PIPELINE_ALREADY_RUNNING', 'PIPELINE_NOT_IDLE', 'PDF_TOO_LARGE'].includes(err?.code) ||
             /retain ownership/i.test(err?.message || '')) {

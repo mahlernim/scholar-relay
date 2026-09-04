@@ -10,6 +10,12 @@ $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 $runtimeFiles = @(
     '_locales/en/messages.json',
     '_locales/ko/messages.json',
+    '_locales/ja/messages.json',
+    '_locales/es/messages.json',
+    '_locales/fr/messages.json',
+    '_locales/de/messages.json',
+    '_locales/pt_BR/messages.json',
+    'i18n.js',
     'background.js',
     'content.js',
     'detection-policy.js',

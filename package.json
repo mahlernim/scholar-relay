@@ -1,12 +1,13 @@
 {
   "name": "scholar-relay",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test",
     "smoke:chrome": "node ./scripts/smoke-extension.mjs",
     "capture:assets": "node ./scripts/capture-assets.mjs",
-    "package:store": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/package-store.ps1"
+    "package:store": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/package-store.ps1",
+    "locales:check": "node scripts/build-locales.mjs --check"
   }
 }

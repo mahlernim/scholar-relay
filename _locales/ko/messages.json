@@ -1,10 +1,800 @@
 {
   "extensionName": {
-    "message": "ScholarRelay - Gemini Notebook PDF 가져오기",
-    "description": "Formal product name"
+    "message": "ScholarRelay - Gemini Notebook PDF 가져오기"
   },
   "extensionDescription": {
-    "message": "PDF, arXiv 논문, 웹페이지를 Gemini Notebook(NotebookLM)으로 가져오고 오디오 개요와 학습 자료를 생성합니다.",
-    "description": "Short extension and Chrome Web Store summary"
+    "message": "PDF, arXiv 논문, 웹페이지를 Gemini Notebook(NotebookLM)으로 가져오고 AI 오디오 오버뷰와 학습 자료를 생성합니다."
+  },
+  "ui_6440add9": {
+    "message": "노트북 $1의 아티팩트 1개가 준비되었습니다. 클릭하여 여세요.",
+    "description": "Notebook $1 is ready with one artifact. Click to open."
+  },
+  "ui_bca3294": {
+    "message": "완료",
+    "description": "Ready"
+  },
+  "ui_5579c3d4": {
+    "message": "실패",
+    "description": "Failed"
+  },
+  "ui_71fcc075": {
+    "message": "생성 중",
+    "description": "Generating"
+  },
+  "ui_c9450e48": {
+    "message": "대기 중",
+    "description": "Waiting"
+  },
+  "ui_ce74e943": {
+    "message": "아티팩트",
+    "description": "Artifact"
+  },
+  "ui_85cc8e29": {
+    "message": "경과 시간 $1분.",
+    "description": "Elapsed time: $1 min."
+  },
+  "ui_5495106b": {
+    "message": "시작 전에 설정에서 아티팩트를 하나 이상 선택하세요.",
+    "description": "Choose at least one artifact in Settings before starting."
+  },
+  "ui_af966070": {
+    "message": "이미 진행 중인 작업이 있습니다. 새로 시작하기 전에 진행 상태를 확인하세요.",
+    "description": "A workflow is already active. Check its progress before starting another."
+  },
+  "ui_74a7ea81": {
+    "message": "Chrome 확장 프로그램 설정에서 파일 URL 접근을 허용하거나 로컬 PDF 업로드를 선택하세요.",
+    "description": "Enable Allow access to file URLs in Chrome extension settings, or choose Upload Local PDF."
+  },
+  "ui_a788ccba": {
+    "message": "직접 PDF",
+    "description": "Direct PDF"
+  },
+  "ui_8212a19a": {
+    "message": "PDF 문서",
+    "description": "PDF document"
+  },
+  "ui_86fe33ed": {
+    "message": "출판사 PDF",
+    "description": "Publisher PDF"
+  },
+  "ui_fd7e7e2b": {
+    "message": "논문 PDF",
+    "description": "Article PDF"
+  },
+  "ui_9a142465": {
+    "message": "내장 PDF 뷰어",
+    "description": "Embedded PDF viewer"
+  },
+  "ui_be4342c0": {
+    "message": "arXiv 초록 페이지",
+    "description": "arXiv abstract page"
+  },
+  "ui_1ae2ab63": {
+    "message": "arXiv PDF",
+    "description": "arXiv PDF"
+  },
+  "ui_5a02480d": {
+    "message": "arXiv PDF 링크",
+    "description": "arXiv PDF link"
+  },
+  "ui_fbb8c667": {
+    "message": "페이지의 PDF 링크",
+    "description": "PDF link on page"
+  },
+  "ui_747f5a5f": {
+    "message": "직접 PDF URL",
+    "description": "Direct PDF URL"
+  },
+  "ui_e4668cae": {
+    "message": "로컬 파일",
+    "description": "Local file"
+  },
+  "ui_102eb56b": {
+    "message": "Gemini Notebook으로 논문 보내기",
+    "description": "Send papers to Gemini Notebook"
+  },
+  "ui_4b058728": {
+    "message": "설정",
+    "description": "Settings"
+  },
+  "ui_b62eeb9e": {
+    "message": "⚙️ 설정",
+    "description": "⚙️ Settings"
+  },
+  "ui_546c8007": {
+    "message": "⚠️ 아티팩트를 하나 이상 선택하세요",
+    "description": "⚠️ Choose at least one artifact"
+  },
+  "ui_fd3f8fe8": {
+    "message": "📓 노트북 설정",
+    "description": "📓 Notebook Settings"
+  },
+  "ui_e0ab2da5": {
+    "message": "새 노트북을 추가할 컬렉션",
+    "description": "Add new notebooks to"
+  },
+  "ui_7ed65126": {
+    "message": "컬렉션 없음",
+    "description": "No collection"
+  },
+  "ui_5cdf8229": {
+    "message": "컬렉션 새로고침",
+    "description": "Refresh collections"
+  },
+  "ui_655bdb8c": {
+    "message": "로그인한 Gemini Notebook 계정에서 컬렉션을 불러옵니다.",
+    "description": "Collections load from your signed-in Gemini Notebook account."
+  },
+  "ui_2775c98c": {
+    "message": "논문 제목을 노트북 이름으로 사용",
+    "description": "Use paper title for notebook"
+  },
+  "ui_23c94c30": {
+    "message": "끄거나 제목을 찾지 못하면 Gemini Notebook이 이름을 정합니다.",
+    "description": "If off or no title is found, Gemini Notebook names it."
+  },
+  "ui_e46cfd94": {
+    "message": "🎨 아티팩트 설정",
+    "description": "🎨 Artifact Settings"
+  },
+  "ui_68dc958f": {
+    "message": "아티팩트 언어",
+    "description": "Artifact language"
+  },
+  "ui_1b9ae0bb": {
+    "message": "영어",
+    "description": "English"
+  },
+  "ui_ad70bf21": {
+    "message": "한국어",
+    "description": "Korean"
+  },
+  "ui_940c2e0a": {
+    "message": "일본어",
+    "description": "Japanese"
+  },
+  "ui_b819825b": {
+    "message": "스페인어",
+    "description": "Spanish"
+  },
+  "ui_7cbd6ca5": {
+    "message": "프랑스어",
+    "description": "French"
+  },
+  "ui_11100833": {
+    "message": "독일어",
+    "description": "German"
+  },
+  "ui_e6d67d5c": {
+    "message": "포르투갈어",
+    "description": "Portuguese"
+  },
+  "ui_5ecc8eb6": {
+    "message": "오디오, 동영상, 보고서, 인포그래픽, 슬라이드 자료, 데이터 표에 적용됩니다.",
+    "description": "Applies to audio, video, reports, infographics, slide decks, and data tables."
+  },
+  "ui_b7a1a59b": {
+    "message": "화면 언어는 Chrome 설정을 따르며 아티팩트 언어와 별개입니다.",
+    "description": "The interface follows Chrome's language. Artifact language is independent."
+  },
+  "ui_63435037": {
+    "message": "🎧 AI 오디오 오버뷰",
+    "description": "🎧 Audio Overview"
+  },
+  "ui_5e4b9b33": {
+    "message": "🎬 AI 동영상 오버뷰",
+    "description": "🎬 Video Overview"
+  },
+  "ui_1c876167": {
+    "message": "📄 보고서",
+    "description": "📄 Report"
+  },
+  "ui_a742b583": {
+    "message": "❓ 퀴즈",
+    "description": "❓ Quiz"
+  },
+  "ui_13be9b37": {
+    "message": "🃏 플래시카드",
+    "description": "🃏 Flashcards"
+  },
+  "ui_853abe6f": {
+    "message": "🖼 인포그래픽",
+    "description": "🖼 Infographic"
+  },
+  "ui_871b8541": {
+    "message": "📊 슬라이드 자료",
+    "description": "📊 Slide Deck"
+  },
+  "ui_768c9843": {
+    "message": "🧠 마인드맵",
+    "description": "🧠 Mind Map"
+  },
+  "ui_c1a0dcce": {
+    "message": "📋 데이터 표",
+    "description": "📋 Data Table"
+  },
+  "ui_ffb0ff72": {
+    "message": "형식",
+    "description": "Format"
+  },
+  "ui_fff5af1f": {
+    "message": "심층 분석",
+    "description": "Deep Dive"
+  },
+  "ui_b3c47c3f": {
+    "message": "요약",
+    "description": "Brief"
+  },
+  "ui_78edea29": {
+    "message": "비평",
+    "description": "Critique"
+  },
+  "ui_61a5d5c0": {
+    "message": "토론",
+    "description": "Debate"
+  },
+  "ui_cc5e1935": {
+    "message": "길이",
+    "description": "Length"
+  },
+  "ui_5fdddd75": {
+    "message": "짧게",
+    "description": "Short"
+  },
+  "ui_19dc307e": {
+    "message": "기본",
+    "description": "Default"
+  },
+  "ui_45939473": {
+    "message": "길게",
+    "description": "Long"
+  },
+  "ui_cda1cf1f": {
+    "message": "맞춤 안내",
+    "description": "Custom instructions"
+  },
+  "ui_c75093e": {
+    "message": "예: 연구 방법에 집중하고 주요 결과를 쉽게 요약하세요.",
+    "description": "e.g. Focus on methodology and summarize key findings simply."
+  },
+  "ui_1c96f10b": {
+    "message": "설명",
+    "description": "Explainer"
+  },
+  "ui_d3110b7c": {
+    "message": "시각적 스타일",
+    "description": "Visual style"
+  },
+  "ui_76422ffa": {
+    "message": "자동 선택",
+    "description": "Auto Select"
+  },
+  "ui_9525b78e": {
+    "message": "맞춤",
+    "description": "Custom"
+  },
+  "ui_7b47b1f3": {
+    "message": "클래식",
+    "description": "Classic"
+  },
+  "ui_29db3ade": {
+    "message": "화이트보드",
+    "description": "Whiteboard"
+  },
+  "ui_642fd4b": {
+    "message": "카와이",
+    "description": "Kawaii"
+  },
+  "ui_3e234f0f": {
+    "message": "애니메이션",
+    "description": "Anime"
+  },
+  "ui_9f0aff47": {
+    "message": "수채화",
+    "description": "Watercolor"
+  },
+  "ui_1a272890": {
+    "message": "레트로 프린트",
+    "description": "Retro Print"
+  },
+  "ui_838b5730": {
+    "message": "헤리티지",
+    "description": "Heritage"
+  },
+  "ui_4b4de48f": {
+    "message": "페이퍼 크래프트",
+    "description": "Paper Craft"
+  },
+  "ui_ecf7487f": {
+    "message": "예: 시각 자료를 강조하는 다큐멘터리 스타일을 사용하세요.",
+    "description": "e.g. Use a documentary style with emphasis on visuals."
+  },
+  "ui_45bb4d7b": {
+    "message": "맞춤 시각적 스타일 프롬프트",
+    "description": "Custom visual style prompt"
+  },
+  "ui_f1d64ff0": {
+    "message": "시각적 스타일이 맞춤일 때 사용합니다.",
+    "description": "Used when Visual style is Custom."
+  },
+  "ui_4d9b6fff": {
+    "message": "브리핑 문서",
+    "description": "Briefing Doc"
+  },
+  "ui_82cda65a": {
+    "message": "학습 가이드",
+    "description": "Study Guide"
+  },
+  "ui_540782c5": {
+    "message": "블로그 게시물",
+    "description": "Blog Post"
+  },
+  "ui_48d33564": {
+    "message": "안내",
+    "description": "Instructions"
+  },
+  "ui_28e8828a": {
+    "message": "(기본 형식에 추가됨)",
+    "description": "(appended for built-in formats)"
+  },
+  "ui_89963e82": {
+    "message": "(맞춤 형식에서 필수)",
+    "description": "(required for Custom format)"
+  },
+  "ui_23b244d3": {
+    "message": "예: 비전문 분야 의사를 위한 임상 요약을 작성하세요.",
+    "description": "e.g. Write a clinical summary for non-specialist physicians."
+  },
+  "ui_2bf732f8": {
+    "message": "수량",
+    "description": "Quantity"
+  },
+  "ui_8bca10b2": {
+    "message": "적게",
+    "description": "Fewer"
+  },
+  "ui_16ab68": {
+    "message": "표준",
+    "description": "Standard"
+  },
+  "ui_4f34d900": {
+    "message": "많게",
+    "description": "More"
+  },
+  "ui_8520a210": {
+    "message": "난이도",
+    "description": "Difficulty"
+  },
+  "ui_6c33113b": {
+    "message": "쉬움",
+    "description": "Easy"
+  },
+  "ui_9be5f96": {
+    "message": "보통",
+    "description": "Medium"
+  },
+  "ui_64efa7fc": {
+    "message": "어려움",
+    "description": "Hard"
+  },
+  "ui_23c5022f": {
+    "message": "예: 의대생을 위한 임상 추론에 집중하세요.",
+    "description": "e.g. Focus on clinical reasoning for medical students."
+  },
+  "ui_a5dcb66a": {
+    "message": "예: 핵심 용어와 정의를 강조하세요.",
+    "description": "e.g. Emphasize key terms and definitions."
+  },
+  "ui_c551d9c1": {
+    "message": "방향",
+    "description": "Orientation"
+  },
+  "ui_2bfbe892": {
+    "message": "가로",
+    "description": "Landscape"
+  },
+  "ui_29092ffa": {
+    "message": "세로",
+    "description": "Portrait"
+  },
+  "ui_fac98c66": {
+    "message": "정사각형",
+    "description": "Square"
+  },
+  "ui_344473b4": {
+    "message": "상세 수준",
+    "description": "Detail"
+  },
+  "ui_ae1f484f": {
+    "message": "간결하게",
+    "description": "Concise"
+  },
+  "ui_60e7b825": {
+    "message": "상세하게",
+    "description": "Detailed"
+  },
+  "ui_27129566": {
+    "message": "레이아웃 프리셋",
+    "description": "Layout preset"
+  },
+  "ui_126befb6": {
+    "message": "자동",
+    "description": "Auto"
+  },
+  "ui_4d7b957e": {
+    "message": "에디토리얼",
+    "description": "Editorial"
+  },
+  "ui_3953c530": {
+    "message": "미니멀",
+    "description": "Minimal"
+  },
+  "ui_6f955d7e": {
+    "message": "데이터 중심",
+    "description": "Data Dense"
+  },
+  "ui_c7131496": {
+    "message": "재미있게",
+    "description": "Playful"
+  },
+  "ui_772d3068": {
+    "message": "기술적",
+    "description": "Technical"
+  },
+  "ui_30d783f6": {
+    "message": "타임라인",
+    "description": "Timeline"
+  },
+  "ui_ed6bcd64": {
+    "message": "비교",
+    "description": "Comparison"
+  },
+  "ui_78f9b63c": {
+    "message": "포스터",
+    "description": "Poster"
+  },
+  "ui_4c4c7c4b": {
+    "message": "스케치 노트",
+    "description": "Sketch Note"
+  },
+  "ui_f838ade2": {
+    "message": "전문적",
+    "description": "Professional"
+  },
+  "ui_2f33ced9": {
+    "message": "벤토 그리드",
+    "description": "Bento Grid"
+  },
+  "ui_d0a9d3e2": {
+    "message": "교육용",
+    "description": "Instructional"
+  },
+  "ui_d0670c2b": {
+    "message": "블록",
+    "description": "Bricks"
+  },
+  "ui_ca5154a8": {
+    "message": "점토",
+    "description": "Clay"
+  },
+  "ui_e2a4f948": {
+    "message": "과학적",
+    "description": "Scientific"
+  },
+  "ui_872f8bff": {
+    "message": "예: 큰 아이콘이 있는 가로 타임라인을 사용하세요.",
+    "description": "e.g. Use a horizontal timeline layout with large icons."
+  },
+  "ui_2b961f3b": {
+    "message": "발표자용",
+    "description": "Presenter"
+  },
+  "ui_d5672d4e": {
+    "message": "예: 15분 학회 발표용으로 구성하세요.",
+    "description": "e.g. Design for a 15-minute conference presentation."
+  },
+  "ui_ebce5073": {
+    "message": "예: 모든 수치 결과를 비교 표로 정리하세요.",
+    "description": "e.g. Extract all numerical results into a comparison table."
+  },
+  "ui_beebc079": {
+    "message": "✨ 사용 환경",
+    "description": "✨ Experience"
+  },
+  "ui_4aa812c3": {
+    "message": "데스크톱 알림",
+    "description": "Desktop notifications"
+  },
+  "ui_d13e25a7": {
+    "message": "완료 알림음",
+    "description": "Completion chime"
+  },
+  "ui_5ef31b9a": {
+    "message": "완료되면 노트북 자동 열기",
+    "description": "Auto-open notebook when done"
+  },
+  "ui_f1435584": {
+    "message": "✓ 설정 저장",
+    "description": "✓ Save Settings"
+  },
+  "ui_f835ea8d": {
+    "message": "페이지에서 PDF 확인 중...",
+    "description": "Scanning page for PDFs..."
+  },
+  "ui_837a3d6": {
+    "message": "준비",
+    "description": "Setup"
+  },
+  "ui_f3ddb69": {
+    "message": "소스 추가",
+    "description": "Add Source"
+  },
+  "ui_f0bfd7ef": {
+    "message": "소스 처리",
+    "description": "Processing Source"
+  },
+  "ui_1a359bf5": {
+    "message": "아티팩트 생성",
+    "description": "Generate Artifacts"
+  },
+  "ui_628ea1a2": {
+    "message": "완료",
+    "description": "Complete"
+  },
+  "ui_74b6158": {
+    "message": "이전에 선택한 컬렉션",
+    "description": "Previously selected collection"
+  },
+  "ui_caa12099": {
+    "message": "이전에 선택한 컬렉션 (사용 불가)",
+    "description": "Previously selected collection (unavailable)"
+  },
+  "ui_9cd3026e": {
+    "message": "이전에 선택한 컬렉션 (새로고침 실패)",
+    "description": "Previously selected collection (could not refresh)"
+  },
+  "ui_9fde4674": {
+    "message": "컬렉션 불러오는 중...",
+    "description": "Loading collections..."
+  },
+  "ui_ad9295c6": {
+    "message": "사용 가능한 컬렉션 $1개.",
+    "description": "Collections available: $1."
+  },
+  "ui_71b89b88": {
+    "message": "컬렉션이 없습니다. Gemini Notebook에서 먼저 만드세요.",
+    "description": "No collections found. Create one in Gemini Notebook first."
+  },
+  "ui_3417b8bd": {
+    "message": "컬렉션을 불러오지 못했습니다. Gemini Notebook에서 로그인 상태를 확인하세요.",
+    "description": "Could not load collections. Open Gemini Notebook and check your sign-in."
+  },
+  "ui_46a25e8a": {
+    "message": "로컬 PDF 감지됨",
+    "description": "Detected Local PDF"
+  },
+  "ui_96195221": {
+    "message": "PDF 감지됨",
+    "description": "Detected PDF"
+  },
+  "ui_f142f1c5": {
+    "message": "업로드 후 생성",
+    "description": "Upload & Generate"
+  },
+  "ui_b3573353": {
+    "message": "다른 PDF 선택",
+    "description": "Choose Different PDF"
+  },
+  "ui_3fac81f6": {
+    "message": "🎧 아티팩트 생성",
+    "description": "🎧 Generate Artifacts"
+  },
+  "ui_c277b27a": {
+    "message": "이 페이지에서 PDF를 찾지 못했습니다.",
+    "description": "No PDF detected on this page."
+  },
+  "ui_f9bbdfd0": {
+    "message": "이 페이지 URL을 직접 가져올 수 있습니다.",
+    "description": "You can still try importing this page URL directly."
+  },
+  "ui_f544e784": {
+    "message": "페이지 가져오기 후 생성",
+    "description": "Import Page & Generate"
+  },
+  "ui_c108fead": {
+    "message": "로컬 PDF 업로드",
+    "description": "Upload Local PDF"
+  },
+  "ui_9388d923": {
+    "message": "유효한 PDF가 아닙니다. 다른 파일을 선택하세요.",
+    "description": "This file isn't a valid PDF. Choose another file."
+  },
+  "ui_b06fbcc0": {
+    "message": "결과를 확인하지 못했습니다. 다시 시작하기 전에 Gemini Notebook을 확인하세요.",
+    "description": "The result could not be confirmed. Check Gemini Notebook before starting again."
+  },
+  "ui_97c517c8": {
+    "message": "업로드 한도를 초과한 PDF입니다. Gemini Notebook에서 직접 업로드하세요.",
+    "description": "This PDF exceeds the upload limit. Upload it directly in Gemini Notebook."
+  },
+  "ui_3f0f4b44": {
+    "message": "Gemini Notebook에 로그인한 뒤 팝업을 다시 여세요.",
+    "description": "Sign in to Gemini Notebook, then reopen this popup."
+  },
+  "ui_e5c255ed": {
+    "message": "Gemini Notebook 사용 한도에 도달했습니다. 잠시 후 다시 시작하세요.",
+    "description": "Gemini Notebook has reached a limit. Wait before starting more work."
+  },
+  "ui_1c310fdf": {
+    "message": "작업을 확인해야 합니다. 계속하기 전에 상세 내용을 확인하세요.",
+    "description": "This workflow needs attention. Check the details before continuing."
+  },
+  "ui_ec24245": {
+    "message": "상세 내용",
+    "description": "Details"
+  },
+  "ui_811b0256": {
+    "message": "노트북 제목",
+    "description": "Notebook title"
+  },
+  "ui_d9259b7d": {
+    "message": "$1에 추가됨",
+    "description": "Added to $1"
+  },
+  "ui_9cebccf3": {
+    "message": "컬렉션에 추가하지 못했습니다.",
+    "description": "Collection assignment failed."
+  },
+  "ui_7fad8491": {
+    "message": "컬렉션",
+    "description": "collection"
+  },
+  "ui_c4a69ed0": {
+    "message": "Gemini Notebook에서 열기",
+    "description": "Open in Gemini Notebook"
+  },
+  "ui_285dfd14": {
+    "message": "소스를 가져왔습니다. 요청한 아티팩트가 없습니다.",
+    "description": "Source imported. No artifacts requested."
+  },
+  "ui_e65751d2": {
+    "message": "아티팩트 $1/$2개 완료 ($3개 실패).",
+    "description": "$1/$2 artifacts ready ($3 failed)."
+  },
+  "ui_f59ae8c5": {
+    "message": "아티팩트 $1개 완료!",
+    "description": "Artifacts ready: $1!"
+  },
+  "ui_1aadce96": {
+    "message": "이 노트북에서 계속하려면 다운로드를 허용하거나 PDF를 선택하세요.",
+    "description": "Allow the download or choose a PDF to continue in this notebook."
+  },
+  "ui_f5943c95": {
+    "message": "팝업을 닫아도 작업은 계속됩니다.",
+    "description": "You can close this popup. Work continues."
+  },
+  "ui_26242fbd": {
+    "message": "다운로드 허용 후 계속",
+    "description": "Allow Download & Continue"
+  },
+  "ui_dd6a9d74": {
+    "message": "대신 PDF 업로드",
+    "description": "Upload PDF Instead"
+  },
+  "ui_9d9a1d5b": {
+    "message": "다운로드 상세 내용",
+    "description": "Download details"
+  },
+  "ui_92de1569": {
+    "message": "모니터링 중지",
+    "description": "Stop Monitoring"
+  },
+  "ui_59ba73c4": {
+    "message": "이 워크플로를 중지합니다. Gemini Notebook에서 이미 시작한 작업은 계속될 수 있습니다.",
+    "description": "Stops this workflow. Work already started in Gemini Notebook may continue."
+  },
+  "ui_a455e487": {
+    "message": "다시 시작",
+    "description": "Start Over"
+  },
+  "ui_61e2a3f8": {
+    "message": "소스",
+    "description": "Source"
+  },
+  "ui_d87cff14": {
+    "message": "소스 대체",
+    "description": "Source replacement"
+  },
+  "ui_18b524fa": {
+    "message": "대체 PDF는 같은 노트북에 업로드됩니다. 실패한 URL 소스는 유지되며 아티팩트는 대체 PDF를 사용합니다.",
+    "description": "Upload fallback uses this notebook. The failed URL source is kept. Artifacts use the replacement PDF."
+  },
+  "ui_79f5dd9e": {
+    "message": "워크플로 상세 내용",
+    "description": "Workflow details"
+  },
+  "ui_6cac833d": {
+    "message": "시작 중...",
+    "description": "Starting..."
+  },
+  "ui_25185cf8": {
+    "message": "⏳ 시작 중...",
+    "description": "⏳ Starting..."
+  },
+  "ui_dfcc9e32": {
+    "message": "업로드 중...",
+    "description": "Uploading..."
+  },
+  "ui_1fb8851e": {
+    "message": "현재 PDF 읽는 중...",
+    "description": "Reading current PDF..."
+  },
+  "ui_435bb9d2": {
+    "message": "Gemini Notebook 연결 중...",
+    "description": "Connecting to Gemini Notebook..."
+  },
+  "ui_8022dbaf": {
+    "message": "노트북 만드는 중...",
+    "description": "Creating notebook..."
+  },
+  "ui_357652bd": {
+    "message": "소스 추가 중...",
+    "description": "Adding source..."
+  },
+  "ui_d2697109": {
+    "message": "PDF 다운로드 중...",
+    "description": "Downloading PDF..."
+  },
+  "ui_36e593a8": {
+    "message": "PDF 업로드 중...",
+    "description": "Uploading PDF..."
+  },
+  "ui_a5712967": {
+    "message": "소스 처리 대기 중. 약 30초마다 확인합니다.",
+    "description": "Waiting for source processing. Checking about every 30 seconds."
+  },
+  "ui_a31472dd": {
+    "message": "아티팩트 요청 중...",
+    "description": "Requesting artifacts..."
+  },
+  "ui_864fcfa3": {
+    "message": "워크플로 완료.",
+    "description": "Workflow complete."
+  },
+  "ui_5549811c": {
+    "message": "작업 진행 중...",
+    "description": "Work in progress..."
+  },
+  "ui_70571b43": {
+    "message": "아티팩트 $2개 중 $1개 완료.",
+    "description": "$1 of $2 artifacts ready."
+  },
+  "ui_cf65f42b": {
+    "message": "Gemini Notebook 준비 완료!",
+    "description": "Gemini Notebook Ready!"
+  },
+  "ui_ed59a0d6": {
+    "message": "노트북 열기",
+    "description": "Open Notebook"
+  },
+  "ui_265915f3": {
+    "message": "닫기",
+    "description": "Dismiss"
+  },
+  "ui_10c52774": {
+    "message": "ScholarRelay 오류",
+    "description": "ScholarRelay Error"
+  },
+  "ui_5a963259": {
+    "message": "노트북 $1 준비 완료. 아티팩트 없이 소스를 가져왔습니다. 클릭하여 여세요.",
+    "description": "Notebook $1 is ready. Source imported without artifacts. Click to open."
+  },
+  "ui_1290e46e": {
+    "message": "노트북 $1의 아티팩트 $2개가 준비되었습니다. 클릭하여 여세요.",
+    "description": "Notebook $1 is ready with $2 artifacts. Click to open."
+  },
+  "ui_67fd3b38": {
+    "message": "노트북 $1 일부 완료. 아티팩트 $2/$3개 완료, $4개 실패. 클릭하여 여세요.",
+    "description": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open."
   }
 }

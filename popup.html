@@ -276,6 +276,8 @@
     }
 
     .step-detail {
+      white-space: pre-line;
+      overflow-wrap: anywhere;
       font-size: 11px;
       color: var(--text-dim);
       margin-top: 2px;
@@ -699,6 +701,14 @@
       border-top: 1px solid var(--border);
       margin: 8px 0;
     }
+    .s-section-title, .s-toggle-label { min-width: 0; overflow-wrap: anywhere; }
+    .toggle-switch, .s-section-arrow { flex-shrink: 0; }
+    .s-select { min-width: 0; max-width: 100%; }
+    .s-toggle-row { gap: 8px; }
+    .btn-generate, .btn-secondary, .btn-save-close { white-space: normal; overflow-wrap: anywhere; }
+    :lang(ko) .settings-group-title, :lang(ja) .settings-group-title,
+    :lang(ko) .s-section-title, :lang(ja) .s-section-title,
+    :lang(ko) .label, :lang(ja) .label { letter-spacing: normal; }
   </style>
 </head>
 
@@ -767,11 +777,13 @@
           </div>
         <div class="s-help" id="language-scope">Applies to audio, video, reports, infographics, slide decks, and data tables.</div>
 
+        <div class="s-help">The interface follows Chrome's language. Artifact language is independent.</div>
+
       <!-- ================== AUDIO ================== -->
       <!-- expanded by default -->
       <div class="s-section expanded" id="sec-audio">
         <div class="s-section-header" data-section="sec-audio">
-          <span class="s-section-title">🎧 Audio</span>
+          <span class="s-section-title">🎧 Audio Overview</span>
           <label class="toggle-switch s-header-toggle">
             <input type="checkbox" id="s-generateAudio" checked>
             <span class="toggle-track"></span>
@@ -811,7 +823,7 @@
       <!-- ================== VIDEO ================== -->
       <div class="s-section" id="sec-video">
         <div class="s-section-header" data-section="sec-video">
-          <span class="s-section-title">🎬 Video</span>
+          <span class="s-section-title">🎬 Video Overview</span>
           <label class="toggle-switch s-header-toggle">
             <input type="checkbox" id="s-generateVideo">
             <span class="toggle-track"></span>

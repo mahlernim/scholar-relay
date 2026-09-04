@@ -307,3 +307,23 @@ e5c41f442410bdff365371deb6ea7cbfcc01fcf0a03ddcab61e1ebc3e782fb94
 The ZIP and checksum replaced the assets in [the existing release draft](https://github.com/mahlernim/scholar-relay/releases/tag/untagged-7e1681531a9834af4293), ID `382447938`. Both asset digests matched the local files. The draft target is the merged commit above and its bilingual notes include final CI and digest evidence. A fresh API read confirmed `draft = true` and no publication timestamp. Store status remains **not submitted**. No store action or v1.3.0 package change occurred.
 
 Use this final ZIP without rebuilding for the next authorized publication and submission. The original draft remains recoverable from the local backup noted above. Keep #14 open for post-publication search observations and #25 open for protocol verification.
+
+### v1.3.1 publication and unsubmitted store draft
+
+The user subsequently authorized publication and submission. GitHub release `382447938` was published on September 4 at `2026-09-04T10:44:47Z`, targeting `01a5be40d2bae92d0250d9c8a13b2476cbd1bdd4`. Its ZIP remains 67,374 bytes with SHA-256 `e5c41f442410bdff365371deb6ea7cbfcc01fcf0a03ddcab61e1ebc3e782fb94`. A fresh GitHub read during localization preparation confirmed the publication timestamp and unchanged asset digest.
+
+After publisher verification, the same ZIP was uploaded to the existing store item. The observed Package page showed Draft 1.3.1 and Published 1.3.0. English and Korean descriptions and replacement screenshots were saved. These dashboard observations were made earlier in this task, before the localization work, and do not establish a later submission or publication. Submission was paused when the user expanded the scope to localization. Version 1.3.1 was not submitted for review in that session.
+
+### v1.3.2 localization preparation
+
+The user approved coordinated UI and store localization in issue #28. The published v1.3.1 ZIP is immutable. Version 1.3.2 adds English, Korean, Japanese, Spanish, French, German, and Brazilian Portuguese catalogs for static and dynamic popup text, settings, accessible toggle labels, progress, recovery guidance, and desktop notifications. Store names, summaries, descriptions, and localized screenshots accompany the interface.
+
+Chrome chooses the UI locale with English fallback. The existing `language` setting, option values, custom prompts, notebook titles, collection names, and wire payloads remain unchanged. In particular, adding `pt_BR` for the UI does not rewrite the existing `pt` artifact-language value. Persisted states and worker diagnostics remain locale-independent. Progress is presented from stable state, including per-artifact status and elapsed time. Original diagnostics stay behind translated Details, while unknown mutation outcomes continue to tell users to inspect the existing notebook before restarting.
+
+The translation source and terminology evidence are in [localization notes](localization/README.md). Published localized Google help was checked for feature names. This is not a claim that every signed-in locale UI was inspected or every translation independently reviewed by a native speaker. No authentication, ingestion, generation, retry, or permission behavior was changed.
+
+Local checks include 87 deterministic tests, complete generated catalogs and placeholders, all static popup labels, translated worker notifications, and the isolated Chrome smoke. Seven locale fixtures check completion, expanded settings, uncertain-result errors, permission waits, and artifact polling at 360 pixels. Saved output language with audio disabled and user prompts survive save/reopen. The real 40 MiB local-file path still reads 525,312 metadata/signature bytes and delivers exactly 41,943,040 bytes to the controlled server with matching SHA-256. No live Google document mutations were needed for this UI-only release.
+
+The first local smoke inherited the system language and exposed an English-only harness assumption. Its baseline now explicitly requests English, followed by deterministic seven-locale checks. Background-tab screenshot capture required bringing the isolated test tab to the front. These were harness corrections, not reasons to alter production language selection.
+
+The candidate remains a draft until its publication step is authorized. Record exact-head CI, merged-main CI, final package bytes and digest below before preparing the release draft. Keep #14 open for post-publication search evidence and #25 open for protocol verification.

@@ -5,6 +5,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { localizationSmoke } from './localization-smoke.mjs';
 
 const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const tempRoot = await mkdtemp(join(tmpdir(), 'scholar-relay-smoke-'));
@@ -260,6 +261,7 @@ try {
   const chromePath = await resolveChrome();
   chrome = spawn(chromePath, [
     '--disable-gpu',
+    '--lang=en',
     '--enable-unsafe-extension-debugging',
     ...(process.env.CI ? ['--disable-dev-shm-usage', '--no-sandbox'] : []),
     '--no-first-run',
@@ -323,7 +325,7 @@ try {
     view = await evaluate(popup, `({text:document.getElementById('content').innerText,resume:!!document.getElementById('btn-resume-pdf'),file:!!document.getElementById('btn-fallback-file'),stop:!!document.getElementById('btn-abort'),width:document.documentElement.scrollWidth})`);
     assert(view.stop && view.width<=360, 'Running popup lacks stop control or clips horizontally');
     assert(!view.text.includes('failed-source'), 'Internal source ID leaked into primary wording');
-    assert(step==='wait_pdf_access' ? view.resume && view.file && !view.text.includes('Work continues.') : view.text.includes('Work continues.'), 'Permission wait incorrectly presents background progress');
+    assert(step==='wait_pdf_access' ? view.resume && view.file && !view.text.includes('Work continues.') : view.text.includes('Work continues.'), `Permission wait incorrectly presents background progress: ${JSON.stringify(view)}`);
   }
 
 
@@ -379,6 +381,8 @@ try {
   assert(escaped.attributes.length === 2 && escaped.href === quotedUrl, 'Title or URL created unexpected markup');
   assert(escaped.rel.includes('noopener') && escaped.rel.includes('noreferrer'), 'Notebook link lacks isolation');
   assert(escaped.summary.includes('Source imported. No artifacts requested.'), 'Empty-task completion claims artifact output');
+
+  await localizationSmoke({ popup, evaluate, reload, root: sourceRoot, completedState });
 
   // Exercise the real Chrome message bridge and the complete file upload client.
   await evaluate(popup, `chrome.storage.local.set({pipelineState:{status:'idle'}})`);

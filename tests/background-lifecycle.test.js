@@ -9,6 +9,7 @@ import * as fallback from '../source-import.js';
 import * as detection from '../detection-policy.js';
 import * as pdf from '../pdf-file-policy.js';
 import * as permissions from '../site-permissions.js';
+import * as i18n from '../i18n.js';
 
 // Run the shipped worker with real policy modules and controlled browser/service IO.
 const source = (await readFile(new URL('../background.js', import.meta.url), 'utf8'))
@@ -17,6 +18,7 @@ const source = (await readFile(new URL('../background.js', import.meta.url), 'ut
 async function worker() {
   const data = { pipelineState: { status: 'idle' }, userSettings: { chimeEnabled: false, notificationEnabled: false } };
   const logs = [];
+  const notifications = [];
   let listener;
   const hooks = {};
   const noop = async () => {};
@@ -24,7 +26,7 @@ async function worker() {
   const apiMocks = Object.fromEntries(Object.entries(api).map(([key, value]) => [key,
     typeof value === 'function' ? () => { throw new Error(`Unexpected service call ${key}`); } : value]));
   const context = vm.createContext({
-    ...apiMocks, ...runtime, ...fallback, ...detection, ...pdf, ...permissions,
+    ...apiMocks, ...runtime, ...fallback, ...detection, ...pdf, ...permissions, ...i18n,
     console: Object.fromEntries(['log', 'warn', 'error'].map(level => [level, (...args) => logs.push([level, ...args])])),
     crypto: webcrypto, URL, TextEncoder, TextDecoder, Uint8Array, ArrayBuffer, atob, btoa, setTimeout, clearTimeout,
     chrome: {
@@ -35,15 +37,38 @@ async function worker() {
       alarms: { get: async () => null, clear: noop, create: noop, onAlarm: { addListener(fn) { listener = fn; } } },
       action: { setBadgeText: noop, setBadgeBackgroundColor: noop },
       runtime: { onMessage: event },
-      notifications: { onClicked: event, onButtonClicked: event, onClosed: event, create: noop },
+      notifications: { onClicked: event, onButtonClicked: event, onClosed: event,
+        create: async (id, options) => notifications.push({ id, ...options }) },
       tabs: { create: noop },
     },
   });
   vm.runInContext(source, context);
   await vm.runInContext('bootReconciliationPromise', context);
   const functions = vm.runInContext('({startPipelineRequest, tickArtifactPoll, tickSourcePoll})', context);
-  return { data, logs, hooks, context, listener, ...functions };
+  return { data, logs, notifications, hooks, context, listener, ...functions };
 }
+
+test('completion and failure notifications use localized guidance without changing worker diagnostics', async () => {
+  const catalog = JSON.parse(await readFile(new URL('../_locales/ko/messages.json', import.meta.url), 'utf8'));
+  const w = await worker();
+  w.data.userSettings.notificationEnabled = true;
+  try {
+    globalThis.chrome = { i18n: { getMessage(key, values) {
+      return catalog[key]?.message.replace(/\$(\d+)/g, (_, index) => values[index - 1]) || '';
+    } } };
+    w.data.pipelineState = { ...running(), notebookTitle: 'My unchanged title' };
+    await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+    assert.equal(w.notifications[0].title, 'Gemini Notebook 준비 완료!');
+    assert.ok(w.notifications[0].message.includes('My unchanged title'));
+    assert.equal(w.notifications[0].buttons[0].title, '노트북 열기');
+    w.data.pipelineState = running([{status:'failed'}]);
+    w.context.listArtifactStatuses = async () => new Map();
+    await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+    assert.equal(w.notifications[1].title, 'ScholarRelay 오류');
+    assert.match(w.notifications[1].message, /상세 내용/);
+    assert.match(w.data.pipelineState.error, /All artifact generations failed/);
+  } finally { delete globalThis.chrome; }
+});
 
 function running(tasks = []) {
   return { status: 'running', runId: 'old', step: 'wait_artifacts', notebookId: 'notebook',
