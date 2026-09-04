@@ -253,3 +253,17 @@ Validation passed 69 tests and the isolated Chrome smoke, including language per
 Issue #14 updates localized names and summaries around PDF import into Gemini Notebook and uses Scholar Relay naturally in the README and prepared descriptions. The summaries fit the 132-character limit. The popup keeps the compact ScholarRelay brand. [Prepared store copy](releases/v1.3.1-store-listing.md) includes equivalent English and Korean descriptions and the required search follow-up. Listing changes are staged in the repository, not applied during v1.3.0 review. Search visibility remains unverified until the next version is published and indexed, so #14 remains open.
 
 Version 1.3.1 contains the wording and listing work. [Release notes](releases/v1.3.1.md) are provided in Korean and English. The next release is prepared as a draft only. The publication monitor continues to track v1.3.0 independently.
+
+### v1.3.1 verified draft
+
+Prepared September 4, 2026. PR #16 closed #15 after exact-head CI passed at `b8c28a2df1e3f33455a529808814439470aea600`. PR #17 references #14 and passed exact-head CI at `ca486404c72cfb37f95f3e1ec3503aba63e4349d`. The release target is merged commit `eb54076fc3629373293ca3d092041e2344ddd3ca`, with both merged-main jobs successful in [run 33831010800](https://github.com/mahlernim/scholar-relay/actions/runs/33831010800).
+
+The canonical `scholar-relay-v1.3.1.zip` contains 20 allowlisted runtime files and is 67,079 bytes. Embedded version, manifest and package alignment, every archived file's bytes, and checksum sidecar were verified locally. The uploaded GitHub asset digest matches the local SHA-256.
+
+```text
+221d6f39610fb02bff8e02c8ec0ee43eded443caaf431bd6d92737618da9e5a9
+```
+
+[GitHub release draft](https://github.com/mahlernim/scholar-relay/releases/tag/untagged-578261f1a8a2f9d1e07f), release ID `382447938`, contains the ZIP and checksum with equivalent Korean and English notes. It is a draft, not a published release. The store submission result for v1.3.1 is **not submitted**. No changes were made to the existing v1.3.0 store submission or live listing during this work. Its publication is tracked separately by the existing follow-up and was not rechecked during release preparation.
+
+When proceeding with publication, use this exact ZIP and the prepared store descriptions and screenshots. Do not rebuild the ZIP. Confirm v1.3.0 publication first, then publish and submit v1.3.1 when authorized. Record submission and eventual dashboard and public-listing confirmation here. Keep #14 open until the post-publication search observations are recorded.
