@@ -327,3 +327,19 @@ Local checks include 87 deterministic tests, complete generated catalogs and pla
 The first local smoke inherited the system language and exposed an English-only harness assumption. Its baseline now explicitly requests English, followed by deterministic seven-locale checks. Background-tab screenshot capture required bringing the isolated test tab to the front. These were harness corrections, not reasons to alter production language selection.
 
 The candidate remains a draft until its publication step is authorized. Record exact-head CI, merged-main CI, final package bytes and digest below before preparing the release draft. Keep #14 open for post-publication search evidence and #25 open for protocol verification.
+
+### v1.3.2 verified draft
+
+[PR #29](https://github.com/mahlernim/scholar-relay/pull/29) closed #28 after both exact-head CI jobs passed at `b83ead784baba7d1d436b66a7d275ca8b0dde2ae` in [run 33866885722](https://github.com/mahlernim/scholar-relay/actions/runs/33866885722). Both merged-main jobs passed at `2a7ef7a3265d8c99da83ef525059ecf407955d03` in [run 33867047014](https://github.com/mahlernim/scholar-relay/actions/runs/33867047014).
+
+The canonical ZIP was built from that merged Windows checkout. It contains 26 allowlisted runtime files, embeds version 1.3.2, and is 114,101 bytes. Every decompressed file matches the release checkout and the checksum sidecar was verified. The ZIP and sidecar were uploaded to [GitHub draft 382668031](https://github.com/mahlernim/scholar-relay/releases/tag/untagged-e0440ac9665a9f716d89). Both uploaded asset digests match their local files. The ZIP SHA-256 is below.
+
+```text
+5921bf2adea872eb4ea23378d3399f925f1775852a287581bfc461a6716963a5
+```
+
+The final catalogs contain 198 UI messages per locale plus name and summary metadata. All 87 tests pass, including localized worker notifications and unchanged diagnostics. Seven-locale Chrome smoke and the original real 40 MiB transfer pass locally and in hosted CI. The global and six localized pairs of store screenshots were regenerated and visually inspected. The capture tool now checks caption/image bounds and constrains grid columns after Korean headline overflow was detected and corrected.
+
+A fresh release read confirmed `isDraft = true` and target `2a7ef7a3265d8c99da83ef525059ecf407955d03`. Version 1.3.2 is **not published and not submitted to the store**. No developer-console mutation occurred during localization preparation. The earlier observed store draft remains 1.3.1 unless subsequently changed outside this task. Published v1.3.1 still has its original `e5c41f44...82fb94` digest, verified locally and against GitHub.
+
+For the next authorized publication step, use this exact ZIP without rebuilding. Use [the seven descriptions](releases/v1.3.2-store-listing.md), global screenshots for English, and `docs/store-assets/<locale>/` for Korean, Japanese, Spanish, French, German, and Brazilian Portuguese. Verify package version and all seven languages in the dashboard before submission. Record submission and eventual public availability separately. Issues #14 and #25 remain open for their existing follow-ups.
