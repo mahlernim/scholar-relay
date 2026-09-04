@@ -536,7 +536,7 @@ function renderProgress(state) {
     </div>
     ${titleHtml}
     ${collectionHtml}
-    ${state.failedUrlSourceId ? '<details class="workflow-details"><summary>Source replacement</summary><div class="step-detail">The PDF is uploaded into this notebook. The failed URL source is kept. Artifacts use the replacement PDF.</div></details>' : ''}
+    ${state.failedUrlSourceId ? '<details class="workflow-details"><summary>Source replacement</summary><div class="step-detail">Upload fallback uses this notebook. The failed URL source is kept. Artifacts use the replacement PDF.</div></details>' : ''}
     ${state.status === 'completed'
         ? `${bottomHtml}<details class="workflow-details"><summary>Workflow details</summary><div class="pipeline">${stepsHtml}</div></details>`
         : `<div class="pipeline">${stepsHtml}</div>${bottomHtml}`}`;
