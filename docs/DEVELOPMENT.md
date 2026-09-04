@@ -332,7 +332,7 @@ The candidate remains a draft until its publication step is authorized. Record e
 
 [PR #29](https://github.com/mahlernim/scholar-relay/pull/29) closed #28 after both exact-head CI jobs passed at `b83ead784baba7d1d436b66a7d275ca8b0dde2ae` in [run 33866885722](https://github.com/mahlernim/scholar-relay/actions/runs/33866885722). Both merged-main jobs passed at `2a7ef7a3265d8c99da83ef525059ecf407955d03` in [run 33867047014](https://github.com/mahlernim/scholar-relay/actions/runs/33867047014).
 
-The canonical ZIP was built from that merged Windows checkout. It contains 26 allowlisted runtime files, embeds version 1.3.2, and is 114,101 bytes. Every decompressed file matches the release checkout and the checksum sidecar was verified. The ZIP and sidecar were uploaded to [GitHub draft 382668031](https://github.com/mahlernim/scholar-relay/releases/tag/untagged-e0440ac9665a9f716d89). Both uploaded asset digests match their local files. The ZIP SHA-256 is below.
+The canonical ZIP was built from that merged Windows checkout. It contains 26 allowlisted runtime files, embeds version 1.3.2, and is 114,101 bytes. Every decompressed file matches the release checkout and the checksum sidecar was verified. The ZIP and sidecar were uploaded to GitHub draft `382668031` in [the release list](https://github.com/mahlernim/scholar-relay/releases). Both uploaded asset digests match their local files. The ZIP SHA-256 is below.
 
 ```text
 5921bf2adea872eb4ea23378d3399f925f1775852a287581bfc461a6716963a5
