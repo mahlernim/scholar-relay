@@ -275,3 +275,21 @@ On September 4, 2026 at approximately 19:26 KST, the [public Chrome Web Store li
 The developer dashboard redirected to Google's Verify it is you sign-in page, so its publication status could not be independently confirmed. Dashboard verification remains outstanding until the publisher signs in again. No store mutation was performed.
 
 GitHub release ID `382447938` was still a v1.3.1 draft during this check. Its verified package remains ready for the next authorized publication step. It was not published, rebuilt, or submitted. Issue #14 still awaits post-v1.3.1-publication search observations.
+
+### v1.3.1 issue-fix candidate
+
+Later on September 4, the user authorized including issues #19 through #23 in the unsubmitted v1.3.1 draft. This supersedes the earlier instruction to retain its original ZIP unchanged. The v1.3.0 store package and public listing remain untouched.
+
+Notebook title and link attributes now escape quotes. New runs require at least one artifact before any remote creation, with another check before generation if settings change during ingestion. Legacy empty-task polling completes as source-import success before evaluating its timeout. Nonempty all-failed runs still fail. Alarm listeners contain stale ownership and unexpected errors, preserve overlap exclusion, and log cleanup-effect failures without overwriting replacement runs. The separate `suggested` and `pending_review` protocol question is tracked in #25 and is not changed here.
+
+Local PDF metadata reads use the first and last 256 KiB. Base64 metadata callers also bound decoding before allocating decoded bytes, with quartet alignment. XMP retains priority across both windows, and disjoint regions are not concatenated into a false metadata match. Metadata outside or crossing a window falls back to a useful filename or service-generated naming. Unused polling helpers, duplicate popup readers, and the redundant MIME branch were removed. The injected page reader remains separate.
+
+Local validation passed 81 deterministic tests and the Chrome smoke. The smoke exercises quoted title and link attributes, empty-task completion wording, and the real local-file popup entry point with a 40 MiB file and no supplied title. Metadata and signature reads totaled 525,312 bytes. The controlled server received all 41,943,040 bytes with matching SHA-256. The message was 55,924,192 bytes and the popup remained 344 pixels high at 360 pixels wide. This is controlled transport validation, not a claim of live Google ingestion or a universal memory improvement measurement.
+
+The replacement candidate ZIP has 20 unchanged allowlisted entries, version 1.3.1, and 67,482 bytes. Every decompressed entry matches the checkout and the checksum sidecar was verified. Its SHA-256 is below.
+
+```text
+bb4a0d28225801503656b892e101ede3bf632ee8194bfee44186fb09b9fdb343
+```
+
+The previous draft ZIP and checksum were retained locally under `dist/draft-backups/221d6f39610fb02bf/` after verifying the original digest. Exact-head and merged-main CI must pass before this candidate replaces the assets in release draft `382447938`. Record the final merged target and CI evidence with the draft update. Keep the release a draft and the store status **not submitted** until publication is authorized. The current bilingual release notes and prepared store copy include these fixes and the bounded naming behavior. Issue #14 still requires post-publication search evidence.
