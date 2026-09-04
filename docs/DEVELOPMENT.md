@@ -267,3 +267,11 @@ The canonical `scholar-relay-v1.3.1.zip` contains 20 allowlisted runtime files a
 [GitHub release draft](https://github.com/mahlernim/scholar-relay/releases/tag/untagged-578261f1a8a2f9d1e07f), release ID `382447938`, contains the ZIP and checksum with equivalent Korean and English notes. It is a draft, not a published release. The store submission result for v1.3.1 is **not submitted**. No changes were made to the existing v1.3.0 store submission or live listing during this work. Its publication is tracked separately by the existing follow-up and was not rechecked during release preparation.
 
 When proceeding with publication, use this exact ZIP and the prepared store descriptions and screenshots. Do not rebuild the ZIP. Confirm v1.3.0 publication first, then publish and submit v1.3.1 when authorized. Record submission and eventual dashboard and public-listing confirmation here. Keep #14 open until the post-publication search observations are recorded.
+
+### v1.3.0 public availability confirmed
+
+On September 4, 2026 at approximately 19:26 KST, the [public Chrome Web Store listing](https://chromewebstore.google.com/detail/scholarrelay/epopghhfmpokhbalmnfcopmplffphdbb) displayed version 1.3.0, an update date of September 4, 2026, and an Add to Chrome button. Its description now explains HTML titles, URL-first import, same-notebook upload fallback, and the 40 MiB limit. This confirms public availability. The precise approval and publication times were not observed.
+
+The developer dashboard redirected to Google's Verify it is you sign-in page, so its publication status could not be independently confirmed. Dashboard verification remains outstanding until the publisher signs in again. No store mutation was performed.
+
+GitHub release ID `382447938` was still a v1.3.1 draft during this check. Its verified package remains ready for the next authorized publication step. It was not published, rebuilt, or submitted. Issue #14 still awaits post-v1.3.1-publication search observations.
