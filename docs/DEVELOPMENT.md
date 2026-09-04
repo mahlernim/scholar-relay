@@ -293,3 +293,17 @@ bb4a0d28225801503656b892e101ede3bf632ee8194bfee44186fb09b9fdb343
 ```
 
 The previous draft ZIP and checksum were retained locally under `dist/draft-backups/221d6f39610fb02bf/` after verifying the original digest. Exact-head and merged-main CI must pass before this candidate replaces the assets in release draft `382447938`. Record the final merged target and CI evidence with the draft update. Keep the release a draft and the store status **not submitted** until publication is authorized. The current bilingual release notes and prepared store copy include these fixes and the bounded naming behavior. Issue #14 still requires post-publication search evidence.
+
+### v1.3.1 refreshed draft verified
+
+[PR #26](https://github.com/mahlernim/scholar-relay/pull/26) closed #19 through #23 after both exact-head CI jobs passed at `80fef3e26517e3803a589aad832ae13fa3802080`. Both merged-main jobs passed in [run 33864057407](https://github.com/mahlernim/scholar-relay/actions/runs/33864057407) at release target `01a5be40d2bae92d0250d9c8a13b2476cbd1bdd4`.
+
+The final checkout normalized Windows line endings, so the candidate byte check correctly rejected the earlier local ZIP. The package was rebuilt from merged main and every decompressed file was verified again. The final ZIP contains the same 20 allowlisted runtime entries, version 1.3.1, and 67,374 bytes. This supersedes the provisional candidate above, which was never uploaded. The final SHA-256 is below.
+
+```text
+e5c41f442410bdff365371deb6ea7cbfcc01fcf0a03ddcab61e1ebc3e782fb94
+```
+
+The ZIP and checksum replaced the assets in [the existing release draft](https://github.com/mahlernim/scholar-relay/releases/tag/untagged-7e1681531a9834af4293), ID `382447938`. Both asset digests matched the local files. The draft target is the merged commit above and its bilingual notes include final CI and digest evidence. A fresh API read confirmed `draft = true` and no publication timestamp. Store status remains **not submitted**. No store action or v1.3.0 package change occurred.
+
+Use this final ZIP without rebuilding for the next authorized publication and submission. The original draft remains recoverable from the local backup noted above. Keep #14 open for post-publication search observations and #25 open for protocol verification.
