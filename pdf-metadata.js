@@ -1,13 +1,25 @@
+// Best-effort metadata only. Content outside these windows uses fallback naming.
+const PDF_METADATA_WINDOW_BYTES = 256 * 1024;
+
+function byteWindows(bytes) {
+  const size = PDF_METADATA_WINDOW_BYTES;
+  return bytes.length <= size * 2 ? [bytes] : [bytes.subarray(0, size), bytes.subarray(-size)];
+}
+
 function bytesFromPayload(payload) {
-  if (payload instanceof Uint8Array) return payload;
-  if (payload instanceof ArrayBuffer) return new Uint8Array(payload);
+  if (payload instanceof Uint8Array) return byteWindows(payload);
+  if (payload instanceof ArrayBuffer) return byteWindows(new Uint8Array(payload));
   if (typeof payload === 'string') {
-    const binary = atob(payload);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return bytes;
+    const compact = (payload.includes(',') ? payload.slice(payload.indexOf(',') + 1) : payload).replace(/\s+/g, '');
+    // Quartet alignment bounds decoding, including the final padded quartet.
+    const chars = Math.ceil(PDF_METADATA_WINDOW_BYTES / 3) * 4;
+    const parts = compact.length <= chars * 2 ? [compact] : [compact.slice(0, chars), compact.slice(-chars)];
+    return parts.map(part => {
+      const binary = atob(part);
+      return Uint8Array.from(binary, char => char.charCodeAt(0));
+    });
   }
-  return new Uint8Array();
+  return [];
 }
 
 function decodeXmlText(value) {
@@ -69,30 +81,49 @@ function isUsefulTitle(value) {
 }
 
 function extractPdfMetadataTitle(payload) {
-  const bytes = bytesFromPayload(payload);
-  if (!bytes.length) return null;
+  return titleFromWindows(bytesFromPayload(payload));
+}
 
-  const utf8 = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
-  const dcTitle = utf8.match(/<dc:title\b[^>]*>([\s\S]*?)<\/dc:title>/i)?.[1];
-  const xmpValue = dcTitle?.match(/<rdf:li\b[^>]*>([\s\S]*?)<\/rdf:li>/i)?.[1] || dcTitle;
-  const xmpTitle = normalizeTitle(decodeXmlText(xmpValue));
-  if (isUsefulTitle(xmpTitle)) return xmpTitle;
+function titleFromWindows(windows) {
+  // Preserve XMP precedence across both windows, without joining unrelated bytes.
+  for (const bytes of windows) {
+    const utf8 = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+    const dcTitle = utf8.match(/<dc:title\b[^>]*>([\s\S]*?)<\/dc:title>/i)?.[1];
+    const xmpValue = dcTitle?.match(/<rdf:li\b[^>]*>([\s\S]*?)<\/rdf:li>/i)?.[1] || dcTitle;
+    const xmpTitle = normalizeTitle(decodeXmlText(xmpValue));
+    if (isUsefulTitle(xmpTitle)) return xmpTitle;
+  }
 
-  const latin1 = new TextDecoder('windows-1252').decode(bytes);
-  const literalMatch = latin1.match(/\/Title\s*\(((?:\\.|[^\\)])*)\)/s);
-  const literalTitle = normalizeTitle(literalMatch ? decodePdfLiteral(literalMatch[1]) : '');
-  if (isUsefulTitle(literalTitle)) return literalTitle;
+  const decoded = windows.map(bytes => new TextDecoder('windows-1252').decode(bytes));
+  for (const latin1 of decoded) {
+    const literalMatch = latin1.match(/\/Title\s*\(((?:\\.|[^\\)])*)\)/s);
+    const literalTitle = normalizeTitle(literalMatch ? decodePdfLiteral(literalMatch[1]) : '');
+    if (isUsefulTitle(literalTitle)) return literalTitle;
+  }
 
-  const hexMatch = latin1.match(/\/Title\s*<([0-9a-f\s]+)>/i);
-  if (hexMatch) {
-    const hex = hexMatch[1].replace(/\s+/g, '');
-    const hexBytes = new Uint8Array((hex.length / 2) | 0);
-    for (let i = 0; i < hexBytes.length; i++) hexBytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-    const hexTitle = normalizeTitle(decodePdfLiteral(String.fromCharCode(...hexBytes)));
-    if (isUsefulTitle(hexTitle)) return hexTitle;
+  for (const latin1 of decoded) {
+    const hexMatch = latin1.match(/\/Title\s*<([0-9a-f\s]+)>/i);
+    if (hexMatch) {
+      const hex = hexMatch[1].replace(/\s+/g, '');
+      const hexBytes = new Uint8Array((hex.length / 2) | 0);
+      for (let i = 0; i < hexBytes.length; i++) hexBytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+      const hexTitle = normalizeTitle(decodePdfLiteral(Array.from(hexBytes, byte => String.fromCharCode(byte)).join('')));
+      if (isUsefulTitle(hexTitle)) return hexTitle;
+    }
   }
 
   return null;
+}
+
+async function choosePdfFileTitle({ file, pageTitle } = {}) {
+  const normalizedPageTitle = normalizeTitle(pageTitle);
+  if (isUsefulTitle(normalizedPageTitle)) return { title: normalizedPageTitle, source: 'page_metadata' };
+  const size = PDF_METADATA_WINDOW_BYTES;
+  const slices = file.size <= size * 2 ? [file] : [file.slice(0, size), file.slice(-size)];
+  const windows = await Promise.all(slices.map(async slice => new Uint8Array(await slice.arrayBuffer())));
+  const title = titleFromWindows(windows);
+  if (title) return { title, source: 'pdf_metadata' };
+  return choosePdfTitle({ filename: file.name });
 }
 
 function titleFromFilename(filename) {
@@ -116,4 +147,4 @@ function choosePdfTitle({ payload, pageTitle, filename } = {}) {
   return { title: null, source: 'notebooklm' };
 }
 
-export { choosePdfTitle, extractPdfMetadataTitle, isUsefulTitle, titleFromFilename };
+export { choosePdfTitle, choosePdfFileTitle, extractPdfMetadataTitle, isUsefulTitle, titleFromFilename, PDF_METADATA_WINDOW_BYTES };

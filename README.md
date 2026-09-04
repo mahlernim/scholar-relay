@@ -24,6 +24,7 @@ ScholarRelay(Scholar Relay)는 PDF, arXiv 연구 논문, 웹페이지를 Gemini 
 - HTML 메타데이터에서 논문 제목과 PDF 링크를 먼저 찾고 URL로 가져옵니다. 가져오기가 실패한 경우에만 PDF를 내려받아 업로드하며, 로컬 PDF도 지원합니다.
 - 새 노트북을 선택한 기존 컬렉션에 자동으로 추가할 수 있습니다.
 - 감지한 논문 제목을 우선 사용하거나 Gemini Notebook의 자동 제목 생성을 선택할 수 있습니다.
+- 로컬 PDF 제목은 제한된 앞뒤 영역에서 확인하며, 찾지 못하면 파일명 또는 Gemini Notebook의 자동 제목을 사용합니다.
 - 오디오, 비디오, 보고서, 퀴즈, 플래시카드, 인포그래픽, 슬라이드, 마인드맵, 데이터 표를 원하는 조합으로 생성합니다.
 - 팝업을 닫아도 Chrome의 절전형 알람으로 진행 상태를 확인하며 완료 알림, 차임, 노트북 자동 열기를 설정할 수 있습니다.
 
@@ -90,6 +91,7 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 - Reads paper titles and PDF links from HTML first, then imports the PDF URL. Downloads and uploads only after a confirmed import failure, with local PDF uploads also supported.
 - Can automatically add each new notebook to a selected existing collection.
 - Can prefer the detected paper title or let Gemini Notebook choose the notebook title.
+- Checks bounded head and tail regions for local PDF titles, then falls back to a useful filename or Gemini Notebook naming.
 - Generates any combination of audio, video, reports, quizzes, flashcards, infographics, slide decks, mind maps, and data tables.
 - Uses Chrome's event-driven alarms to monitor progress after the popup closes, with optional notifications, a completion chime, and automatic notebook opening.
 

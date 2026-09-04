@@ -1,5 +1,5 @@
 import { inspectPaperPage } from './content.js';
-import { choosePdfTitle } from './pdf-metadata.js';
+import { choosePdfTitle, choosePdfFileTitle } from './pdf-metadata.js';
 import { directDetectionMatchesTab } from './detection-policy.js';
 import {
     MAX_PDF_UPLOAD_BYTES,
@@ -493,14 +493,16 @@ function renderProgress(state) {
 
     let bottomHtml = '';
     if (state.notebookUrl) {
-        bottomHtml += `<a class="notebook-link" href="${state.notebookUrl}" target="_blank">📓 Open in Gemini Notebook</a>`;
+        bottomHtml += `<a class="notebook-link" href="${escapeHtml(state.notebookUrl)}" target="_blank" rel="noopener noreferrer">📓 Open in Gemini Notebook</a>`;
     }
     if (state.status === 'completed') {
         const tasks = state.tasks || [];
         const totalCount = tasks.length;
         const completedCount = tasks.filter(t => t.status === 'completed').length;
         const failedCount = tasks.filter(t => t.status === 'failed').length;
-        const summaryMsg = failedCount > 0
+        const summaryMsg = totalCount === 0
+            ? 'Source imported. No artifacts requested.'
+            : failedCount > 0
             ? `${completedCount}/${totalCount} artifacts ready (${failedCount} failed).`
             : `${completedCount} artifact${completedCount !== 1 ? 's' : ''} ready!`;
         bottomHtml += `
@@ -666,12 +668,11 @@ async function startPipelineFile(file, pageUrl, sourceTitle = null) {
         assertPdfUploadSize(file.size);
         const signature = await file.slice(0, 1024).arrayBuffer();
         if (!hasPdfSignature(signature)) throw new Error("This file isn't a valid PDF. Choose another file.");
-        const fileDataBase64 = await readFileAsBase64(file);
-        const selectedTitle = choosePdfTitle({
-            payload: fileDataBase64,
+        const selectedTitle = await choosePdfFileTitle({
+            file,
             pageTitle: sourceTitle,
-            filename: file.name,
         });
+        const fileDataBase64 = await readFileAsBase64(file);
         console.log(`[Popup] Notebook title source: ${selectedTitle.source}`);
         const response = await chrome.runtime.sendMessage({
             type: 'START_PIPELINE_FILE',
@@ -701,19 +702,6 @@ async function startPipelineFile(file, pageUrl, sourceTitle = null) {
         showError(error?.message || 'Could not upload the selected PDF.');
         return false;
     }
-}
-
-function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            const result = String(reader.result || '');
-            const commaIdx = result.indexOf(',');
-            resolve(commaIdx >= 0 ? result.substring(commaIdx + 1) : result);
-        };
-        reader.onerror = () => reject(reader.error || new Error('Failed to read PDF blob'));
-        reader.readAsDataURL(blob);
-    });
 }
 
 function filenameFromUrl(url) {
@@ -795,7 +783,7 @@ async function tryDirectTabPdfRead(tab, preferredPdfUrl = null) {
         const mimeType = response.headers.get('content-type') || 'application/pdf';
         if (!hasPdfSignature(bytes)) return { ok: false, error: 'Current tab content is not a valid PDF' };
         const blob = new Blob([bytes], { type: mimeType });
-        const fileDataBase64 = await blobToBase64(blob);
+        const fileDataBase64 = await readFileAsBase64(blob);
         return {
             ok: true,
             fileDataBase64,
@@ -1108,7 +1096,7 @@ async function getState() {
 function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 window.addEventListener('unload', stopPolling);

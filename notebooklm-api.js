@@ -747,11 +747,6 @@ async function addNotebookToCollection(collectionId, notebookId) {
   return confirmed;
 }
 
-function makeAbortError() {
-  const err = new Error('Pipeline monitoring aborted by user');
-  err.code = 'PIPELINE_ABORTED';
-  return err;
-}
 
 function normalizeBinaryPayload(fileData) {
   if (typeof fileData === 'string') {
@@ -1024,54 +1019,6 @@ async function createNote(notebookId, title = 'New Note', content = '') {
   return { id: String(noteId), title: String(title || '') };
 }
 
-/**
- * Wait for a source to become READY by polling.
- * Returns the ready source object.
- */
-async function waitForSourceReady(notebookId, sourceId, timeoutMs = 120000, intervalMs = 5000, shouldAbort = null) {
-  const start = Date.now();
-  const requestedSourceId = String(sourceId);
-  const normalizedRequestedId = extractFirstIdFromResult(requestedSourceId) || requestedSourceId;
-
-  while (Date.now() - start < timeoutMs) {
-    if (typeof shouldAbort === 'function' && shouldAbort()) {
-      throw makeAbortError();
-    }
-
-    const sources = await listSources(notebookId);
-    const source = sources.find(s => {
-      const currentId = String(s.id);
-      const normalizedCurrentId = extractFirstIdFromResult(currentId) || currentId;
-      return currentId === requestedSourceId || normalizedCurrentId === normalizedRequestedId;
-    });
-
-    if (!source) {
-      console.log(`[NotebookLM API] Source ${requestedSourceId} not visible yet, waiting ${intervalMs}ms...`);
-      if (typeof shouldAbort === 'function' && shouldAbort()) {
-        throw makeAbortError();
-      }
-      await sleep(intervalMs);
-      continue;
-    }
-
-    if (source.status === SourceStatus.READY) {
-      console.log(`[NotebookLM API] Source ${sourceId} is READY`);
-      return source;
-    }
-
-    if (source.status === SourceStatus.ERROR) {
-      throw new Error(`Source ${sourceId} processing failed`);
-    }
-
-    console.log(`[NotebookLM API] Source ${sourceId} status=${source.status}, waiting ${intervalMs}ms...`);
-    if (typeof shouldAbort === 'function' && shouldAbort()) {
-      throw makeAbortError();
-    }
-    await sleep(intervalMs);
-  }
-
-  throw new Error(`Source ${sourceId} timed out after ${timeoutMs}ms`);
-}
 
 /**
  * Get all source IDs from a notebook.
@@ -1781,41 +1728,7 @@ async function listArtifactStatuses(notebookId) {
   return statuses;
 }
 
-/**
- * Poll artifact status by listing all artifacts and finding the one we want.
- */
-async function pollArtifactStatus(notebookId, taskId) {
-  const statuses = await listArtifactStatuses(notebookId);
-  if (statuses.has(String(taskId))) {
-    return statuses.get(String(taskId));
-  }
-  return { taskId, status: 'pending' };
-}
 
-/**
- * Wait for an artifact generation to complete.
- */
-async function waitForArtifact(notebookId, taskId, timeoutMs = 600000, intervalMs = 15000) {
-  const start = Date.now();
-
-  while (Date.now() - start < timeoutMs) {
-    const status = await pollArtifactStatus(notebookId, taskId);
-
-    if (status.status === 'completed') {
-      console.log(`[NotebookLM API] Artifact ${taskId} completed`);
-      return status;
-    }
-
-    if (status.status === 'failed') {
-      throw new Error(`Artifact ${taskId} generation failed`);
-    }
-
-    console.log(`[NotebookLM API] Artifact ${taskId} status=${status.status}, waiting ${intervalMs}ms...`);
-    await sleep(intervalMs);
-  }
-
-  throw new Error(`Artifact ${taskId} timed out after ${timeoutMs}ms`);
-}
 
 // =========================================================================
 // Utilities
@@ -1882,7 +1795,6 @@ export {
   addFileSource,
   listSources,
   getNotebookTitle,
-  waitForSourceReady,
   generateAudio,
   generateVideo,
   generateReport,
@@ -1893,8 +1805,6 @@ export {
   generateMindMap,
   generateDataTable,
   listArtifactStatuses,
-  pollArtifactStatus,
-  waitForArtifact,
   ArtifactStatus,
   ArtifactTypeCode,
   AudioLength,

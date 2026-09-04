@@ -254,6 +254,8 @@ try {
   await writeFile(apiPath, (await readFile(apiPath, 'utf8'))
     .replace("const DEFAULT_BASE_URL = 'https://notebook.google.com';", `const DEFAULT_BASE_URL = '${origin}';`)
     .replace("const LEGACY_BASE_URL = 'https://notebooklm.google.com';", `const LEGACY_BASE_URL = '${origin}';`));
+  const popupPath = join(extensionRoot, 'popup.js');
+  await writeFile(popupPath, `${await readFile(popupPath, 'utf8')}\nglobalThis.__smoke = { startPipelineFile };\n`);
 
   const chromePath = await resolveChrome();
   chrome = spawn(chromePath, [
@@ -368,6 +370,16 @@ try {
   assert(layout.resultBottom < 600 && layout.linkBottom < 600 && layout.collapsed, 'Results are not immediately visible');
   console.log(`Completed popup layout: ${JSON.stringify(layout)}`);
 
+  const quotedTitle = `A "quoted" title 'with' <markup> & symbols`;
+  const quotedUrl = `${origin}/notebook/smoke?q="quoted"&other='value'`;
+  await evaluate(popup, `chrome.storage.local.set({pipelineState:${JSON.stringify({ ...completedState, notebookTitle: quotedTitle, notebookUrl: quotedUrl, tasks: [] })}})`);
+  await reload(popup);
+  const escaped = await evaluate(popup, `({title:document.querySelector('.nb-title').getAttribute('title'),text:document.querySelector('.nb-title').textContent,attributes:document.querySelector('.nb-title').getAttributeNames(),href:document.querySelector('.notebook-link').getAttribute('href'),rel:document.querySelector('.notebook-link').rel,summary:document.querySelector('.completed-box').innerText})`);
+  assert(escaped.title === quotedTitle && escaped.text === quotedTitle, 'Quoted notebook title was corrupted');
+  assert(escaped.attributes.length === 2 && escaped.href === quotedUrl, 'Title or URL created unexpected markup');
+  assert(escaped.rel.includes('noopener') && escaped.rel.includes('noreferrer'), 'Notebook link lacks isolation');
+  assert(escaped.summary.includes('Source imported. No artifacts requested.'), 'Empty-task completion claims artifact output');
+
   // Exercise the real Chrome message bridge and the complete file upload client.
   await evaluate(popup, `chrome.storage.local.set({pipelineState:{status:'idle'}})`);
   const size = 40 * 1024 * 1024;
@@ -378,17 +390,26 @@ try {
   const baselineHeap = await popup.call('Runtime.getHeapUsage');
   const transfer = await evaluate(popup, `(async()=>{
     const bytes=new Uint8Array(${size}).fill(32); bytes.set(new TextEncoder().encode('%PDF-1.7\\n'));
-    const fileDataBase64=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result.split(',')[1]);reader.readAsDataURL(new Blob([bytes],{type:'application/pdf'}));});
     let last=performance.now(),maxGapMs=0,ticks=0;
     const timer=setInterval(()=>{const now=performance.now();maxGapMs=Math.max(maxGapMs,now-last);last=now;ticks++;},25);
-    const message={type:'START_PIPELINE_FILE',fileName:'large-smoke.pdf',fileDataBase64,sourceTitle:'Large PDF validation'};
-    const messageBytes=new TextEncoder().encode(JSON.stringify(message)).byteLength;
-    const response=await chrome.runtime.sendMessage(message);
-    clearInterval(timer);
-    return {response,messageBytes,maxGapMs,ticks};
+    const file=new File([bytes],'paper.pdf',{type:'application/pdf'});
+    let metadataReadBytes=0,messageBytes=0;
+    const slice=file.slice.bind(file);
+    file.slice=(...args)=>{const part=slice(...args);metadataReadBytes+=part.size;return part;};
+    file.arrayBuffer=()=>{throw new Error('Full-file metadata read');};
+    const send=chrome.runtime.sendMessage.bind(chrome.runtime);
+    chrome.runtime.sendMessage=(message,...args)=>{
+      if(message.type==='START_PIPELINE_FILE') messageBytes=new TextEncoder().encode(JSON.stringify(message)).byteLength;
+      return send(message,...args);
+    };
+    try {
+      const ok=await globalThis.__smoke.startPipelineFile(file,null);
+      return {response:{ok},messageBytes,maxGapMs,ticks,metadataReadBytes};
+    } finally {clearInterval(timer);chrome.runtime.sendMessage=send;}
   })()`);
   assert(transfer.response.ok, `Large PDF start failed: ${JSON.stringify(transfer.response)}`);
   assert(transfer.messageBytes < 64 * 1024 * 1024, 'Large PDF message exceeds Chrome limit');
+  assert(transfer.metadataReadBytes === 2 * 256 * 1024 + 1024, 'Large local metadata read was not bounded');
   const targets = await browserConnection.call('Target.getTargets');
   const workerTarget = targets.targetInfos.find(target => target.type === 'service_worker' && target.url.includes(extensionId));
   const workerAttachment = workerTarget ? await browserConnection.call('Target.attachToTarget', { targetId: workerTarget.targetId, flatten: true }) : null;
@@ -414,7 +435,7 @@ try {
     return chrome.runtime.sendMessage({type:'START_PIPELINE_FILE',fileName:'too-large.pdf',fileDataBase64:b64});
   })()`);
   assert(!rejected.ok && rejected.code === 'PDF_TOO_LARGE', '40 MiB plus one byte was not rejected');
-  console.log(`40 MiB transfer: ${JSON.stringify({messageBytes:transfer.messageBytes,elapsedMs:Date.now()-started,maxTimerGapMs:transfer.maxGapMs,peak,sha256:imports.uploadedHash})}`);
+  console.log(`40 MiB transfer: ${JSON.stringify({messageBytes:transfer.messageBytes,metadataReadBytes:transfer.metadataReadBytes,elapsedMs:Date.now()-started,maxTimerGapMs:transfer.maxGapMs,peak,sha256:imports.uploadedHash})}`);
 
   console.log('Chrome extension smoke test passed.');
 } finally {

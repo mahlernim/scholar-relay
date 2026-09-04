@@ -319,7 +319,7 @@ async function downloadRemotePdfForUpload(pdfUrl, pageUrl = null) {
 
     return {
         filename,
-        mimeType: /application\/pdf/i.test(contentType) ? 'application/pdf' : 'application/pdf',
+        mimeType: 'application/pdf',
         fileData,
     };
 }
@@ -558,12 +558,14 @@ async function completePipeline(runId) {
     const failedCount = tasks.filter(t => t.status === 'failed').length;
     const allSucceeded = totalCount > 0 && failedCount === 0 && completedCount === totalCount;
 
-    if (completedCount === 0) {
+    if (totalCount > 0 && completedCount === 0) {
         await failPipeline(runId, 'All artifact generations failed. No artifacts were generated.');
         return;
     }
 
-    const stepDetail = allSucceeded
+    const stepDetail = totalCount === 0
+        ? 'Source imported successfully. No artifacts were requested.'
+        : allSucceeded
         ? 'All artifacts generated successfully!'
         : `Partial success: ${completedCount}/${totalCount} artifacts generated (${failedCount} failed).`;
 
@@ -590,7 +592,9 @@ async function completePipeline(runId) {
     const artifactLabel = allSucceeded
         ? (completedCount === 1 ? '1 artifact' : `${completedCount} artifacts`)
         : `${completedCount}/${totalCount} artifacts`;
-    const notificationMessage = allSucceeded
+    const notificationMessage = totalCount === 0
+        ? `Notebook ${nbTitle}is ready. Source imported without artifacts. Click to open.`
+        : allSucceeded
         ? `Notebook ${nbTitle}is ready with ${artifactLabel}. Click to open.`
         : `Notebook ${nbTitle}is partially ready with ${artifactLabel} (${failedCount} failed). Click to open.`;
 
@@ -751,6 +755,7 @@ async function tickSourcePoll(state) {
     try {
         const settings = await getSettings();
         await requireActiveRun(runId, ['generate_artifacts']);
+        assertArtifactSelection(settings);
 
         if (settings.collectionId) {
             await transitionRun(runId, {
@@ -937,6 +942,11 @@ async function tickSourcePoll(state) {
 async function tickArtifactPoll(state) {
     const runId = state.runId;
     await requireActiveRun(runId, ['wait_artifacts']);
+    const tasks = state.tasks || [];
+    if (tasks.length === 0) {
+        await completePipeline(runId);
+        return;
+    }
     const ARTIFACT_TIMEOUT_MS = 1200000; // 20 minutes
     const elapsed = pollingElapsedMs(state.stepStartedAt);
 
@@ -945,7 +955,6 @@ async function tickArtifactPoll(state) {
         return;
     }
 
-    const tasks = state.tasks || [];
     const updatedTasks = [...tasks];
     let statusByTaskId = new Map();
 
@@ -996,37 +1005,50 @@ async function tickArtifactPoll(state) {
 
 const runExclusivePollTick = createExclusiveRunner();
 
-chrome.alarms.onAlarm.addListener(async (alarm) => {
+async function handlePollAlarm(alarm) {
     if (alarm.name !== ALARM_NAME) return;
-    await bootReconciliationPromise;
-    const ran = await runExclusivePollTick(async () => {
-        const state = await getState();
+    let step = 'unknown';
+    try {
+        await bootReconciliationPromise;
+        const ran = await runExclusivePollTick(async () => {
+            const state = await getState();
+            step = state?.step || 'idle';
 
-        if (!state || state.status !== 'running') {
-            await pipelineState.effectWhen(
-                current => current?.status !== 'running',
-                () => chrome.alarms.clear(ALARM_NAME)
-            );
-            return;
+            if (!state || state.status !== 'running') {
+                const cleanup = await pipelineState.effectWhen(
+                    current => current?.status !== 'running',
+                    () => chrome.alarms.clear(ALARM_NAME)
+                );
+                if (cleanup.effectError) throw cleanup.effectError;
+                return;
+            }
+
+            console.log(`[Alarm] tick -- step=${state.step}`);
+
+            if (state.step === 'wait_source') {
+                await tickSourcePoll(state);
+            } else if (state.step === 'wait_artifacts') {
+                await tickArtifactPoll(state);
+            } else if (state.step === 'generate_artifacts') {
+                console.log('[Alarm] Artifact start phase still in progress');
+            } else {
+                console.log(`[Alarm] tick during non-polling step '${state.step}', ignoring`);
+            }
+        });
+
+        if (!ran) {
+            console.warn('[Alarm] Previous poll tick is still running; skipping overlap');
         }
-
-        console.log(`[Alarm] tick -- step=${state.step}`);
-
-        if (state.step === 'wait_source') {
-            await tickSourcePoll(state);
-        } else if (state.step === 'wait_artifacts') {
-            await tickArtifactPoll(state);
-        } else if (state.step === 'generate_artifacts') {
-            console.log('[Alarm] Artifact start phase still in progress');
+    } catch (error) {
+        if (error?.code === 'PIPELINE_STALE_RUN') {
+            console.log(`[Alarm] Ignoring stale tick at ${step}`);
         } else {
-            console.log(`[Alarm] tick during non-polling step '${state.step}', ignoring`);
+            console.error(`[Alarm] Tick failed at ${step}:`, error);
         }
-    });
-
-    if (!ran) {
-        console.warn('[Alarm] Previous poll tick is still running; skipping overlap');
     }
-});
+}
+
+chrome.alarms.onAlarm.addListener(handlePollAlarm);
 
 async function reconcilePipelineRuntime() {
     const [state, alarm] = await Promise.all([
@@ -1199,8 +1221,19 @@ async function runPipeline(runId, pdfUrl, pageUrl, uploadFile = null, sourceType
 // Message handlers (from popup and content script)
 // =========================================================================
 
+function assertArtifactSelection(settings) {
+    if (settings.generateAudio !== false || [
+        'generateInfographic', 'generateVideo', 'generateReport', 'generateQuiz',
+        'generateFlashcards', 'generateSlideDeck', 'generateMindMap', 'generateDataTable',
+    ].some(key => !!settings[key])) return;
+    const error = new Error('Select at least one artifact before starting.');
+    error.code = 'NO_ARTIFACT_SELECTED';
+    throw error;
+}
+
 async function startPipelineRequest(message, uploadFile = null) {
     await bootReconciliationPromise;
+    assertArtifactSelection(await getSettings());
 
     if (uploadFile) {
         const decodedSize = decodedBase64ByteLength(uploadFile.fileData);
