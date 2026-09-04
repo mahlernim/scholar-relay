@@ -57,7 +57,7 @@ test('ScholarRelay branding and package identity stay aligned', async () => {
   assert.match(englishLocale.extensionDescription.message, /Gemini Notebook/);
   assert.match(koreanLocale.extensionDescription.message, /Gemini Notebook/);
   assert.doesNotMatch(`${popupText}\n${backgroundText}`, /Chrome PDF to NotebookLM/);
-  assert.match(popupText, /Open in Gemini Notebook|Gemini Notebook chooses/);
+  assert.match(popupText, /Open in Gemini Notebook|Gemini Notebook names/);
   assert.match(readmeText, /formerly NotebookLM/);
   assert.match(privacyText, /^# Privacy Policy for ScholarRelay/m);
   assert.match(packageScript, /scholar-relay-v\$\(\$manifest\.version\)\.zip/);

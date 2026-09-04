@@ -69,6 +69,8 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 
 컬렉션 추가에 실패해도 소스 처리와 아티팩트 생성은 계속됩니다. 컬렉션 목록은 현재 로그인한 Gemini Notebook 계정에서 불러옵니다.
 
+아티팩트 언어는 오디오를 끈 상태에서도 오디오, 동영상, 보고서, 인포그래픽, 슬라이드, 데이터 표에 공통으로 적용됩니다. 작업 중 팝업을 닫아도 계속 진행됩니다. Stop Monitoring은 이 워크플로를 중지하지만 Gemini Notebook에서 이미 시작된 작업은 계속될 수 있습니다.
+
 ### 권한 및 문제 해결
 
 - 현재 페이지와 다른 사이트에 있는 PDF를 직접 내려받아야 할 때만 해당 PDF 사이트에 대한 Chrome 권한을 요청합니다. URL 가져오기는 다운로드 권한 없이 먼저 시도하며, 업로드가 필요할 때만 권한을 요청합니다. 권한을 거부하면 파일을 직접 선택할 수 있습니다.
@@ -132,6 +134,8 @@ When switching from a manual installation to the store version, note your settin
 | **Experience** | Desktop notifications, completion chime, and automatic notebook opening |
 
 Source processing and artifact generation continue if collection assignment fails. Collections are loaded from the currently signed-in Gemini Notebook account.
+
+Artifact language is shared by audio, video, reports, infographics, slide decks, and data tables, even with Audio disabled. You can close the popup while work runs. Stop Monitoring ends this workflow, but work already started in Gemini Notebook may continue.
 
 ### Permissions and troubleshooting
 

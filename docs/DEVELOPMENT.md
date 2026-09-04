@@ -241,3 +241,11 @@ The dashboard verified draft package 1.3.0 with English and Korean before submis
 At approximately 19:24 KST, the dashboard confirmed that the extension was submitted for review and displayed `Pending review`. Automatic publication after approval was checked. This records successful submission, not approval or public availability of v1.3.0. The subsequent publication result must be confirmed on both the dashboard and public listing and appended here.
 
 The live eLife check also accepted its selected version-specific `elife-91194-v1.pdf` download link. It reached a selectable source after processing. The validation notebook retains the arXiv, both eLife URL forms, and local PDF sources.
+
+## Next release preparation during v1.3.0 review
+
+The user authorized preparing the next patch while v1.3.0 remains in review. Development and tested PR merges can proceed now. Keep the existing store submission untouched and prepare a draft release for later submission.
+
+Issue #15 keeps the term artifact and shortens source actions and notebook settings. Artifact language moves above the individual artifact sections while preserving the saved key and six existing language-aware generation calls. Permission waits request an action rather than claiming work continues. Stop Monitoring explains that accepted Google work can continue. Errors retain diagnostics in expandable details and uncertain outcomes direct users to inspect the notebook before starting again. Replacement details explain the same-notebook upload and retained failed source without showing internal IDs.
+
+Validation passed 69 tests and the isolated Chrome smoke, including language persistence with Audio disabled, collapsed error details, running and permission states, ownership guards, and the existing real 40 MiB transfer. The completed popup remains 344 pixels high at 360 pixels wide. Current README and store screenshots were regenerated and visually inspected.
