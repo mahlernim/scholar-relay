@@ -1,4 +1,5 @@
 {
+  "Notebook $1 is ready with one artifact. Click to open.": ["노트북 $1의 아티팩트 1개가 준비되었습니다. 클릭하여 여세요.", "ノートブック $1 のアーティファクト 1 件が完了しました。クリックして開きます。", "El cuaderno $1 está listo con un artefacto. Haz clic para abrir.", "Le notebook $1 est prêt avec un artefact. Cliquez pour ouvrir.", "Notebook $1 mit einem Artefakt ist bereit. Zum Öffnen klicken.", "O notebook $1 está pronto com um artefato. Clique para abrir."],
   "Ready": ["완료", "完了", "Listo", "Prêt", "Bereit", "Pronto"],
   "Failed": ["실패", "失敗", "Error", "Échec", "Fehlgeschlagen", "Falhou"],
   "Generating": ["생성 중", "生成中", "Generando", "Génération", "Wird erstellt", "Gerando"],

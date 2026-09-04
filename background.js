@@ -593,7 +593,9 @@ async function completePipeline(runId) {
     const notificationMessage = totalCount === 0
         ? t('Notebook $1 is ready. Source imported without artifacts. Click to open.', [nbTitle.trim()])
         : allSucceeded
-        ? t('Notebook $1 is ready with $2 artifacts. Click to open.', [nbTitle.trim(), completedCount])
+        ? completedCount === 1
+            ? t('Notebook $1 is ready with one artifact. Click to open.', [nbTitle.trim()])
+            : t('Notebook $1 is ready with $2 artifacts. Click to open.', [nbTitle.trim(), completedCount])
         : t('Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open.', [nbTitle.trim(), completedCount, totalCount, failedCount]);
 
     if (settings.notificationEnabled !== false) {

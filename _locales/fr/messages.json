@@ -5,6 +5,10 @@
   "extensionDescription": {
     "message": "Importez PDF, articles arXiv et pages dans Gemini Notebook (NotebookLM). Créez des résumés audio et supports d’étude."
   },
+  "ui_6440add9": {
+    "message": "Le notebook $1 est prêt avec un artefact. Cliquez pour ouvrir.",
+    "description": "Notebook $1 is ready with one artifact. Click to open."
+  },
   "ui_bca3294": {
     "message": "Prêt",
     "description": "Ready"
