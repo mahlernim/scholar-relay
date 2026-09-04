@@ -1,6 +1,6 @@
 # ScholarRelay
 
-Send a PDF, research paper, or webpage to Gemini Notebook (formerly NotebookLM), organize the notebook, and generate the artifacts you choose in one workflow.
+ScholarRelay (Scholar Relay) imports PDFs, arXiv research papers, and webpages into Gemini Notebook (formerly NotebookLM). Organize the notebook and generate audio overviews, study materials, and other artifacts in one workflow.
 
 [Install from the Chrome Web Store](https://chromewebstore.google.com/detail/epopghhfmpokhbalmnfcopmplffphdbb) · [Support](https://github.com/mahlernim/scholar-relay/issues) · [Privacy](./PRIVACY.md) · [한국어](#한국어) · [English](#english)
 
@@ -16,7 +16,7 @@ Send a PDF, research paper, or webpage to Gemini Notebook (formerly NotebookLM),
 
 ## 한국어
 
-ScholarRelay는 PDF, 연구 논문 또는 웹페이지를 Gemini Notebook(이전 명칭 NotebookLM)으로 보내고, 노트북을 정리하고, 원하는 아티팩트를 생성하는 과정을 한 번에 처리합니다.
+ScholarRelay(Scholar Relay)는 PDF, arXiv 연구 논문, 웹페이지를 Gemini Notebook(이전 명칭 NotebookLM)으로 가져옵니다. 노트북을 정리하고 오디오 개요, 학습 자료 등 원하는 아티팩트를 한 번에 생성합니다.
 
 ### 주요 기능
 

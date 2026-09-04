@@ -12,3 +12,4 @@ Read [development history](docs/DEVELOPMENT.md) for the reasons behind existing 
 - Verify the ZIP allowlist, embedded version, extracted file bytes, and SHA-256. Publish and submit the same ZIP to the existing Chrome Web Store item.
 - Record submitted version, digest, and dashboard status. Pending review is not publication. Verify the public listing after approval.
 - Keep unrelated issues and user changes outside the current task. Do not add approval checkpoints to already authorized work.
+- Preparing the next release may proceed during store review. Keep the submitted package unchanged and hold the next release as a draft until its publication step is authorized. Keep searchability issues open until post-publication search evidence is recorded.
