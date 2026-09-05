@@ -804,5 +804,97 @@
   "ui_dccf5581": {
     "message": "Artifact details",
     "description": "Artifact details"
+  },
+  "ui_e46778ea": {
+    "message": "Paper queue",
+    "description": "Paper queue"
+  },
+  "ui_9e437c74": {
+    "message": "Queued",
+    "description": "Queued"
+  },
+  "ui_98bfff6f": {
+    "message": "Preparing",
+    "description": "Preparing"
+  },
+  "ui_863f19ee": {
+    "message": "Stopped",
+    "description": "Stopped"
+  },
+  "ui_cf1d1846": {
+    "message": "Add to queue",
+    "description": "Add to queue"
+  },
+  "ui_1512a308": {
+    "message": "Save PDF to queue",
+    "description": "Save PDF to queue"
+  },
+  "ui_d5809db3": {
+    "message": "Add page to queue",
+    "description": "Add page to queue"
+  },
+  "ui_c66a1109": {
+    "message": "Add another paper",
+    "description": "Add another paper"
+  },
+  "ui_fc5bf3cc": {
+    "message": "Remove from queue",
+    "description": "Remove from queue"
+  },
+  "ui_6810ced4": {
+    "message": "Stop this job",
+    "description": "Stop this job"
+  },
+  "ui_acc12e9e": {
+    "message": "Pause queue",
+    "description": "Pause queue"
+  },
+  "ui_ab9aefe9": {
+    "message": "Resume queue",
+    "description": "Resume queue"
+  },
+  "ui_13e397ca": {
+    "message": "Recent jobs",
+    "description": "Recent jobs"
+  },
+  "ui_7b37dc98": {
+    "message": "Clear finished jobs",
+    "description": "Clear finished jobs"
+  },
+  "ui_caf6d280": {
+    "message": "Queue paused. Jobs already started continue.",
+    "description": "Queue paused. Jobs already started continue."
+  },
+  "ui_c7972f4e": {
+    "message": "Prepare one paper at a time. Up to three notebooks can generate together.",
+    "description": "Prepare one paper at a time. Up to three notebooks can generate together."
+  },
+  "ui_c744f96c": {
+    "message": "Saved. You can close this popup. Keep Chrome running to start queued papers.",
+    "description": "Saved. You can close this popup. Keep Chrome running to start queued papers."
+  },
+  "ui_a6133a54": {
+    "message": "Requests accepted. Gemini Notebook will keep generating even if you close Chrome. You can add another paper.",
+    "description": "Requests accepted. Gemini Notebook will keep generating even if you close Chrome. You can add another paper."
+  },
+  "ui_8481df34": {
+    "message": "You can close this popup. Keep Chrome running until the artifact requests are accepted.",
+    "description": "You can close this popup. Keep Chrome running until the artifact requests are accepted."
+  },
+  "ui_440cb2bf": {
+    "message": "This paper needs attention. Other queued papers can continue.",
+    "description": "This paper needs attention. Other queued papers can continue."
+  },
+  "ui_e5cfc00b": {
+    "message": "Some requests may still be running in Gemini Notebook. Check this notebook for the result.",
+    "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
+  },
+  "ui_314695f8": {
+    "message": "Artifacts are ready. You can move on to another paper.",
+    "description": "Artifacts are ready. You can move on to another paper."
+  },
+  "ui_232cd7e": {
+    "message": "Saving PDF. Keep this popup open...",
+    "description": "Saving PDF. Keep this popup open..."
   }
 }

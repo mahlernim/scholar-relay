@@ -185,6 +185,10 @@ function assert(condition, message) {
 }
 
 const imports = { urls: [], uploads: 0, pdfDownloads: 0, notebookTitles: [], uploadedBytes: 0, uploadedHash: null };
+let queueMode = false;
+let generationComplete = false;
+const notebooks = new Map();
+const generations = [];
 const server = createServer(async (request, response) => {
   const requestUrl = new URL(request.url, 'http://localhost');
   if (requestUrl.pathname === '/upload/_/') {
@@ -205,9 +209,12 @@ const server = createServer(async (request, response) => {
     const params = JSON.parse(JSON.parse(new URLSearchParams(body).get('f.req'))[0][0][1]);
     const method = requestUrl.searchParams.get('rpcids');
     let result = [[null, []]];
-    if (method === 'CCqFvf') { imports.notebookTitles.push(params[0]); result = [params[0], null, 'smoke-notebook-id']; }
-    if (method === 'izAoDd') { imports.urls.push(params[0][0][2][0]); result = [['smoke-url-source-id']]; }
+    if (method === 'CCqFvf') { imports.notebookTitles.push(params[0]); const id='smoke-notebook-'+imports.notebookTitles.length; notebooks.set(id,{title:params[0],sources:[]}); result = [params[0], null, id]; }
+    if (method === 'izAoDd') { const url=params[0][0][2][0]; imports.urls.push(url); const id='source-'+params[1]; notebooks.get(params[1])?.sources.push([[id],url,[null,null,null,null,null,null,null,[url]],[null,2]]); result = [[id]]; }
     if (method === 'o4cbdc') { imports.uploads++; result = [['smoke-file-source-id']]; }
+    if (queueMode && method==='rLM1Ne') { const notebook=notebooks.get(params[0]); result=[[notebook?.title || 'Paper', notebook?.sources || [], params[0]]]; }
+    if (queueMode && method==='R7cb6c') { const item={notebookId:params[1],taskId:'artifact-'+params[1],type:params[2][2],language:params[2][6]?.[1]?.[4]}; generations.push(item); result=[[item.taskId,null,item.type,null,1]]; }
+    if (queueMode && method==='gArtLc') result=[generations.filter(item=>item.notebookId===params[1]).map(item=>[item.taskId,null,item.type,null,generationComplete?3:2,null,[null,null,null,null,null,[[origin+'/audio.mp3']]]])];
     response.writeHead(200, { 'content-type': 'application/json' });
     response.end(`)]}'\n${JSON.stringify([['wrb.fr', method, JSON.stringify(result)]])}`);
     return;
@@ -255,8 +262,10 @@ try {
   await writeFile(apiPath, (await readFile(apiPath, 'utf8'))
     .replace("const DEFAULT_BASE_URL = 'https://notebook.google.com';", `const DEFAULT_BASE_URL = '${origin}';`)
     .replace("const LEGACY_BASE_URL = 'https://notebooklm.google.com';", `const LEGACY_BASE_URL = '${origin}';`));
+  const workerPath = join(extensionRoot, 'background.js');
+  await writeFile(workerPath, (await readFile(workerPath,'utf8')) + '\nchrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message.type!=="SMOKE_TICK")return;handlePollAlarm({name:ALARM_NAME}).then(()=>reply({ok:true}));return true;});\n');
   const popupPath = join(extensionRoot, 'popup.js');
-  await writeFile(popupPath, `${await readFile(popupPath, 'utf8')}\nglobalThis.__smoke = { startPipelineFile };\n`);
+  await writeFile(popupPath, `${await readFile(popupPath, 'utf8')}\nglobalThis.__smoke = { startPipelineFile, async setFixtureState(state, extra = {}) { await chrome.storage.local.set({ jobQueue: {version:1,paused:false,jobs:state.status==='idle'?[]:[{runId:'fixture',...state}]}, ...extra }); } };\n`);
 
   const chromePath = await resolveChrome();
   chrome = spawn(chromePath, [
@@ -301,15 +310,17 @@ try {
   assert(!view.text.includes(`${origin}/paper.pdf`), 'A stale PDF survived navigation in the same tab');
 
   const errorText = 'Smoke test visible pipeline error';
-  await evaluate(popup, `chrome.storage.local.set({pipelineState:{status:'error',runId:'smoke',step:'error',stepDetail:${JSON.stringify(errorText)},error:${JSON.stringify(errorText)},pdfUrl:'smoke.pdf',tasks:[]}})`);
+  await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'error',runId:'smoke',step:'error',stepDetail:${JSON.stringify(errorText)},error:${JSON.stringify(errorText)},pdfUrl:'smoke.pdf',tasks:[]})`);
   await reload(popup);
+  await evaluate(popup, `document.querySelector('[data-show]')?.click()`);
   view = await evaluate(popup, `({summary:document.querySelector('.pipeline-error-box')?.innerText,details:document.querySelector('.workflow-details')?.textContent,collapsed:!document.querySelector('.workflow-details')?.open})`);
   assert(view.summary && view.details.includes(errorText) && view.collapsed, 'Error summary and collapsed diagnostics were not preserved');
   await evaluate(popup, `document.querySelector('.workflow-details').open=true`);
   assert((await evaluate(popup, `document.getElementById('content').innerText`)).includes(errorText), 'Expanded error diagnostics are inaccessible');
 
-  await evaluate(popup, `chrome.storage.local.set({pipelineState:{status:'error',runId:'uncertain-ui',step:'error',error:'Uncertain artifact generation. Check this notebook before starting again.',pdfUrl:'paper.pdf',tasks:[{type:'audio',status:'uncertain',error:'Accepted response stalled'}]}})`);
+  await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'error',runId:'uncertain-ui',step:'error',error:'Uncertain artifact generation. Check this notebook before starting again.',pdfUrl:'paper.pdf',tasks:[{type:'audio',status:'uncertain',error:'Accepted response stalled'}]})`);
   await reload(popup);
+  await evaluate(popup, `document.querySelector('[data-show]')?.click()`);
   view = await evaluate(popup, `({summary:document.querySelector('.pipeline-error-box')?.innerText,details:[...document.querySelectorAll('details')].find(el=>el.querySelector('summary')?.textContent==='Artifact details')?.textContent})`);
   assert(view.summary.includes('could not be confirmed') && view.details?.includes('Needs checking') && view.details.includes('Accepted response stalled'), 'Uncertain task diagnostics were lost');
 
@@ -325,50 +336,84 @@ try {
 
   await popup.call('Emulation.setDeviceMetricsOverride', { width: 360, height: 600, deviceScaleFactor: 1, mobile: false });
   for (const step of ['wait_source','wait_pdf_access']) {
-    await evaluate(popup, `chrome.storage.local.set({pipelineState:{status:'running',runId:'ui-state',step:${JSON.stringify(step)},stepDetail:'Permission diagnostic',pdfUrl:'paper.pdf',originalPdfUrl:'${origin}/paper.pdf',notebookUrl:'${origin}/notebook/smoke',failedUrlSourceId:'failed-source',tasks:[]}})`);
+    await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'running',runId:'ui-state',step:${JSON.stringify(step)},stepDetail:'Permission diagnostic',pdfUrl:'paper.pdf',originalPdfUrl:'${origin}/paper.pdf',notebookUrl:'${origin}/notebook/smoke',failedUrlSourceId:'failed-source',tasks:[]})`);
     await reload(popup);
+  await evaluate(popup, `document.querySelector('[data-show]')?.click()`);
     view = await evaluate(popup, `({text:document.getElementById('content').innerText,resume:!!document.getElementById('btn-resume-pdf'),file:!!document.getElementById('btn-fallback-file'),stop:!!document.getElementById('btn-abort'),width:document.documentElement.scrollWidth})`);
     assert(view.stop && view.width<=360, 'Running popup lacks stop control or clips horizontally');
     assert(!view.text.includes('failed-source'), 'Internal source ID leaked into primary wording');
-    assert(step==='wait_pdf_access' ? view.resume && view.file && !view.text.includes('Work continues.') : view.text.includes('Work continues.'), `Permission wait incorrectly presents background progress: ${JSON.stringify(view)}`);
+    assert(step==='wait_pdf_access' ? view.resume && view.file && view.text.includes('needs attention') : view.text.includes('Keep Chrome running'), `Permission wait incorrectly presents background progress: ${JSON.stringify(view)}`);
   }
 
 
-  await evaluate(popup, `chrome.storage.local.set({pipelineState:{status:'running',runId:'existing-run',step:'auth',stepDetail:'Busy',pdfUrl:'busy.pdf',tasks:[]}})`);
+  await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'running',runId:'existing-run',step:'auth',stepDetail:'Busy',pdfUrl:'busy.pdf',tasks:[]})`);
   const busyResponse = await evaluate(popup, `chrome.runtime.sendMessage({type:'START_PIPELINE',pdfUrl:${JSON.stringify(`${origin}/plain`)},pageUrl:${JSON.stringify(`${origin}/plain`)},sourceType:'webpage'})`);
-  assert(busyResponse?.ok === false && busyResponse?.code === 'PIPELINE_ALREADY_RUNNING', 'A second pipeline start was not rejected');
-  let storedState = await evaluate(popup, `chrome.storage.local.get('pipelineState').then(result=>result.pipelineState)`);
-  assert(storedState.runId === 'existing-run', 'A rejected start replaced the active run');
+  assert(busyResponse?.ok === true, 'A second paper was not queued');
+  let storedState = await evaluate(popup, `chrome.runtime.sendMessage({type:'GET_STATE'})`);
+  assert(storedState.status === 'queued', 'A second paper stole the preparation slot');
+  const existing = await evaluate(popup, `chrome.runtime.sendMessage({type:'GET_STATE',runId:'existing-run'})`);
+  assert(existing.step==='auth', 'Queue insertion changed the first job');
 
-  await evaluate(popup, `chrome.storage.local.set({pipelineState:{status:'running',runId:'stoppable-run',step:'wait_source',stepDetail:'Waiting',pdfUrl:'wait.pdf',tasks:[]}})`);
+  await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'running',runId:'stoppable-run',step:'wait_source',stepDetail:'Waiting',pdfUrl:'wait.pdf',tasks:[]})`);
   const staleStop = await evaluate(popup, `chrome.runtime.sendMessage({type:'ABORT_PIPELINE',runId:'old-run'})`);
   assert(staleStop?.ok === false, 'A stale popup stopped a replacement run');
   const acceptedStop = await evaluate(popup, `chrome.runtime.sendMessage({type:'ABORT_PIPELINE',runId:'stoppable-run'})`);
   assert(acceptedStop?.ok === true, 'The matching polling run could not be stopped');
-  storedState = await evaluate(popup, `chrome.storage.local.get('pipelineState').then(result=>result.pipelineState)`);
-  assert(storedState.status === 'idle' && storedState.runId === null, 'Stopped run did not return to idle state');
+  storedState = await evaluate(popup, `chrome.runtime.sendMessage({type:'GET_STATE'})`);
+  assert(storedState.status === 'stopped' && storedState.runId === 'stoppable-run', 'Stopped job lost its history');
 
   await evaluate(popup, `chrome.tabs.update(${tabA.id},{active:true})`);
   await reload(popup);
   const downloadsBefore = imports.pdfDownloads;
   await evaluate(popup, `document.getElementById('btn-start').click()`);
   for (let attempt = 0; attempt < 50; attempt++) {
-    storedState = await evaluate(popup, `chrome.storage.local.get('pipelineState').then(result=>result.pipelineState)`);
-    if (storedState.step === 'wait_source' || storedState.status === 'error') break;
+    storedState = await evaluate(popup, `chrome.runtime.sendMessage({type:'GET_STATE'})`);
+    if ((storedState.status === 'running' && storedState.step === 'wait_source') || storedState.status === 'error') break;
     await delay(100);
   }
   assert(storedState.step === 'wait_source', `URL import did not reach source polling: ${storedState.error}`);
-  assert(imports.notebookTitles.at(-1) === 'A scholarly HTML title', 'HTML title did not reach notebook creation');
+  assert(imports.notebookTitles.at(-1) === 'A scholarly HTML title', 'HTML title did not reach notebook creation: '+JSON.stringify({titles:imports.notebookTitles,state:storedState}));
   assert(imports.urls.at(-1) === `${origin}/paper-two.pdf`, 'Detected PDF URL was not imported');
   assert(imports.pdfDownloads === downloadsBefore && imports.uploads === 0, 'URL-first import downloaded or uploaded a PDF');
+
+  // Two real popup requests through the shipped worker and wire client.
+  await evaluate(popup, `chrome.runtime.sendMessage({type:'ABORT_PIPELINE',runId:${JSON.stringify(storedState.runId)}})`);
+  await evaluate(popup, `chrome.runtime.sendMessage({type:'RESET_STATE'})`);
+  queueMode=true;
+  const jobSettings={generateAudio:true,generateInfographic:false,chimeEnabled:false,notificationEnabled:false};
+  const first=await evaluate(popup, `chrome.runtime.sendMessage({type:'START_PIPELINE',pdfUrl:'${origin}/queue-a.pdf',sourceTitle:'Queued paper A',settings:${JSON.stringify({...jobSettings,language:'ko'})}})`);
+  const queueState=()=>evaluate(popup, `chrome.runtime.sendMessage({type:'GET_QUEUE'})`);
+  const waitForJob=async (id,step)=>{
+    for(let i=0;i<100;i++) { const job=(await queueState()).jobs.find(job=>job.runId===id); if(job?.step===step)return job; if(job?.status==='error')throw new Error(job.error); await delay(50); }
+    throw new Error('Queued job did not reach '+step);
+  };
+  await waitForJob(first.runId,'wait_source');
+  const second=await evaluate(popup, `chrome.runtime.sendMessage({type:'START_PIPELINE',pdfUrl:'${origin}/queue-b.pdf',sourceTitle:'Queued paper B',settings:${JSON.stringify({...jobSettings,language:'en'})}})`);
+  assert((await queueState()).jobs.find(job=>job.runId===second.runId).status==='queued','Second paper bypassed the preparation slot');
+  await evaluate(popup, `chrome.runtime.sendMessage({type:'SMOKE_TICK'})`);
+  await waitForJob(first.runId,'wait_artifacts');
+  await waitForJob(second.runId,'wait_source');
+  await reload(popup);
+  const queueView=await evaluate(popup, `({text:document.getElementById('job-queue').innerText,current:!!document.getElementById('btn-start'),width:document.documentElement.scrollWidth})`);
+  assert(queueView.current && queueView.width<=360 && queueView.text.includes('Requests accepted') && queueView.text.includes('Preparing'),'Popup does not explain the handoff while allowing another paper');
+  await evaluate(popup, `chrome.runtime.sendMessage({type:'SMOKE_TICK'})`);
+  await waitForJob(second.runId,'wait_artifacts');
+  generationComplete=true;
+  await evaluate(popup, `chrome.runtime.sendMessage({type:'SMOKE_TICK'})`);
+  const pair=(await queueState()).jobs;
+  assert(pair.length===2 && pair.every(job=>job.status==='completed') && pair[0].notebookId!==pair[1].notebookId,'Two papers did not produce independent notebook/artifact pairs');
+  assert(generations.length===2 && generations[0].language==='ko' && generations[1].language==='en','Queue changed settings or repeated an artifact mutation');
+  queueMode=false;
+  console.log('Two queued papers completed with separate notebook IDs and saved languages.');
 
   await popup.call('Emulation.setDeviceMetricsOverride', { width: 360, height: 600, deviceScaleFactor: 1, mobile: false });
   const completedState = { status: 'completed', step: 'done', pdfUrl: 'paper.pdf',
     notebookTitle: 'Harness-of-Harness: Multi-Day Autonomous Software Development with Continual Improvement',
     notebookUrl: `${origin}/notebook/smoke`, collectionAssignment: { status: 'completed', name: 'Research papers' },
     tasks: [{ type: 'audio', status: 'completed' }, { type: 'infographic', status: 'completed' }] };
-  await evaluate(popup, `chrome.storage.local.set({pipelineState:${JSON.stringify(completedState)}})`);
+  await evaluate(popup, `globalThis.__smoke.setFixtureState(${JSON.stringify(completedState)})`);
   await reload(popup);
+  await evaluate(popup, `document.querySelector('[data-show]')?.click()`);
   const layout = await evaluate(popup, `({height:document.body.getBoundingClientRect().height,width:document.documentElement.scrollWidth,
     resultBottom:document.querySelector('.completed-box').getBoundingClientRect().bottom,
     linkBottom:document.querySelector('.notebook-link').getBoundingClientRect().bottom,
@@ -379,8 +424,9 @@ try {
 
   const quotedTitle = `A "quoted" title 'with' <markup> & symbols`;
   const quotedUrl = `${origin}/notebook/smoke?q="quoted"&other='value'`;
-  await evaluate(popup, `chrome.storage.local.set({pipelineState:${JSON.stringify({ ...completedState, notebookTitle: quotedTitle, notebookUrl: quotedUrl, tasks: [] })}})`);
+  await evaluate(popup, `globalThis.__smoke.setFixtureState(${JSON.stringify({ ...completedState, notebookTitle: quotedTitle, notebookUrl: quotedUrl, tasks: [] })})`);
   await reload(popup);
+  await evaluate(popup, `document.querySelector('[data-show]')?.click()`);
   const escaped = await evaluate(popup, `({title:document.querySelector('.nb-title').getAttribute('title'),text:document.querySelector('.nb-title').textContent,attributes:document.querySelector('.nb-title').getAttributeNames(),href:document.querySelector('.notebook-link').getAttribute('href'),rel:document.querySelector('.notebook-link').rel,summary:document.querySelector('.completed-box').innerText})`);
   assert(escaped.title === quotedTitle && escaped.text === quotedTitle, 'Quoted notebook title was corrupted');
   assert(escaped.attributes.length === 2 && escaped.href === quotedUrl, 'Title or URL created unexpected markup');
@@ -390,7 +436,8 @@ try {
   await localizationSmoke({ popup, evaluate, reload, root: sourceRoot, completedState });
 
   // Exercise the real Chrome message bridge and the complete file upload client.
-  await evaluate(popup, `chrome.storage.local.set({pipelineState:{status:'idle'}})`);
+  await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'idle'})`);
+  await evaluate(popup, `chrome.runtime.sendMessage({type:'PAUSE_QUEUE',paused:true})`);
   const size = 40 * 1024 * 1024;
   const expectedBytes = Buffer.alloc(size, 32);
   expectedBytes.write('%PDF-1.7\n');
@@ -419,6 +466,13 @@ try {
   assert(transfer.response.ok, `Large PDF start failed: ${JSON.stringify(transfer.response)}`);
   assert(transfer.messageBytes < 64 * 1024 * 1024, 'Large PDF message exceeds Chrome limit');
   assert(transfer.metadataReadBytes === 2 * 256 * 1024 + 1024, 'Large local metadata read was not bounded');
+  const queuedBeforeRestart = await evaluate(popup, `chrome.runtime.sendMessage({type:'GET_STATE'})`);
+  assert(queuedBeforeRestart.status==='queued' && queuedBeforeRestart.payloadBytes===size, 'PDF was not durably queued before acknowledgment');
+  await popup.call('ServiceWorker.enable');
+  await popup.call('ServiceWorker.stopAllWorkers');
+  const afterRestart = await evaluate(popup, `chrome.runtime.sendMessage({type:'GET_QUEUE'})`);
+  assert(afterRestart.paused && afterRestart.jobs.at(-1).runId===queuedBeforeRestart.runId, 'Worker restart lost the saved queue');
+  await evaluate(popup, `chrome.runtime.sendMessage({type:'PAUSE_QUEUE',paused:false})`);
   const targets = await browserConnection.call('Target.getTargets');
   const workerTarget = targets.targetInfos.find(target => target.type === 'service_worker' && target.url.includes(extensionId));
   const workerAttachment = workerTarget ? await browserConnection.call('Target.attachToTarget', { targetId: workerTarget.targetId, flatten: true }) : null;
@@ -431,8 +485,8 @@ try {
       peak.workerHeap = Math.max(peak.workerHeap, workerHeap.usedSize);
       peak.workerBacking = Math.max(peak.workerBacking, workerHeap.backingStorageSize || 0);
     }
-    storedState = await evaluate(popup, `chrome.storage.local.get('pipelineState').then(result=>result.pipelineState)`);
-    if (storedState.step === 'wait_source' || storedState.status === 'error') break;
+    storedState = await evaluate(popup, `chrome.runtime.sendMessage({type:'GET_STATE'})`);
+    if ((storedState.status === 'running' && storedState.step === 'wait_source') || storedState.status === 'error') break;
     await delay(50);
   }
   assert(storedState.step === 'wait_source', `Large upload failed: ${storedState.error || storedState.step}`);

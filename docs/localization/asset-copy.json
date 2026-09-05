@@ -1,26 +1,26 @@
 {
   "ko": {
-    "workflow": ["하나의 워크플로", "논문에서 Gemini Notebook 아티팩트까지", "PDF나 웹페이지를 추가하고 노트북을 정리하세요. 팝업을 닫아도 진행 상태를 확인할 수 있습니다.", "PDF · arXiv 감지", "컬렉션", "백그라운드 진행"],
+    "workflow": ["논문을 위한 대기열", "논문을 추가하고 계속 생성하세요", "Gemini Notebook이 생성하는 동안 다음 논문을 저장하세요. 팝업을 닫고 넘어가도 되는 시점을 알려드립니다.", "PDF · arXiv 감지", "컬렉션", "명확한 진행 안내"],
     "settings": ["간결한 설정", "원하는 Gemini Notebook 아티팩트를 선택하세요", "화면 언어와 아티팩트 언어를 따로 설정하고 원하는 학습 자료를 생성하세요.", "컬렉션과 논문 제목 설정", "AI 오디오 오버뷰와 다양한 학습 도구", "알림, 완료음, 노트북 자동 열기"]
   },
   "ja": {
-    "workflow": ["ひとつのワークフロー", "論文から Gemini Notebook のアーティファクトへ", "PDF やウェブページを追加してノートブックを整理。ポップアップを閉じた後も進行状況を確認できます。", "PDF・arXiv の検出", "コレクション", "バックグラウンド処理"],
+    "workflow": ["論文のためのキュー", "論文を追加して次へ", "Gemini Notebookで生成中に次の論文を保存。ポップアップを閉じて次へ進めるタイミングがわかります。", "PDF・arXivの検出", "コレクション", "明確な進行状況"],
     "settings": ["コンパクトな設定", "生成するアーティファクトを選択", "画面の言語と生成言語は別設定。目的に合った学習資料を作成できます。", "コレクションと論文タイトル", "音声解説と多彩な学習ツール", "通知、完了音、自動で開く機能"]
   },
   "es": {
-    "workflow": ["Un solo proceso", "De la fuente a los artefactos", "Añade un PDF o una página, organiza el cuaderno y sigue el progreso aunque cierres la ventana.", "PDF y arXiv", "Colecciones", "Progreso en segundo plano"],
+    "workflow": ["Una cola para tus artículos", "Añade artículos. Sigue creando.", "Guarda el siguiente artículo mientras Gemini Notebook genera. Sabrás cuándo puedes cerrar la ventana y seguir.", "PDF y arXiv", "Colecciones", "Estado claro"],
     "settings": ["Controles compactos", "Elige qué genera Gemini Notebook", "El idioma de la interfaz y el de los artefactos son independientes. Crea el material que necesitas.", "Colección y título del artículo", "Resúmenes de audio y herramientas de estudio", "Avisos, sonido y apertura automática"]
   },
   "fr": {
-    "workflow": ["Un seul traitement", "De la source aux artefacts", "Ajoutez un PDF ou une page, organisez le notebook et suivez la progression même après avoir fermé la fenêtre.", "PDF et arXiv", "Collections", "Suivi en arrière-plan"],
+    "workflow": ["Une file pour vos articles", "Ajoutez des articles. Continuez.", "Enregistrez le prochain article pendant la génération. Sachez quand fermer la fenêtre et passer à la suite.", "PDF et arXiv", "Collections", "Statut clair"],
     "settings": ["Réglages compacts", "Choisissez ce que Gemini Notebook génère", "La langue de l’interface et celle des artefacts sont indépendantes. Créez vos supports d’étude.", "Collection et titre de l’article", "Résumés audio et outils d’étude", "Notifications, son et ouverture automatique"]
   },
   "de": {
-    "workflow": ["Ein durchgängiger Ablauf", "Von der Quelle zum Artefakt", "PDF oder Webseite hinzufügen, Notebook organisieren und den Fortschritt auch bei geschlossenem Fenster verfolgen.", "PDF und arXiv", "Sammlungen", "Fortschritt im Hintergrund"],
+    "workflow": ["Eine Warteschlange für Artikel", "Artikel einreihen. Weitermachen.", "Speichere den nächsten Artikel, während Gemini Notebook generiert. Sieh, wann du das Popup schließen kannst.", "PDF und arXiv", "Sammlungen", "Klarer Status"],
     "settings": ["Kompakte Einstellungen", "Wähle, was Gemini Notebook erstellt", "Oberflächen- und Artefaktsprache sind unabhängig. Erstelle das passende Lernmaterial.", "Sammlung und Artikeltitel", "Audio-Zusammenfassungen und Lernhilfen", "Benachrichtigungen, Ton und automatisches Öffnen"]
   },
   "pt_BR": {
-    "workflow": ["Um único fluxo", "Da fonte aos artefatos", "Adicione um PDF ou uma página, organize o notebook e acompanhe o progresso mesmo após fechar a janela.", "PDF e arXiv", "Coleções", "Progresso em segundo plano"],
+    "workflow": ["Uma fila para seus artigos", "Adicione artigos. Continue criando.", "Salve o próximo artigo enquanto o Gemini Notebook gera. Saiba quando pode fechar a janela e seguir.", "PDF e arXiv", "Coleções", "Status claro"],
     "settings": ["Controles compactos", "Escolha o que o Gemini Notebook gera", "O idioma da interface e o dos artefatos são independentes. Crie os materiais de estudo de que precisa.", "Coleção e título do artigo", "Resumos em Áudio e ferramentas de estudo", "Notificações, som e abertura automática"]
   }
 }

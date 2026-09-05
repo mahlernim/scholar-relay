@@ -19,7 +19,7 @@ export function canFallback(state) {
 // Claim each transition before external work. No PDF bytes are persisted in state.
 export function createPdfFallback({ getState, transition, download, upload, poll, fail }) {
   return async function fallback(runId, { resume = false, file = null } = {}) {
-    const state = await getState();
+    const state = await getState(runId);
     const steps = resume ? ['wait_pdf_access'] : ['add_source', 'wait_source'];
     const claimed = await transition(runId, {
       step: 'download_pdf',
@@ -51,7 +51,7 @@ export function createPdfFallback({ getState, transition, download, upload, poll
       return !!waiting;
     } catch (error) {
       if (error?.code === 'PIPELINE_STALE_RUN') return false;
-      const current = await getState();
+      const current = await getState(runId);
       if (current.runId !== runId || current.status !== 'running') return false;
       if (current.step === 'download_pdf') {
         await transition(runId, {
