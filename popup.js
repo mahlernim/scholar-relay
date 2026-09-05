@@ -1,4 +1,4 @@
-import { t, localizeStaticDocument, progressDetail, errorSummary } from './i18n.js';
+import { t, localizeStaticDocument, progressDetail, errorSummary, artifactLabel, artifactStatusLabel } from './i18n.js';
 import { inspectPaperPage } from './content.js';
 import { choosePdfTitle, choosePdfFileTitle } from './pdf-metadata.js';
 import { directDetectionMatchesTab } from './detection-policy.js';
@@ -519,6 +519,11 @@ function renderProgress(state) {
     }
     if (state.status === 'error') {
         bottomHtml += errorHtml(state.error || state.stepDetail || 'The workflow stopped.');
+    }
+    if ((state.tasks || []).some(task => task.error)) {
+        bottomHtml += `<details class="workflow-details"><summary>${escapeHtml(t('Artifact details'))}</summary>${state.tasks.map(task =>
+            `<div class="step-detail">${escapeHtml(artifactLabel(task.type))} · ${escapeHtml(artifactStatusLabel(task.status))}${task.error ? `<div>${escapeHtml(task.error)}</div>` : ''}</div>`
+        ).join('')}</details>`;
     }
     if (state.status === 'running') {
         bottomHtml += `<p class="s-help" role="status">${state.step === 'wait_pdf_access'

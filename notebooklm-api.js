@@ -157,6 +157,7 @@ const ArtifactStatus = {
 
 // Source status codes
 const SourceStatus = {
+  UNKNOWN: 0,
   PROCESSING: 1,
   READY: 2,
   ERROR: 3,
@@ -376,18 +377,20 @@ function extractRpcResult(chunks, rpcId) {
         if (resultData === null && item.length > 5 && item[5] !== null) {
           const serialized = JSON.stringify(item[5]);
           if (serialized.includes('UserDisplayableError')) {
-            throw new Error('RATE_LIMITED: API rate limit or quota exceeded.');
+            const error = new Error('RATE_LIMITED: API rate limit or quota exceeded.');
+            error.code = 'RATE_LIMITED';
+            throw error;
           }
         }
 
         if (typeof resultData === 'string') {
-          try { return JSON.parse(resultData); } catch { return resultData; }
+          return JSON.parse(resultData);
         }
         return resultData;
       }
     }
   }
-  return null;
+  throw new Error(`No result found for RPC ID: ${rpcId}`);
 }
 
 function decodeResponse(rawResponse, rpcId, allowNull = false) {
@@ -610,7 +613,14 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false) {
       throw error;
     }
 
-    return decodeResponse(responseText, methodId, allowNull);
+    try {
+      return decodeResponse(responseText, methodId, allowNull);
+    } catch (error) {
+      if (!isReadOnly && !['RPC_REJECTED', 'RATE_LIMITED'].includes(error?.code)) {
+        throw mutationUncertainError(methodId, 'The mutation response could not be decoded.');
+      }
+      throw error;
+    }
   }
 
   throw new Error(`RPC ${methodId} exhausted its retry budget.`);
@@ -628,19 +638,13 @@ async function createNotebook(title = '') {
   const params = [title, null, null, requestTemplateOptions()];
   const result = await rpcCall(RPCMethod.CREATE_NOTEBOOK, params);
 
-  // Parse notebook from response
-  // Response structure changed over time; keep extraction flexible.
-  let notebookId = null;
-  if (Array.isArray(result)) {
-    notebookId = Array.isArray(result[0]) ? extractFirstIdFromResult(result[0]) : extractFirstIdFromResult(result);
-  }
-
-  if (!notebookId) {
-    notebookId = extractFirstIdFromResult(result);
-  }
-
-  if (!notebookId) {
-    console.warn('[NotebookLM API] Could not parse notebook ID from create response', result);
+  // Web Project rows store the title at 0 and ID at 2. Never scan titles,
+  // source IDs or chat session IDs for an ID-looking string.
+  const row = Array.isArray(result) && result.length === 1 && Array.isArray(result[0])
+    ? result[0] : result;
+  const notebookId = Array.isArray(row) ? row[2] : null;
+  if (typeof notebookId !== 'string' || !/^[A-Za-z0-9_-]{10,}$/.test(notebookId)) {
+    throw mutationUncertainError(RPCMethod.CREATE_NOTEBOOK, 'The response did not identify the created notebook.');
   }
 
   console.log(`[NotebookLM API] Created notebook: ${notebookId}`);
@@ -789,7 +793,7 @@ async function registerFileSource(notebookId, filename) {
 
   const sourceId = extractFirstIdFromResult(result);
   if (!sourceId) {
-    throw new Error('Failed to register file source - no source ID returned');
+    throw mutationUncertainError(RPCMethod.ADD_SOURCE_FILE, 'File registration returned no source ID.');
   }
   return String(sourceId);
 }
@@ -969,8 +973,8 @@ async function listSources(notebookId) {
         }
 
         // Extract status from src[3][1]
-        let status = SourceStatus.READY;
-        if (src.length > 3 && Array.isArray(src[3]) && src[3].length > 1) {
+        let status = SourceStatus.UNKNOWN;
+        if (Array.isArray(src[3]) && Object.values(SourceStatus).includes(src[3][1])) {
           status = src[3][1];
         }
 
@@ -1001,7 +1005,7 @@ async function createNote(notebookId, title = 'New Note', content = '') {
     noteId = extractFirstIdFromResult(createResult);
   }
   if (!noteId) {
-    throw new Error('Mind map note creation failed: no note ID returned');
+    throw mutationUncertainError(RPCMethod.CREATE_NOTE, 'Mind map note creation returned no note ID.');
   }
 
   const updateParams = [
@@ -1077,7 +1081,7 @@ async function generateAudio(notebookId, sourceIds = null, language = 'en', audi
     true
   );
 
-  return parseGenerationResult(result);
+  return parseGenerationResult(result, ArtifactTypeCode.AUDIO);
 }
 
 /**
@@ -1149,7 +1153,7 @@ async function generateVideo(
     true
   );
 
-  return parseGenerationResult(result);
+  return parseGenerationResult(result, ArtifactTypeCode.VIDEO);
 }
 
 /**
@@ -1238,7 +1242,7 @@ async function generateReport(
     true
   );
 
-  return parseGenerationResult(result);
+  return parseGenerationResult(result, ArtifactTypeCode.REPORT);
 }
 
 /**
@@ -1295,7 +1299,7 @@ async function generateQuiz(notebookId, sourceIds = null, quantity = QuizQuantit
     true
   );
 
-  return parseGenerationResult(result);
+  return parseGenerationResult(result, ArtifactTypeCode.QUIZ);
 }
 
 /**
@@ -1346,7 +1350,7 @@ async function generateFlashcards(notebookId, sourceIds = null, quantity = QuizQ
     true
   );
 
-  return parseGenerationResult(result);
+  return parseGenerationResult(result, ArtifactTypeCode.QUIZ);
 }
 
 /**
@@ -1405,7 +1409,7 @@ async function generateSlideDeck(
     true
   );
 
-  return parseGenerationResult(result);
+  return parseGenerationResult(result, ArtifactTypeCode.SLIDE_DECK);
 }
 
 /**
@@ -1525,7 +1529,7 @@ async function generateDataTable(notebookId, sourceIds = null, instructions = nu
     true
   );
 
-  return parseGenerationResult(result);
+  return parseGenerationResult(result, ArtifactTypeCode.DATA_TABLE);
 }
 
 /**
@@ -1591,21 +1595,20 @@ async function generateInfographic(
     true
   );
 
-  return parseGenerationResult(result);
+  return parseGenerationResult(result, ArtifactTypeCode.INFOGRAPHIC);
 }
 
-function parseGenerationResult(result) {
+function parseGenerationResult(result, expectedType = null) {
   if (!result || !Array.isArray(result) || result.length === 0) {
-    return { taskId: null, status: 'failed', error: 'No result from API' };
+    throw mutationUncertainError(RPCMethod.CREATE_ARTIFACT, 'The response did not identify an artifact.');
   }
 
   const artifactData = Array.isArray(result[0]) ? result[0] : result;
-  const taskId = extractFirstIdFromResult(
-    Array.isArray(artifactData) && artifactData.length > 0 ? artifactData[0] : result
-  ) || extractFirstIdFromResult(result);
+  const taskId = typeof artifactData[0] === 'string' && /^[A-Za-z0-9_-]{10,}$/.test(artifactData[0])
+    ? artifactData[0] : null;
 
   if (!taskId) {
-    return { taskId: null, status: 'failed', error: 'Could not parse task ID from API response' };
+    throw mutationUncertainError(RPCMethod.CREATE_ARTIFACT, 'The response did not identify an artifact.');
   }
 
   let status = 'in_progress';
@@ -1618,7 +1621,7 @@ function parseGenerationResult(result) {
       status = 'pending';
       break;
     case ArtifactStatus.COMPLETED:
-      status = 'completed';
+      status = isMediaArtifactReady(artifactData, expectedType ?? artifactData[2]) ? 'completed' : 'in_progress';
       break;
     case ArtifactStatus.FAILED:
       status = 'failed';

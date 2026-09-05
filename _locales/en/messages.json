@@ -796,5 +796,13 @@
   "ui_67fd3b38": {
     "message": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open.",
     "description": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open."
+  },
+  "ui_6fa973d2": {
+    "message": "Needs checking",
+    "description": "Needs checking"
+  },
+  "ui_dccf5581": {
+    "message": "Artifact details",
+    "description": "Artifact details"
   }
 }

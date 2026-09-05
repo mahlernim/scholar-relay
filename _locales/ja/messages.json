@@ -796,5 +796,13 @@
   "ui_67fd3b38": {
     "message": "ノートブック $1 は一部完了。$2/$3 件完了、$4 件失敗。クリックして開きます。",
     "description": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open."
+  },
+  "ui_6fa973d2": {
+    "message": "確認が必要",
+    "description": "Needs checking"
+  },
+  "ui_dccf5581": {
+    "message": "アーティファクトの詳細",
+    "description": "Artifact details"
   }
 }

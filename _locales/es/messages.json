@@ -796,5 +796,13 @@
   "ui_67fd3b38": {
     "message": "El cuaderno $1 está parcialmente listo. $2/$3 artefactos listos, $4 fallidos. Haz clic para abrir.",
     "description": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open."
+  },
+  "ui_6fa973d2": {
+    "message": "Requiere comprobación",
+    "description": "Needs checking"
+  },
+  "ui_dccf5581": {
+    "message": "Detalles de los artefactos",
+    "description": "Artifact details"
   }
 }

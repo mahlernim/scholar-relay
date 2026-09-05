@@ -163,3 +163,34 @@ test('settings changed during ingestion stop generation without deleting the imp
   assert.match(w.data.pipelineState.error, /Select at least one artifact/);
   assert.equal(w.data.pipelineState.notebookId, 'notebook');
 });
+
+test('uncertain generation preserves inspection guidance and never adopts an unrelated artifact', async () => {
+  const w = await worker();
+  w.data.userSettings.generateInfographic = false;
+  w.data.pipelineState = { ...running(), step: 'wait_source', sourceId: 'source' };
+  w.context.listSources = async () => [{ id: 'source', status: api.SourceStatus.READY }];
+  w.context.getNotebookTitle = async () => 'Paper';
+  let mutations = 0;
+  w.context.generateAudio = async () => {
+    mutations++;
+    throw Object.assign(new Error('Accepted response stalled'), { code: 'TRANSIENT_MUTATION_UNCERTAIN' });
+  };
+  w.context.listArtifactStatuses = async () => new Map([['unattributable-id', { status: 'completed' }]]);
+  await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  assert.equal(w.data.pipelineState.tasks[0].status, 'uncertain');
+  await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  assert.equal(w.data.pipelineState.status, 'error');
+  assert.match(w.data.pipelineState.error, /Uncertain.*Check this notebook/);
+  assert.equal(w.data.pipelineState.tasks[0].error, 'Accepted response stalled');
+  assert.equal(w.data.pipelineState.tasks[0].taskId, null);
+  assert.equal(mutations, 1);
+});
+
+test('unknown ingestion status does not start generation', async () => {
+  const w = await worker();
+  w.data.pipelineState = { ...running(), step: 'wait_source', sourceId: 'source' };
+  w.context.listSources = async () => [{ id: 'source', status: api.SourceStatus.UNKNOWN }];
+  await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  assert.equal(w.data.pipelineState.step, 'wait_source');
+  assert.equal(w.data.pipelineState.tasks.length, 0);
+});

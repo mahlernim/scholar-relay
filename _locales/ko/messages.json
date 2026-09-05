@@ -796,5 +796,13 @@
   "ui_67fd3b38": {
     "message": "노트북 $1 일부 완료. 아티팩트 $2/$3개 완료, $4개 실패. 클릭하여 여세요.",
     "description": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open."
+  },
+  "ui_6fa973d2": {
+    "message": "확인 필요",
+    "description": "Needs checking"
+  },
+  "ui_dccf5581": {
+    "message": "아티팩트 상세 내용",
+    "description": "Artifact details"
   }
 }

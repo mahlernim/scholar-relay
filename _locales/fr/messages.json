@@ -796,5 +796,13 @@
   "ui_67fd3b38": {
     "message": "Le notebook $1 est partiellement prêt. $2/$3 artefacts prêts, $4 échecs. Cliquez pour ouvrir.",
     "description": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open."
+  },
+  "ui_6fa973d2": {
+    "message": "À vérifier",
+    "description": "Needs checking"
+  },
+  "ui_dccf5581": {
+    "message": "Détails des artefacts",
+    "description": "Artifact details"
   }
 }
