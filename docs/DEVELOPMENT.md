@@ -369,3 +369,19 @@ Local PDFs commit to IndexedDB before enqueue acknowledgment. Per-file and combi
 The popup keeps current-paper actions available alongside the queue, shows per-job handoff guidance, and preserves expandable diagnostics. Settings defaults are shared by the popup and worker. Seven UI catalogs, README, privacy disclosures, store descriptions, and screenshots cover the new behavior. The controlled Chrome smoke exercises two complete notebook/artifact pairs with distinct IDs and languages. It also stops and restarts the worker with a saved 40 MiB PDF before uploading and verifying the original bytes. These are controlled-service checks, not a claim of a fresh live Google generation test.
 
 Version 1.4.0 is being prepared. Existing published and submitted ZIPs remain unchanged. The signed-in store dashboard still showed version 1.3.2 Pending review on September 5. Release and submission evidence will be recorded separately.
+
+### v1.4.0 release and store submission
+
+[PR #38](https://github.com/mahlernim/scholar-relay/pull/38) closed #36 after both exact-head checks passed at `e934dd59bb92b84a03a9a448686d709f1cb76ce8` in [run 33939365594](https://github.com/mahlernim/scholar-relay/actions/runs/33939365594). Both merged-main checks passed at `2c621a22aa6625def4fae179f5fff284a841ae27` in [run 33939433192](https://github.com/mahlernim/scholar-relay/actions/runs/33939433192). Validation includes 103 tests, seven-locale Chrome smoke, two independent notebook/artifact jobs, and a saved 40 MiB PDF surviving a worker restart before an exact-byte upload.
+
+[GitHub v1.4.0](https://github.com/mahlernim/scholar-relay/releases/tag/v1.4.0) was published at `2026-09-05T02:35:21Z`, targeting that merged commit. The canonical ZIP contains 30 allowlisted runtime files, embeds version 1.4.0, and is 126,310 bytes. Every decompressed file matches the release checkout. The checksum sidecar and GitHub asset digest match the local ZIP.
+
+```text
+76fd5d45874f98f5c0e81fb29987ecefc74600d62c3b478bccb298ad6e0237db
+```
+
+The superseded v1.3.2 store review was canceled before uploading this same v1.4.0 ZIP to existing item `epopghhfmpokhbalmnfcopmplffphdbb`. Its Package page confirmed Draft 1.4.0, all seven languages, and unchanged permissions. Published remained 1.3.0. The published ZIP was not rebuilt. Store submission and eventual publication are recorded separately below.
+
+All seven descriptions in [the submitted listing](releases/v1.4.0-store-listing.md) were saved and compared with the prepared copy after a fresh dashboard load. English uses two global screenshots. The other six languages each have two matching localized screenshots, with the queue first and settings second. Storage and alarm justifications now describe the queue and temporary PDF retention. The 472-character reviewer instructions cover two separate paper jobs, closing and reopening the popup, accepted requests, pausing new starts, and local PDF limits. All changed fields were read back. An older open dashboard tab retained stale privacy values, so verification used a fresh tab without replaying the save.
+
+Submission succeeded on September 5, 2026, around `2026-09-05T02:50Z`, with the confirmation “Your extension was submitted for review”. Automatic publication after approval was checked. A subsequent Package view confirmed Pending review, submitted version 1.4.0, revision `00005`, all seven languages, and Published 1.3.0. Pending review is not public availability. Verify the public version and localized listing after approval. Keep #14 open until post-publication search evidence is recorded and keep unrelated #25 open.
