@@ -1,3 +1,5 @@
+import { jobHandoff, isUnfinishedJob } from './job-queue.js';
+import { DEFAULT_SETTINGS as DEFAULTS } from './settings.js';
 import { t, localizeStaticDocument, progressDetail, errorSummary, artifactLabel, artifactStatusLabel } from './i18n.js';
 import { inspectPaperPage } from './content.js';
 import { choosePdfTitle, choosePdfFileTitle } from './pdf-metadata.js';
@@ -18,6 +20,107 @@ import { httpOriginPattern, needsOptionalPdfAccess } from './site-permissions.js
 
 localizeStaticDocument();
 const contentEl = document.getElementById('content');
+const queueEl = document.getElementById('job-queue');
+let selectedRunId = null;
+let lastQueueHtml = '';
+let queueSnapshot = { jobs: [], paused: false };
+
+function handoffMessage(job) {
+    if (job.status === 'completed' && !job.tasks?.length) return t('Source imported. No artifacts requested.');
+    return {
+        saved: t('Saved. You can close this popup. Keep Chrome running to start queued papers.'),
+        accepted: t('Requests accepted. Gemini Notebook will keep generating even if you close Chrome. You can add another paper.'),
+        preparing: t('You can close this popup. Keep Chrome running until the artifact requests are accepted.'),
+        attention: t('This paper needs attention. Other queued papers can continue.'),
+        check: t('Some requests may still be running in Gemini Notebook. Check this notebook for the result.'),
+        ready: t('Artifacts are ready. You can move on to another paper.'),
+    }[jobHandoff(job)];
+}
+
+function queuePhase(job) {
+    if (job.status === 'queued' || job.step === 'queued_pdf') return t('Queued');
+    if (job.status === 'completed') return t('Ready');
+    if (job.status === 'stopped') return t('Stopped');
+    if (job.status === 'error' || job.step === 'wait_pdf_access') return t('Needs checking');
+    return job.step === 'wait_artifacts' ? t('Generating') : t('Preparing');
+}
+
+async function refreshQueue() {
+    const queue = await chrome.runtime.sendMessage({ type: 'GET_QUEUE' });
+    if (!Array.isArray(queue?.jobs)) throw new Error(queue?.error || 'Could not read the saved queue.');
+    queueSnapshot = queue;
+    const active = queue.jobs.filter(isUnfinishedJob);
+    const finished = queue.jobs.filter(job => !isUnfinishedJob(job)).reverse();
+    const card = job => {
+        const canStop = job.status === 'queued' || (job.status === 'running' &&
+            ['wait_source','wait_artifacts','wait_pdf_access','download_pdf','queued_pdf'].includes(job.step));
+        return '<article class="job-card" data-job="' + escapeHtml(job.runId) + '">' +
+            '<button class="job-title" data-show="' + escapeHtml(job.runId) + '">' + escapeHtml(job.sourceTitle || job.notebookTitle || job.pdfUrl || t('Source')) + '</button>' +
+            '<div class="job-phase">' + escapeHtml(queuePhase(job)) + '</div>' +
+            '<p class="job-hint">' + escapeHtml(handoffMessage(job)) + '</p>' +
+            '<div class="job-actions">' + (job.notebookUrl ? '<a href="' + escapeHtml(job.notebookUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(t('Open Notebook')) + '</a>' : '') +
+            (canStop ? '<button data-stop="' + escapeHtml(job.runId) + '">' + escapeHtml(job.status === 'queued' || job.step === 'queued_pdf' ? t('Remove from queue') : t('Stop this job')) + '</button>' : '') + '</div></article>';
+    };
+    const html = '<div class="queue-heading"><strong>' + escapeHtml(t('Paper queue')) + ' · ' + active.length + '</strong>' +
+        '<button id="btn-pause-queue">' + escapeHtml(queue.paused ? t('Resume queue') : t('Pause queue')) + '</button></div>' +
+        '<p class="s-help">' + escapeHtml(queue.paused ? t('Queue paused. Jobs already started continue.') : t('Prepare one paper at a time. Up to three notebooks can generate together.')) + '</p>' +
+        '<div class="job-list">' + active.map(card).join('') + '</div>' +
+        (finished.length ? '<details id="finished-jobs"><summary>' + escapeHtml(t('Recent jobs')) + ' · ' + finished.length + '</summary><div class="job-list">' + finished.map(card).join('') + '</div><button class="btn-secondary" id="btn-clear-jobs">' + escapeHtml(t('Clear finished jobs')) + '</button></details>' : '');
+    if (html !== lastQueueHtml) {
+        const wasOpen = queueEl.querySelector('#finished-jobs')?.open;
+        const scrollPositions = [...queueEl.querySelectorAll('.job-list')].map(el => el.scrollTop);
+        queueEl.innerHTML = html;
+        lastQueueHtml = html;
+        if (wasOpen && queueEl.querySelector('#finished-jobs')) queueEl.querySelector('#finished-jobs').open = true;
+        queueEl.querySelectorAll('.job-list').forEach((el,i) => { el.scrollTop = scrollPositions[i] || 0; });
+        queueEl.querySelectorAll('[data-show]').forEach(button => button.addEventListener('click', async () => {
+            selectedRunId = button.dataset.show;
+            renderProgress(queueSnapshot.jobs.find(job => job.runId === selectedRunId));
+            contentEl.scrollIntoView({ block: 'start' });
+        }));
+        queueEl.querySelectorAll('[data-stop]').forEach(button => button.addEventListener('click', () => abortPipeline(button.dataset.stop)));
+        queueEl.querySelector('#btn-pause-queue').addEventListener('click', async () => {
+            try {
+                const response = await chrome.runtime.sendMessage({ type: 'PAUSE_QUEUE', paused: !queueSnapshot.paused });
+                if (!response?.ok) throw new Error(response?.message);
+                await refreshQueue();
+            } catch (error) { showError(error.message); }
+        });
+        queueEl.querySelector('#btn-clear-jobs')?.addEventListener('click', async () => {
+            try {
+                const response = await chrome.runtime.sendMessage({ type: 'RESET_STATE' });
+                if (!response?.ok) throw new Error(response?.message);
+                selectedRunId = null;
+                await detectAndRender();
+                await refreshQueue();
+            } catch (error) { showError(error.message); }
+        });
+    }
+    const selected = queue.jobs.find(job => job.runId === selectedRunId);
+    if (selected) renderProgress(selected);
+    return queue;
+}
+
+async function enqueueRequest(message) {
+    const settings = listenersWired ? await saveSettings() : ((await chrome.storage.local.get('userSettings')).userSettings || {});
+    const requestId = crypto.randomUUID();
+    let response;
+    try { response = await chrome.runtime.sendMessage({ ...message, requestId, settings }); }
+    catch (error) {
+        const queue = await chrome.runtime.sendMessage({ type: 'GET_QUEUE' });
+        const saved = queue?.jobs?.find(job => job.requestId === requestId);
+        if (!saved) throw error;
+        response = { ok: true, runId: saved.runId };
+    }
+    return response;
+}
+
+async function showQueuedResponse(response) {
+    selectedRunId = response.runId;
+    await refreshQueue();
+    startPolling();
+}
+
 
 // Pipeline steps -- 'keys' maps one or more background state step names to this display row
 const STEPS = [
@@ -36,22 +139,7 @@ const STEPS = [
 // Settings schema
 // =========================================================================
 
-const DEFAULTS = {
-    generateAudio: true,
-    audioFormat: 'deep_dive', audioLength: 'long', language: 'en', audioPrompt: '',
-    generateVideo: false, videoFormat: 'explainer', videoStyle: 'auto', videoPrompt: '', videoStylePrompt: '',
-    generateReport: false, reportFormat: 'study_guide', reportPrompt: '',
-    generateQuiz: false, quizQuantity: 'standard', quizDifficulty: 'medium', quizPrompt: '',
-    generateFlashcards: false, flashcardsQuantity: 'standard', flashcardsDifficulty: 'medium', flashcardsPrompt: '',
-    generateInfographic: true,
-    infographicOrientation: 'landscape', infographicDetail: 'standard', infographicStylePreset: 'auto', infographicNativeStyle: 'auto', infographicPrompt: '',
-    generateSlideDeck: false, slideDeckFormat: 'detailed_deck', slideDeckLength: 'default', slideDeckPrompt: '',
-    generateMindMap: false,
-    generateDataTable: false, dataTablePrompt: '',
-    notificationEnabled: true,
-    chimeEnabled: true, autoOpenNotebook: false, useSourceTitleForNotebook: true,
-    collectionId: '',
-};
+
 
 const SELECT_MAP = {
     's-audioFormat': 'audioFormat',
@@ -211,7 +299,9 @@ async function saveSettings() {
     }
 
     const current = ((await chrome.storage.local.get('userSettings')).userSettings) || {};
-    await chrome.storage.local.set({ userSettings: { ...current, ...s } });
+    const settings = { ...current, ...s };
+    await chrome.storage.local.set({ userSettings: settings });
+    return settings;
 }
 
 // Returns true if at least one artifact toggle is checked
@@ -337,13 +427,9 @@ function wireSettingsListeners() {
 // =========================================================================
 
 async function init() {
-    const state = await getState();
-    if (state.status === 'running' || state.status === 'completed' || state.status === 'error') {
-        renderProgress(state);
-        if (state.status === 'running') startPolling();
-        return;
-    }
     await detectAndRender();
+    try { await refreshQueue(); } catch (error) { showError(error.message); }
+    startPolling();
 }
 
 // =========================================================================
@@ -414,7 +500,7 @@ function renderDetection(data) {
       <div class="pdf-url">${escapeHtml(truncated)}</div>
       <div class="pdf-source">${escapeHtml(t(sourceLabel))}</div>
     </div>
-    <button class="btn-generate" id="btn-upload-start">${escapeHtml(t("Upload & Generate"))}</button>
+    <button class="btn-generate" id="btn-upload-start">${escapeHtml(t('Save PDF to queue'))}</button>
     <button class="btn-secondary" id="btn-upload-other">${escapeHtml(t("Choose Different PDF"))}</button>`;
         document.getElementById('btn-upload-start').addEventListener('click', () => startPipelineFromCurrentTabPdf(data.pageUrl || data.pdfUrl));
         document.getElementById('btn-upload-other').addEventListener('click', () => promptForPdfUpload(data.pageUrl || data.pdfUrl));
@@ -427,7 +513,7 @@ function renderDetection(data) {
       <div class="pdf-url">${escapeHtml(truncated)}</div>
       <div class="pdf-source">${escapeHtml(t(sourceLabel))}</div>
     </div>
-    <button class="btn-generate" id="btn-start">${escapeHtml(t("🎧 Generate Artifacts"))}</button>`;
+    <button class="btn-generate" id="btn-start">${escapeHtml(t('Add to queue'))}</button>`;
     document.getElementById('btn-start').addEventListener('click', () =>
         startPipeline(data.pdfUrl, data.pageUrl, 'pdf', data.sourceTitle, data.pdfEvidence || data.source)
             .catch(error => showError(error.message))
@@ -441,7 +527,7 @@ function renderNoPdf() {
       ${escapeHtml(t("No PDF detected on this page."))}<br>
       <span style="font-size:11px; color:var(--text-dim)">${escapeHtml(t("You can still try importing this page URL directly."))}</span>
     </div>
-    <button class="btn-generate" id="btn-start-url">${escapeHtml(t("Import Page & Generate"))}</button>
+    <button class="btn-generate" id="btn-start-url">${escapeHtml(t('Add page to queue'))}</button>
     <button class="btn-secondary" id="btn-upload-manual">${escapeHtml(t("Upload Local PDF"))}</button>`;
     document.getElementById('btn-start-url').addEventListener('click', startPipelineFromCurrentPageUrl);
     document.getElementById('btn-upload-manual').addEventListener('click', () => promptForPdfUpload(null));
@@ -462,6 +548,7 @@ function showError(detail) {
 }
 
 function renderProgress(state) {
+    if (!state) return;
     const openDetails = new Set([...contentEl.querySelectorAll('details[open]')].map(el => el.querySelector('summary')?.textContent));
     const currentStepIndex = STEPS.findIndex(s => s.keys.includes(state.step));
 
@@ -525,22 +612,16 @@ function renderProgress(state) {
             `<div class="step-detail">${escapeHtml(artifactLabel(task.type))} · ${escapeHtml(artifactStatusLabel(task.status))}${task.error ? `<div>${escapeHtml(task.error)}</div>` : ''}</div>`
         ).join('')}</details>`;
     }
-    if (state.status === 'running') {
-        bottomHtml += `<p class="s-help" role="status">${state.step === 'wait_pdf_access'
-            ? t("Allow the download or choose a PDF to continue in this notebook.")
-            : t("You can close this popup. Work continues.")}</p>`;
-    }
+    bottomHtml += `<p class="handoff-note" role="status">${escapeHtml(handoffMessage(state))}</p>`;
     if (state.status === 'running' && state.step === 'wait_pdf_access') {
         bottomHtml += `<button class="btn-generate" id="btn-resume-pdf">${escapeHtml(t("Allow Download & Continue"))}</button>
           <button class="btn-secondary" id="btn-fallback-file">${escapeHtml(t("Upload PDF Instead"))}</button>
           ${state.stepDetail ? `<details class="workflow-details"><summary>${escapeHtml(t("Download details"))}</summary><div class="step-detail">${escapeHtml(state.stepDetail)}</div></details>` : ''}`;
     }
-    if (state.status === 'running' && ['wait_source', 'wait_artifacts', 'wait_pdf_access', 'download_pdf'].includes(state.step)) {
+    if (state.status === 'running' && ['wait_source', 'wait_artifacts', 'wait_pdf_access', 'download_pdf', 'queued_pdf'].includes(state.step)) {
         bottomHtml += `<button class="btn-secondary" id="btn-abort" aria-describedby="stop-help">${escapeHtml(t("Stop Monitoring"))}</button><p class="s-help" id="stop-help">${escapeHtml(t("Stops this workflow. Work already started in Gemini Notebook may continue."))}</p>`;
     }
-    if (state.status === 'error' || state.status === 'completed') {
-        bottomHtml += `<button class="btn-secondary" id="btn-reset">${escapeHtml(t("Start Over"))}</button>`;
-    }
+    bottomHtml += `<button class="btn-secondary" id="btn-reset">${escapeHtml(t('Add another paper'))}</button>`;
 
     contentEl.innerHTML = `
     <div class="pdf-info">
@@ -550,7 +631,7 @@ function renderProgress(state) {
     ${titleHtml}
     ${collectionHtml}
     ${state.failedUrlSourceId ? `<details class="workflow-details"><summary>${escapeHtml(t("Source replacement"))}</summary><div class="step-detail">${escapeHtml(t("Upload fallback uses this notebook. The failed URL source is kept. Artifacts use the replacement PDF."))}</div></details>` : ''}
-    ${state.status === 'completed'
+    ${['completed', 'queued', 'stopped'].includes(state.status)
         ? `${bottomHtml}<details class="workflow-details"><summary>${escapeHtml(t("Workflow details"))}</summary><div class="pipeline">${stepsHtml}</div></details>`
         : `<div class="pipeline">${stepsHtml}</div>${bottomHtml}`}`;
 
@@ -559,16 +640,8 @@ function renderProgress(state) {
     });
 
     document.getElementById('btn-reset')?.addEventListener('click', async () => {
-        try {
-            const response = await chrome.runtime.sendMessage({ type: 'RESET_STATE' });
-            if (!response?.ok) {
-                showError(response?.message || 'Could not reset pipeline state.');
-                return;
-            }
-            await detectAndRender();
-        } catch (error) {
-            showError(error?.message || 'The service worker did not respond. Reopen the popup and try again.');
-        }
+        selectedRunId = null;
+        await detectAndRender();
     });
     document.getElementById('btn-abort')?.addEventListener('click', () => abortPipeline(state.runId));
     document.getElementById('btn-resume-pdf')?.addEventListener('click', async () => {
@@ -600,8 +673,8 @@ function renderProgress(state) {
 async function resumeFallbackFromPopup(runId, file = {}) {
     const response = await chrome.runtime.sendMessage({ type: 'RESUME_PDF_FALLBACK', runId, ...file });
     if (!response?.ok) throw new Error(response?.message || 'Could not resume PDF upload.');
-    renderProgress(response.state);
-    if (response.state.status === 'running') startPolling();
+    selectedRunId = runId;
+    await refreshQueue();
 }
 
 // =========================================================================
@@ -613,18 +686,13 @@ async function startPipeline(pdfUrl, pageUrl, sourceType = 'pdf', sourceTitle = 
     const originalText = btn?.textContent || '';
     if (btn) { btn.disabled = true; btn.textContent = t("⏳ Starting..."); }
     try {
-        const response = await chrome.runtime.sendMessage({ type: 'START_PIPELINE', pdfUrl, pageUrl, sourceType, sourceTitle, pdfEvidence });
+        const response = await enqueueRequest({ type: 'START_PIPELINE', pdfUrl, pageUrl, sourceType, sourceTitle, pdfEvidence });
         if (!response?.ok) {
             const error = new Error(response?.message || 'Could not start pipeline');
             error.code = response?.code;
             throw error;
         }
-        const state = await getState();
-        if (state.runId !== response.runId || state.status !== 'running') {
-            throw new Error('The pipeline did not retain ownership after starting.');
-        }
-        renderProgress(state);
-        startPolling();
+        await showQueuedResponse(response);
         return response;
     } catch (error) {
         if (btn?.isConnected) {
@@ -649,7 +717,7 @@ async function startPipelineFromCurrentPageUrl() {
         await startPipeline(currentUrl, currentUrl, 'webpage', sourceTitle);
     } catch (err) {
         console.warn('[Popup] Could not start webpage URL pipeline:', err?.message || err);
-        if (btn) { btn.disabled = false; btn.textContent = t("Import Page & Generate"); }
+        if (btn) { btn.disabled = false; btn.textContent = t('Add page to queue'); }
         showError(err?.message || 'Could not use current webpage URL as a source.');
     }
 }
@@ -657,24 +725,15 @@ async function startPipelineFromCurrentPageUrl() {
 async function abortPipeline(runId) {
     try {
         const response = await chrome.runtime.sendMessage({ type: 'ABORT_PIPELINE', runId });
-        if (!response?.ok) {
-            const current = response?.state || await getState();
-            renderProgress(current);
-            if (current.status === 'running') startPolling();
-            showError(response?.message || 'The pipeline could not be stopped.');
-            return;
-        }
-        stopPolling();
-        await detectAndRender();
-    } catch (error) {
-        showError(error?.message || 'The service worker did not respond. Reopen the popup and try again.');
-    }
+        if (!response?.ok) throw new Error(response?.message || 'Could not stop this job.');
+        await refreshQueue();
+    } catch (error) { showError(error.message); }
 }
 
 async function startPipelineFile(file, pageUrl, sourceTitle = null) {
     const btn = document.getElementById('btn-upload-start') || document.getElementById('btn-upload-manual');
     const originalText = btn?.textContent || '';
-    if (btn) { btn.disabled = true; btn.textContent = t("Uploading..."); }
+    if (btn) { btn.disabled = true; btn.textContent = t('Saving PDF. Keep this popup open...'); }
     try {
         assertPdfUploadSize(file.size);
         const signature = await file.slice(0, 1024).arrayBuffer();
@@ -685,7 +744,7 @@ async function startPipelineFile(file, pageUrl, sourceTitle = null) {
         });
         const fileDataBase64 = await readFileAsBase64(file);
         console.log(`[Popup] Notebook title source: ${selectedTitle.source}`);
-        const response = await chrome.runtime.sendMessage({
+        const response = await enqueueRequest({
             type: 'START_PIPELINE_FILE',
             fileName: file.name || 'local-upload.pdf',
             mimeType: file.type || 'application/pdf',
@@ -697,12 +756,7 @@ async function startPipelineFile(file, pageUrl, sourceTitle = null) {
             error.code = response?.code;
             throw error;
         }
-        const state = await getState();
-        if (state.runId !== response.runId || state.status !== 'running') {
-            throw new Error('The file pipeline did not retain ownership after starting.');
-        }
-        renderProgress(state);
-        startPolling();
+        await showQueuedResponse(response);
         return true;
     } catch (error) {
         console.warn('[Popup] Could not start local PDF pipeline:', error?.message || error);
@@ -858,7 +912,7 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
             showFileAccessHint();
             if (btn) {
                 btn.disabled = false;
-                btn.textContent = btn.id === 'btn-start' ? t("🎧 Generate Artifacts") : t("Upload & Generate");
+                btn.textContent = btn.id === 'btn-start' ? t('Add to queue') : t('Save PDF to queue');
             }
             return;
         }
@@ -988,8 +1042,8 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
         });
         console.log(`[Popup] Notebook title source: ${selectedTitle.source}`);
 
-        if (btn) { btn.textContent = t("Uploading..."); }
-        const response = await chrome.runtime.sendMessage({
+        if (btn) { btn.textContent = t('Saving PDF. Keep this popup open...'); }
+        const response = await enqueueRequest({
             type: 'START_PIPELINE_FILE',
             fileName: payload.fileName || 'local-upload.pdf',
             mimeType: payload.mimeType || 'application/pdf',
@@ -1002,17 +1056,12 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
             error.code = response?.code;
             throw error;
         }
-        const state = await getState();
-        if (state.runId !== response.runId || state.status !== 'running') {
-            throw new Error('The PDF pipeline did not retain ownership after starting.');
-        }
-        renderProgress(state);
-        startPolling();
+        await showQueuedResponse(response);
     } catch (err) {
         console.warn('[Popup] Direct local PDF read failed, falling back to file picker:', err?.message || err);
         if (btn) {
             btn.disabled = false;
-            btn.textContent = btn.id === 'btn-start' ? t("🎧 Generate Artifacts") : t("Upload & Generate");
+            btn.textContent = btn.id === 'btn-start' ? t('Add to queue') : t('Save PDF to queue');
         }
         if (['PIPELINE_ALREADY_RUNNING', 'PIPELINE_NOT_IDLE', 'PDF_TOO_LARGE'].includes(err?.code) ||
             /retain ownership/i.test(err?.message || '')) {
@@ -1063,12 +1112,7 @@ function startPolling() {
         if (!pollingEnabled || pollInFlight) return;
         pollInFlight = true;
         try {
-            const state = await getState();
-            renderProgress(state);
-            if (state.status !== 'running') {
-                stopPolling();
-                return;
-            }
+            await refreshQueue();
             if (pollingEnabled) {
                 pollInterval = setTimeout(tick, 2000);
             }
@@ -1090,14 +1134,6 @@ function stopPolling() {
     }
     pollInterval = null;
     pollInFlight = false;
-}
-
-async function getState() {
-    return new Promise(resolve => {
-        chrome.runtime.sendMessage({ type: 'GET_STATE' }, response => {
-            resolve(response || { status: 'idle' });
-        });
-    });
 }
 
 // =========================================================================

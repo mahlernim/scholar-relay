@@ -169,31 +169,27 @@ async function capturePopup(port, extensionId, locale = 'en') {
   const setup = await openTarget(port, `chrome-extension://${extensionId}/popup.html`);
   await setup.call('Page.addScriptToEvaluateOnNewDocument', { source: localeScript });
   await delay(400);
-  const pipelineState = {
-    status: 'completed',
-    step: 'done',
-    stepDetail: 'All requested artifacts are ready.',
-    pdfUrl: 'https://arxiv.org/pdf/2601.04480',
-    sourceType: 'pdf',
-    notebookUrl: 'https://notebook.google.com/notebook/example',
-    notebookTitle: 'The Geometry of Character Counting in Language Models',
-    collectionAssignment: { status: 'completed', name: 'Research Papers' },
-    tasks: [
-      { type: 'audio', status: 'completed' },
-      { type: 'infographic', status: 'completed' },
-      { type: 'mind_map', status: 'completed' },
-    ],
-  };
-  await evaluate(setup, `chrome.storage.local.set({pipelineState:${JSON.stringify(pipelineState)}})`);
+  const queueFixture = { version:1, paused:false, jobs:[
+    { status:'running', runId:'example-a', step:'wait_artifacts', sourceTitle:'The Geometry of Character Counting in Language Models',
+      pdfUrl:'https://arxiv.org/pdf/2601.04480', notebookUrl:'https://notebook.google.com/notebook/example',
+      tasks:[{type:'audio',taskId:'example-audio',status:'in_progress'},{type:'infographic',taskId:'example-figure',status:'in_progress'}] },
+    { status:'queued', runId:'example-b', step:'queued', sourceTitle:'Attention Is All You Need', pdfUrl:'https://arxiv.org/pdf/1706.03762',tasks:[] },
+  ] };
+  await setup.call('Page.addScriptToEvaluateOnNewDocument', {source: `
+    const savedSend=chrome.runtime.sendMessage.bind(chrome.runtime);
+    chrome.runtime.sendMessage=(message,...args)=>message.type==='GET_QUEUE'?Promise.resolve(${JSON.stringify(queueFixture)}):savedSend(message,...args);
+    chrome.tabs.query=async()=>[{id:12345,url:'https://arxiv.org/pdf/2303.08774'}];
+    chrome.scripting.executeScript=async()=>[];
+  `});
   await sessionReload(setup);
   await hidePageScrollbars(setup);
-  await capture(setup, join(output, 'workflow.png'), 360, 350);
+  await capture(setup, join(output, 'workflow.png'), 360, 550);
   setup.close();
 
   const settings = await openTarget(port, `chrome-extension://${extensionId}/popup.html`);
   await settings.call('Page.addScriptToEvaluateOnNewDocument', { source: localeScript });
   await delay(400);
-  await evaluate(settings, `chrome.storage.local.set({pipelineState:{status:'idle'},userSettings:{generateAudio:true,audioLength:'long',language:'en',generateInfographic:true,useSourceTitleForNotebook:true,notificationEnabled:true,chimeEnabled:true,autoOpenNotebook:false,collectionId:'research-papers'}})`);
+  await evaluate(settings, `chrome.storage.local.set({jobQueue:{version:1,paused:false,jobs:[]},userSettings:{generateAudio:true,audioLength:'long',language:'en',generateInfographic:true,useSourceTitleForNotebook:true,notificationEnabled:true,chimeEnabled:true,autoOpenNotebook:false,collectionId:'research-papers'}})`);
   await sessionReload(settings);
   await evaluate(settings, `document.getElementById('btn-gear').click()`);
   await delay(500);

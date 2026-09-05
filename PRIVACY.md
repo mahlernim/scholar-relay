@@ -1,6 +1,6 @@
 # Privacy Policy for ScholarRelay
 
-Last updated: September 3, 2026
+Last updated: September 5, 2026
 
 ScholarRelay is an independent browser extension that helps a user add a PDF or webpage to the user's own Gemini Notebook account (formerly NotebookLM) and request artifacts. It is not affiliated with, authorized by, or endorsed by Google.
 
@@ -9,7 +9,7 @@ ScholarRelay is an independent browser extension that helps a user add a PDF or 
 The extension handles only data needed for a user-requested workflow:
 
 - The URL and title of the active tab, and limited page content needed to detect a PDF link or paper title.
-- A PDF selected by the user or detected in the active tab. PDF bytes are held temporarily in browser memory while the file is uploaded.
+- A PDF selected by the user or detected in the active tab. Selected local PDFs are saved temporarily in extension-owned IndexedDB so queued uploads survive popup and browser restarts. Remote PDF downloads remain temporary in memory.
 - Extension settings, custom artifact instructions, selected collection, and pipeline progress.
 - Gemini Notebook notebook, source, collection, and artifact identifiers and status information.
 - The existing authenticated Gemini Notebook browser session. The extension makes HTTPS requests that allow Chrome to attach the session already established by the user on Gemini Notebook.
@@ -23,7 +23,7 @@ HTML metadata is read before remote PDF import. PDF bytes are downloaded only wh
 
 Data is used only to detect the source selected by the user, upload or import it into the user's Gemini Notebook account, apply the user's notebook settings, request the selected artifacts, and report progress.
 
-Data is transmitted only over HTTPS to:
+Data is transmitted to:
 
 - Google's Gemini Notebook service, as necessary to perform the workflow requested by the user.
 - The host of a user-selected PDF, when the extension must download that PDF. Cross-origin access is requested for that specific host before downloading.
@@ -35,8 +35,8 @@ Google and source websites process data under their own terms and privacy polici
 ## Local storage and retention
 
 - Settings and custom instructions remain in Chrome local extension storage until the user changes them or removes the extension.
-- Pipeline state, including source URLs, titles, Gemini Notebook identifiers, and status, remains until it is replaced by a new run, reset in the extension, or removed with the extension.
-- PDF file bytes and Gemini Notebook authentication values are not saved in Chrome local storage.
+- The paper queue stores source URLs, titles, a settings snapshot for each job, Gemini Notebook identifiers, and progress. It holds up to 20 unfinished jobs and 50 previous finished jobs. Use Clear finished jobs to remove finished history. Removing the extension deletes the queue.
+- Queued PDF bytes are stored in IndexedDB, with a 40 MiB limit per file and 100 MiB combined limit. They are removed after upload, failure, or removal of the queued job. Cleanup interrupted by browser shutdown finishes when the extension next starts. Gemini Notebook authentication values are never saved to persistent storage.
 - Website permissions remain until the user revokes them in Chrome or removes the extension.
 
 Removing the extension deletes its Chrome-managed local storage and permission grants. Data already sent to Gemini Notebook remains under the user's control in Gemini Notebook.
@@ -47,7 +47,7 @@ The use of information received from Chrome APIs complies with the Chrome Web St
 
 ## Security
 
-The extension uses HTTPS for network transmission, bundles all executable code inside the extension package, and does not load or execute remote code. Because the consumer Gemini Notebook web interface does not provide a supported public API for this workflow, compatibility may change when the service changes.
+Gemini Notebook requests use HTTPS. Direct PDF downloads use the source URL selected by the user, which may use HTTP or HTTPS. The extension bundles all executable code inside the extension package and does not load or execute remote code. Because the consumer Gemini Notebook web interface does not provide a supported public API for this workflow, compatibility may change when the service changes.
 
 ## Contact
 

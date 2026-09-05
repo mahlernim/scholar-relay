@@ -804,5 +804,97 @@
   "ui_dccf5581": {
     "message": "아티팩트 상세 내용",
     "description": "Artifact details"
+  },
+  "ui_e46778ea": {
+    "message": "논문 대기열",
+    "description": "Paper queue"
+  },
+  "ui_9e437c74": {
+    "message": "대기 중",
+    "description": "Queued"
+  },
+  "ui_98bfff6f": {
+    "message": "준비 중",
+    "description": "Preparing"
+  },
+  "ui_863f19ee": {
+    "message": "중지됨",
+    "description": "Stopped"
+  },
+  "ui_cf1d1846": {
+    "message": "대기열에 추가",
+    "description": "Add to queue"
+  },
+  "ui_1512a308": {
+    "message": "PDF를 대기열에 저장",
+    "description": "Save PDF to queue"
+  },
+  "ui_d5809db3": {
+    "message": "페이지를 대기열에 추가",
+    "description": "Add page to queue"
+  },
+  "ui_c66a1109": {
+    "message": "다른 논문 추가",
+    "description": "Add another paper"
+  },
+  "ui_fc5bf3cc": {
+    "message": "대기열에서 제거",
+    "description": "Remove from queue"
+  },
+  "ui_6810ced4": {
+    "message": "이 작업 중지",
+    "description": "Stop this job"
+  },
+  "ui_acc12e9e": {
+    "message": "대기열 일시정지",
+    "description": "Pause queue"
+  },
+  "ui_ab9aefe9": {
+    "message": "대기열 재개",
+    "description": "Resume queue"
+  },
+  "ui_13e397ca": {
+    "message": "최근 작업",
+    "description": "Recent jobs"
+  },
+  "ui_7b37dc98": {
+    "message": "종료된 작업 지우기",
+    "description": "Clear finished jobs"
+  },
+  "ui_caf6d280": {
+    "message": "대기열이 일시정지되었습니다. 이미 시작한 작업은 계속됩니다.",
+    "description": "Queue paused. Jobs already started continue."
+  },
+  "ui_c7972f4e": {
+    "message": "논문을 하나씩 준비합니다. 최대 3개 노트북에서 동시에 생성할 수 있습니다.",
+    "description": "Prepare one paper at a time. Up to three notebooks can generate together."
+  },
+  "ui_c744f96c": {
+    "message": "저장되었습니다. 이 팝업을 닫아도 됩니다. 대기 중인 논문을 시작하려면 Chrome을 실행해 두세요.",
+    "description": "Saved. You can close this popup. Keep Chrome running to start queued papers."
+  },
+  "ui_a6133a54": {
+    "message": "요청이 접수되었습니다. Chrome을 닫아도 Gemini Notebook에서 생성을 계속합니다. 다른 논문을 추가해도 됩니다.",
+    "description": "Requests accepted. Gemini Notebook will keep generating even if you close Chrome. You can add another paper."
+  },
+  "ui_8481df34": {
+    "message": "이 팝업을 닫아도 됩니다. 결과물 생성 요청이 접수될 때까지 Chrome을 실행해 두세요.",
+    "description": "You can close this popup. Keep Chrome running until the artifact requests are accepted."
+  },
+  "ui_440cb2bf": {
+    "message": "이 논문은 확인이 필요합니다. 대기열의 다른 논문은 계속 진행할 수 있습니다.",
+    "description": "This paper needs attention. Other queued papers can continue."
+  },
+  "ui_e5cfc00b": {
+    "message": "일부 요청은 Gemini Notebook에서 계속 진행 중일 수 있습니다. 이 노트북에서 결과를 확인하세요.",
+    "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
+  },
+  "ui_314695f8": {
+    "message": "결과물이 준비되었습니다. 다른 논문으로 넘어가도 됩니다.",
+    "description": "Artifacts are ready. You can move on to another paper."
+  },
+  "ui_232cd7e": {
+    "message": "PDF 저장 중입니다. 이 팝업을 열어 두세요...",
+    "description": "Saving PDF. Keep this popup open..."
   }
 }

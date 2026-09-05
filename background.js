@@ -1,3 +1,4 @@
+import { withRequestDeadline } from './request-deadline.js';
 /**
  * Background service worker for ScholarRelay.
  *
@@ -20,6 +21,9 @@
  * 7. Notify + chime on completion
  */
 
+import { DEFAULT_SETTINGS } from './settings.js';
+import { createJobQueue, canStartNextJob, isUnfinishedJob, MAX_QUEUED_JOBS, MAX_QUEUED_PDF_BYTES } from './job-queue.js';
+import { createQueuedPdfStore } from './queued-pdfs.js';
 import { t, errorSummary } from './i18n.js';
 import {
     fetchTokens,
@@ -61,7 +65,6 @@ import {
     PIPELINE_POLL_PERIOD_MINUTES,
     canStopPipeline,
     createExclusiveRunner,
-    createPipelineStateCoordinator,
     interruptedPipelineUpdate,
     isActivePipelineRun,
     pollingElapsedMs,
@@ -114,33 +117,36 @@ const INITIAL_STATE = {
     stepStartedAt: null,     // ISO timestamp when the current polling phase began
 };
 
-async function getState() {
-    const result = await chrome.storage.local.get('pipelineState');
-    return result.pipelineState || { ...INITIAL_STATE };
+async function getQueue() {
+    const result = await chrome.storage.local.get('jobQueue');
+    if (result.jobQueue) return result.jobQueue;
+    const legacy = (await chrome.storage.local.get('pipelineState')).pipelineState;
+    return { version: 1, paused: false, jobs: legacy?.runId ? [legacy] : [] };
 }
 
-const pipelineState = createPipelineStateCoordinator({
-    readState: getState,
-    writeState: state => chrome.storage.local.set({ pipelineState: state }),
+async function getState(runId = null) {
+    const queue = await getQueue();
+    return (runId ? queue.jobs.find(job => job.runId === runId) : queue.jobs.at(-1)) || { ...INITIAL_STATE };
+}
+
+const pdfStore = createQueuedPdfStore();
+const pipelineState = createJobQueue({
+    read: getQueue,
+    write: jobQueue => chrome.storage.local.set({ jobQueue }),
 });
-
-async function setState(updates) {
-    return (await pipelineState.update(updates)).state;
-}
-
-async function resetState(options = {}) {
-    const result = await pipelineState.reset({ ...INITIAL_STATE }, options);
-    return result.applied ? result.state : null;
-}
 
 async function transitionRun(runId, updates, options = {}) {
     const result = await pipelineState.transition(runId, updates, options);
     if (result.effectError) throw result.effectError;
+    if (result.applied && (result.state.status !== 'running' ||
+        ['wait_artifacts', 'wait_pdf_access'].includes(result.state.step))) {
+        kickQueue();
+    }
     return result.applied ? result.state : null;
 }
 
 async function requireActiveRun(runId, expectedSteps = null) {
-    const state = await getState();
+    const state = await getState(runId);
     if (!isActivePipelineRun(state, runId)) {
         const error = new Error('Pipeline run is no longer active');
         error.code = 'PIPELINE_STALE_RUN';
@@ -281,48 +287,51 @@ async function downloadRemotePdfForUpload(pdfUrl, pageUrl = null) {
         );
     }
 
-    const response = await fetch(pdfUrl, {
-        method: 'GET',
-        credentials: 'include',
-        redirect: 'follow',
-        cache: 'force-cache',
-        headers: {
-            Accept: 'application/pdf,application/octet-stream;q=0.9,*/*;q=0.8',
-        },
-        referrer: pageUrl || undefined,
-    });
+    return withRequestDeadline(async signal => {
+        const response = await fetch(pdfUrl, {
+            signal,
+            method: 'GET',
+            credentials: 'include',
+            redirect: 'follow',
+            cache: 'force-cache',
+            headers: {
+                Accept: 'application/pdf,application/octet-stream;q=0.9,*/*;q=0.8',
+            },
+            referrer: pageUrl || undefined,
+        });
 
-    if (!response.ok) {
-        throw new Error(`HTTP ${response.status} while downloading source PDF`);
-    }
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status} while downloading source PDF`);
+        }
 
-    const contentType = response.headers.get('content-type') || '';
-    const contentDisposition = response.headers.get('content-disposition') || '';
-    const filename = ensurePdfFilename(
-        filenameFromContentDisposition(contentDisposition) ||
-        filenameFromUrl(response.url || pdfUrl) ||
-        filenameFromUrl(pdfUrl) ||
-        'uploaded.pdf'
-    );
+        const contentType = response.headers.get('content-type') || '';
+        const contentDisposition = response.headers.get('content-disposition') || '';
+        const filename = ensurePdfFilename(
+            filenameFromContentDisposition(contentDisposition) ||
+            filenameFromUrl(response.url || pdfUrl) ||
+            filenameFromUrl(pdfUrl) ||
+            'uploaded.pdf'
+        );
 
-    // Accept common PDF delivery types: application/pdf or generic binary payloads.
-    const likelyPdfMime = /application\/pdf/i.test(contentType) || /application\/octet-stream/i.test(contentType);
-    const likelyPdfUrl = /\.pdf(\?|#|$)/i.test(response.url || pdfUrl);
+        // Accept common PDF delivery types: application/pdf or generic binary payloads.
+        const likelyPdfMime = /application\/pdf/i.test(contentType) || /application\/octet-stream/i.test(contentType);
+        const likelyPdfUrl = /\.pdf(\?|#|$)/i.test(response.url || pdfUrl);
 
-    const bytes = await readResponseWithinLimit(response);
-    const fileData = bytes.buffer;
-    const hasPdfMagic = hasPdfSignature(bytes);
+        const bytes = await readResponseWithinLimit(response);
+        const fileData = bytes.buffer;
+        const hasPdfMagic = hasPdfSignature(bytes);
 
-    if (!hasPdfMagic) {
-        const deliveryHint = likelyPdfMime || likelyPdfUrl ? ' despite its PDF URL or content type' : '';
-        throw new Error(`Downloaded content does not contain a PDF signature${deliveryHint}`);
-    }
+        if (!hasPdfMagic) {
+            const deliveryHint = likelyPdfMime || likelyPdfUrl ? ' despite its PDF URL or content type' : '';
+            throw new Error(`Downloaded content does not contain a PDF signature${deliveryHint}`);
+        }
 
-    return {
-        filename,
-        mimeType: 'application/pdf',
-        fileData,
-    };
+        return {
+            filename,
+            mimeType: 'application/pdf',
+            fileData,
+        };
+    }, 25000);
 }
 
 // =========================================================================
@@ -344,57 +353,11 @@ function clearBadge() {
 // Settings
 // =========================================================================
 
-const DEFAULT_SETTINGS = {
-    // Audio
-    generateAudio: true,
-    audioFormat: 'deep_dive',   // 'deep_dive'|'brief'|'critique'|'debate'
-    audioLength: 'long',        // 'short'|'default'|'long'
-    language: 'en',
-    audioPrompt: '',
-    // Video
-    generateVideo: false,
-    videoFormat: 'explainer',   // 'explainer'|'brief'
-    videoStyle: 'auto',        // 'auto'|'custom'|'classic'|'whiteboard'|'kawaii'|'anime'|'watercolor'|'retro_print'|'heritage'|'paper_craft'
-    videoPrompt: '',
-    videoStylePrompt: '',
-    // Report
-    generateReport: false,
-    reportFormat: 'study_guide', // 'briefing_doc'|'study_guide'|'blog_post'|'custom'
-    reportPrompt: '',
-    // Quiz
-    generateQuiz: false,
-    quizQuantity: 'standard',    // 'fewer'|'standard'|'more'
-    quizDifficulty: 'medium',      // 'easy'|'medium'|'hard'
-    quizPrompt: '',
-    // Flashcards
-    generateFlashcards: false,
-    flashcardsQuantity: 'standard',
-    flashcardsDifficulty: 'medium',
-    flashcardsPrompt: '',
-    // Infographic
-    generateInfographic: true,
-    infographicOrientation: 'landscape', // 'landscape'|'portrait'|'square'
-    infographicDetail: 'standard',       // 'concise'|'standard'|'detailed'
-    infographicStylePreset: 'auto',
-    infographicNativeStyle: 'auto',
-    infographicPrompt: '',
-    // Slide deck
-    generateSlideDeck: false,
-    slideDeckFormat: 'detailed_deck',   // 'detailed_deck'|'presenter_slides'
-    slideDeckLength: 'default',         // 'default'|'short'
-    slideDeckPrompt: '',
-    // Mind map
-    generateMindMap: false,
-    // Data table
-    generateDataTable: false,
-    dataTablePrompt: '',
-    // UX
-    notificationEnabled: true,
-    chimeEnabled: true,
-    autoOpenNotebook: false,
-    useSourceTitleForNotebook: true,
-    collectionId: '',
-};
+
+
+async function getJobSettings(runId) {
+    return (await getState(runId)).settings || await getSettings();
+}
 
 async function getSettings() {
     const result = await chrome.storage.local.get('userSettings');
@@ -550,8 +513,8 @@ async function takeNotificationTarget(notificationId) {
 
 async function completePipeline(runId) {
     await requireActiveRun(runId, ['wait_artifacts']);
-    const settings = await getSettings();
-    const state = await getState();
+    const settings = await getJobSettings(runId);
+    const state = await getState(runId);
     if (!isActivePipelineRun(state, runId) || state.step !== 'wait_artifacts') return;
     const tasks = state.tasks || [];
     const totalCount = tasks.length;
@@ -577,13 +540,8 @@ async function completePipeline(runId) {
         completedAt: new Date().toISOString(),
     }, {
         expectedSteps: ['wait_artifacts'],
-        afterWrite: async () => {
-            try { await chrome.alarms.clear(ALARM_NAME); }
-            catch (error) { console.warn('[Alarm] Could not clear completion alarm:', error); }
-        },
     });
     if (!completedState) return;
-    setBadge('\u2713', '#0fad6e').catch(error => console.warn('[Badge] Completion badge failed:', error));
 
     if (settings.chimeEnabled) {
         playCompletionChime();
@@ -642,16 +600,12 @@ async function failPipeline(runId, errorMsg, notebookId = null, canDeleteBlankNo
         step: 'error',
         stepDetail: finalError,
         error: finalError,
+        completedAt: new Date().toISOString(),
     }, {
-        afterWrite: async () => {
-            try { await chrome.alarms.clear(ALARM_NAME); }
-            catch (error) { console.warn('[Alarm] Could not clear failure alarm:', error); }
-        },
     });
     if (!failedState) return;
-    setBadge('!', '#e03e3e').catch(error => console.warn('[Badge] Error badge failed:', error));
 
-    const settings = await getSettings();
+    const settings = await getJobSettings(runId);
 
     if (settings.notificationEnabled !== false) {
         chrome.notifications.create(`pipeline-error:${runId}`, {
@@ -753,7 +707,7 @@ async function tickSourcePoll(state) {
     }
 
     try {
-        const settings = await getSettings();
+        const settings = await getJobSettings(runId);
         await requireActiveRun(runId, ['generate_artifacts']);
         assertArtifactSelection(settings);
 
@@ -1011,80 +965,121 @@ async function tickArtifactPoll(state) {
 
 const runExclusivePollTick = createExclusiveRunner();
 
+async function syncQueueRuntime() {
+    const result = await pipelineState.transact(queue => ({ afterWrite: async () => {
+        const active = queue.jobs.filter(isUnfinishedJob);
+        if (active.some(job => job.status === 'running') || (!queue.paused && active.length)) {
+            await chrome.alarms.create(ALARM_NAME, { periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES });
+        } else {
+            await chrome.alarms.clear(ALARM_NAME);
+        }
+        await setBadge(active.length ? String(active.length) : queue.jobs.some(job => job.status === 'error') ? '!' : '', '#6b7a8d');
+    } }));
+    if (result.effectError) throw result.effectError;
+}
+
+let dispatching = false;
+let dispatchAgain = false;
+function kickQueue() {
+    dispatchAgain = true;
+    if (dispatching) return;
+    dispatching = true;
+    Promise.resolve().then(async () => {
+        while (dispatchAgain) {
+            dispatchAgain = false;
+            await dispatchNextJob();
+            await syncQueueRuntime();
+        }
+    }).catch(error => console.error('[Queue] Dispatch failed:', error))
+        .finally(() => { dispatching = false; if (dispatchAgain) kickQueue(); });
+}
+
+async function dispatchNextJob() {
+    const claimed = await pipelineState.transact(queue => {
+        if (!canStartNextJob(queue)) return null;
+        const job = queue.jobs.find(item => item.status === 'queued' || item.step === 'queued_pdf');
+        if (!job) return null;
+        const resume = job.step === 'queued_pdf';
+        Object.assign(job, { status: 'running', step: resume ? 'wait_pdf_access' : 'auth',
+            startedAt: job.startedAt || new Date().toISOString(), stepStartedAt: new Date().toISOString() });
+        return { state: job, resume };
+    });
+    if (!claimed.applied) return;
+    const job = claimed.state;
+    // A separate runtime lock also covers the brief wait_pdf_access resume claim.
+    try {
+        const file = job.payloadId ? await pdfStore.get(job.payloadId) : null;
+        if (job.payloadId && !file) throw new Error('The saved PDF is unavailable. Select it again.');
+        await requireActiveRun(job.runId);
+        if (claimed.resume) await fallbackPdf(job.runId, { resume: true, file });
+        else await runPipeline(job.runId, job.pdfUrl, job.pageUrl, file, job.sourceType, job.sourceTitle);
+    } catch (error) {
+        if (error?.code !== 'PIPELINE_STALE_RUN') await failPipeline(job.runId, error.message);
+    } finally {
+        const current = await getState(job.runId);
+        if (!['queued', 'auth', 'create_notebook', 'add_source', 'download_pdf', 'upload_pdf', 'queued_pdf'].includes(current.step)) {
+            await releaseJobPdf(job.runId);
+        }
+        dispatchAgain = true;
+    }
+}
+
+async function releaseJobPdf(runId) {
+    const cleared = await pipelineState.transact(queue => {
+        const job = queue.jobs.find(item => item.runId === runId);
+        if (!job?.payloadId) return null;
+        const payloadId = job.payloadId;
+        Object.assign(job, { payloadId: null, payloadBytes: 0 });
+        return { payloadId };
+    });
+    if (cleared.applied) await pdfStore.remove(cleared.payloadId);
+}
+
 async function handlePollAlarm(alarm) {
     if (alarm.name !== ALARM_NAME) return;
-    let step = 'unknown';
     try {
         await bootReconciliationPromise;
         const ran = await runExclusivePollTick(async () => {
-            const state = await getState();
-            step = state?.step || 'idle';
-
-            if (!state || state.status !== 'running') {
-                const cleanup = await pipelineState.effectWhen(
-                    current => current?.status !== 'running',
-                    () => chrome.alarms.clear(ALARM_NAME)
-                );
-                if (cleanup.effectError) throw cleanup.effectError;
-                return;
-            }
-
-            console.log(`[Alarm] tick -- step=${state.step}`);
-
-            if (state.step === 'wait_source') {
-                await tickSourcePoll(state);
-            } else if (state.step === 'wait_artifacts') {
-                await tickArtifactPoll(state);
-            } else if (state.step === 'generate_artifacts') {
-                console.log('[Alarm] Artifact start phase still in progress');
-            } else {
-                console.log(`[Alarm] tick during non-polling step '${state.step}', ignoring`);
-            }
+            const queue = await getQueue();
+            // Different notebooks may be polled together. Only one can still be
+            // preparing, so artifact-start mutations remain serialized.
+            await Promise.allSettled(queue.jobs.filter(job => job.status === 'running').map(async state => {
+                try {
+                    if (state.step === 'wait_source') await tickSourcePoll(state);
+                    else if (state.step === 'wait_artifacts') await tickArtifactPoll(state);
+                } catch (error) {
+                    if (error?.code === 'PIPELINE_STALE_RUN') console.log('[Alarm] Ignoring stale tick');
+                    else console.error('[Alarm] Tick failed at ' + state.step, error);
+                }
+            }));
+            kickQueue();
+            await syncQueueRuntime();
         });
-
-        if (!ran) {
-            console.warn('[Alarm] Previous poll tick is still running; skipping overlap');
-        }
-    } catch (error) {
-        if (error?.code === 'PIPELINE_STALE_RUN') {
-            console.log(`[Alarm] Ignoring stale tick at ${step}`);
-        } else {
-            console.error(`[Alarm] Tick failed at ${step}:`, error);
-        }
-    }
+        if (!ran) console.warn('[Alarm] Previous poll tick is still running; skipping overlap');
+    } catch (error) { console.error('[Alarm] Tick failed:', error); }
 }
 
 chrome.alarms.onAlarm.addListener(handlePollAlarm);
 
 async function reconcilePipelineRuntime() {
-    const [state, alarm] = await Promise.all([
-        getState(),
-        chrome.alarms.get(ALARM_NAME),
-    ]);
-    const action = runtimeRecoveryAction(state, !!alarm);
-
-    if (action === 'create_alarm') {
-        try {
-            await chrome.alarms.create(ALARM_NAME, {
-                periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES,
-            });
-            console.log(`[Recovery] Restored ${ALARM_NAME} for ${state.step}`);
-        } catch (error) {
-            await setState(interruptedPipelineUpdate(state));
-            setBadge('!', '#e03e3e').catch(badgeError => console.warn('[Badge] Recovery badge failed:', badgeError));
-            console.warn('[Recovery] Could not restore polling alarm:', error);
+    const settings = await getSettings();
+    await pipelineState.transact(queue => {
+        for (const job of queue.jobs) {
+            job.settings ||= { ...settings };
+            const action = runtimeRecoveryAction(job, false);
+            if (action === 'wait_pdf_access') {
+                Object.assign(job, { step: 'wait_pdf_access', stepDetail: 'PDF download was paused. Open the popup to resume or select a PDF.' });
+            } else if (action === 'interrupt' && job.step !== 'queued_pdf') {
+                Object.assign(job, interruptedPipelineUpdate(job));
+            }
+            if (!isUnfinishedJob(job)) Object.assign(job, { payloadId: null, payloadBytes: 0 });
         }
-    } else if (action === 'wait_pdf_access') {
-        await setState({ step: 'wait_pdf_access', stepDetail: 'PDF download was paused. Open the popup to resume or select a PDF.' });
-        await chrome.alarms.clear(ALARM_NAME);
-    } else if (action === 'clear_alarm') {
-        await chrome.alarms.clear(ALARM_NAME);
-    } else if (action === 'interrupt') {
-        await setState(interruptedPipelineUpdate(state));
-        chrome.alarms.clear(ALARM_NAME).catch(error => console.warn('[Alarm] Recovery cleanup failed:', error));
-        setBadge('!', '#e03e3e').catch(error => console.warn('[Badge] Recovery badge failed:', error));
-        console.warn(`[Recovery] Stopped interrupted non-idempotent phase: ${state?.step}`);
-    }
+        return {};
+    });
+    const queue = await getQueue();
+    await pdfStore.prune(queue.jobs.filter(job => isUnfinishedJob(job)).map(job => job.payloadId).filter(Boolean));
+    await chrome.storage.local.remove('pipelineState');
+    await syncQueueRuntime();
 }
 
 const fallbackPdf = createPdfFallback({
@@ -1098,20 +1093,37 @@ const fallbackPdf = createPdfFallback({
 
 async function resumePdfFallback(message) {
     await bootReconciliationPromise;
-    await requireActiveRun(message.runId, ['wait_pdf_access']);
     let file = null;
-    if (message.fileDataBase64) {
-        assertPdfUploadSize(decodedBase64ByteLength(message.fileDataBase64));
-        if (!hasBase64PdfSignature(message.fileDataBase64)) throw new Error('The selected file is not a PDF.');
-        file = { filename: message.fileName || 'paper.pdf', fileData: message.fileDataBase64, mimeType: 'application/pdf' };
+    if (message.fileDataBase64) file = decodeQueuedPdf(message.fileDataBase64, message.fileName);
+    const payloadId = file ? crypto.randomUUID() : null;
+    let result;
+    try {
+        result = await pipelineState.transact(async queue => {
+            const job = queue.jobs.find(item => item.runId === message.runId);
+            if (job?.status !== 'running' || job.step !== 'wait_pdf_access') return null;
+            if (file) {
+                assertQueuePdfBudget(queue, file.fileData.byteLength);
+                await pdfStore.put(payloadId, file);
+            }
+            Object.assign(job, { step: 'queued_pdf', ...(file ? { payloadId, payloadBytes: file.fileData.byteLength } : {}) });
+            return { state: job };
+        });
+    } catch (error) {
+        const saved = (await getQueue()).jobs.find(job => job.runId === message.runId && job.step === 'queued_pdf' && (!file || job.payloadId === payloadId));
+        if (saved) result = { applied: true, state: saved };
+        else {
+            if (file) await pdfStore.remove(payloadId);
+            throw error;
+        }
     }
-    // Keep the message channel alive until the claimed fallback completes.
-    await fallbackPdf(message.runId, { resume: true, file });
-    return { ok: true, state: await getState() };
+    if (!result.applied) return { ok: false, message: 'This job has already advanced. Refresh the queue.' };
+    kickQueue();
+    return { ok: true, state: result.state };
 }
 
 const bootReconciliationPromise = reconcilePipelineRuntime()
-    .catch(error => console.warn('[Recovery] Initial reconciliation failed:', error));
+    .then(() => { kickQueue(); })
+    .catch(error => { console.error('[Recovery] Initial reconciliation failed:', error); throw error; });
 
 // =========================================================================
 // Pipeline orchestration (steps 1-3: synchronous network calls)
@@ -1139,7 +1151,7 @@ async function runPipeline(runId, pdfUrl, pageUrl, uploadFile = null, sourceType
         if (!creating) return;
 
         // Step 2: Create notebook
-        const settings = await getSettings();
+        const settings = await getJobSettings(runId);
         const requestedNotebookTitle = settings.useSourceTitleForNotebook !== false ? detectedTitle : '';
         await requireActiveRun(runId, ['create_notebook']);
         const notebook = await createNotebook(requestedNotebookTitle);
@@ -1163,7 +1175,7 @@ async function runPipeline(runId, pdfUrl, pageUrl, uploadFile = null, sourceType
         // Step 3: Add source
         let source = null;
         if (uploadFile) {
-            assertPdfUploadSize(decodedBase64ByteLength(uploadFile.fileData));
+            assertPdfUploadSize(typeof uploadFile.fileData === 'string' ? decodedBase64ByteLength(uploadFile.fileData) : uploadFile.fileData.byteLength);
             await requireActiveRun(runId, ['add_source']);
             sourceMutationStarted = true;
             source = await addFileSource(
@@ -1181,7 +1193,7 @@ async function runPipeline(runId, pdfUrl, pageUrl, uploadFile = null, sourceType
                 sourceMutationStarted = true;
                 source = await addUrlSource(notebook.id, pdfUrl);
             } catch (urlErr) {
-                if (isConfirmedImportRejection(urlErr) && canFallback(await getState())) {
+                if (isConfirmedImportRejection(urlErr) && canFallback(await getState(runId))) {
                     await fallbackPdf(runId);
                     return;
                 }
@@ -1203,7 +1215,6 @@ async function runPipeline(runId, pdfUrl, pageUrl, uploadFile = null, sourceType
         }, {
             expectedSteps: ['add_source'],
             afterWrite: async () => {
-                await chrome.alarms.clear(ALARM_NAME);
                 await chrome.alarms.create(ALARM_NAME, {
                     periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES,
                 });
@@ -1237,101 +1248,99 @@ function assertArtifactSelection(settings) {
     throw error;
 }
 
+function decodeQueuedPdf(base64, filename) {
+    assertPdfUploadSize(decodedBase64ByteLength(base64));
+    if (!hasBase64PdfSignature(base64)) throw new Error('The selected file does not contain a PDF signature.');
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return { filename: filename || 'paper.pdf', fileData: bytes.buffer, mimeType: 'application/pdf' };
+}
+
+function assertQueuePdfBudget(queue, bytes) {
+    const storedBytes = queue.jobs.reduce((sum, job) => sum + (job.payloadBytes || 0), 0);
+    if (storedBytes + bytes > MAX_QUEUED_PDF_BYTES) throw new Error('Queued PDFs exceed the 100 MiB storage limit. Remove a queued PDF or wait for an upload.');
+}
+
 async function startPipelineRequest(message, uploadFile = null) {
     await bootReconciliationPromise;
-    assertArtifactSelection(await getSettings());
-
+    const settings = { ...DEFAULT_SETTINGS, ...(message.settings || await getSettings()) };
+    assertArtifactSelection(settings);
+    let file = null;
+    let sourceKey;
     if (uploadFile) {
-        const decodedSize = decodedBase64ByteLength(uploadFile.fileData);
-        assertPdfUploadSize(decodedSize);
-        if (!hasBase64PdfSignature(uploadFile.fileData)) {
-            throw new Error('The selected file does not contain a PDF signature.');
+        file = decodeQueuedPdf(uploadFile.fileData, uploadFile.filename);
+        const digest = await crypto.subtle.digest('SHA-256', file.fileData);
+        sourceKey = 'file:' + Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    } else {
+        const url = new URL(message.pdfUrl);
+        if (!['https:', 'http:'].includes(url.protocol)) throw new Error('Use a webpage URL or upload a local PDF.');
+        url.hash = '';
+        sourceKey = url.href;
+    }
+    const runId = crypto.randomUUID();
+    let result;
+    try {
+        result = await pipelineState.transact(async queue => {
+            const duplicate = queue.jobs.find(job => (message.requestId && job.requestId === message.requestId) ||
+                (isUnfinishedJob(job) && job.sourceKey === sourceKey));
+            if (duplicate) return { state: duplicate, duplicate: true };
+            if (queue.jobs.filter(isUnfinishedJob).length >= MAX_QUEUED_JOBS) throw new Error('The queue is full. Wait for a job to finish or remove a queued paper.');
+            await chrome.alarms.create(ALARM_NAME, { periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES });
+            if (file) {
+                assertQueuePdfBudget(queue, file.fileData.byteLength);
+                await pdfStore.put(runId, file);
+            }
+            const job = {
+                ...INITIAL_STATE, status: 'queued', runId, requestId: message.requestId || runId,
+                step: 'queued', queuedAt: new Date().toISOString(), settings,
+                pdfUrl: file ? file.filename : message.pdfUrl,
+                sourceType: file ? 'pdf' : (message.sourceType || 'pdf'),
+                pageUrl: message.pageUrl || null, sourceTitle: normalizeSourceTitle(message.sourceTitle) || null,
+                sourceKey, importMethod: file ? 'file' : 'url', originalPdfUrl: file ? null : message.pdfUrl,
+                pdfEvidence: message.pdfEvidence || null,
+                payloadId: file ? runId : null, payloadBytes: file?.fileData.byteLength || 0,
+            };
+            queue.jobs.push(job);
+            return { state: job };
+        });
+    } catch (error) {
+        const saved = (await getQueue()).jobs.find(job => job.runId === runId);
+        if (saved) result = { state: saved };
+        else {
+            if (file) await pdfStore.remove(runId);
+            throw error;
         }
     }
-
-    const runId = crypto.randomUUID();
-    const sourceType = uploadFile ? 'pdf' : (message.sourceType || 'pdf');
-    const initialState = {
-        ...INITIAL_STATE,
-        status: 'running',
-        runId,
-        step: 'auth',
-        stepDetail: 'Connecting to Gemini Notebook...',
-        pdfUrl: uploadFile ? uploadFile.filename : message.pdfUrl,
-        sourceType,
-        pageUrl: message.pageUrl || null,
-        sourceTitle: normalizeSourceTitle(message.sourceTitle) || null,
-        importMethod: uploadFile ? 'file' : 'url',
-        originalPdfUrl: uploadFile ? null : message.pdfUrl,
-        pdfEvidence: message.pdfEvidence || null,
-        startedAt: new Date().toISOString(),
-        stepStartedAt: new Date().toISOString(),
-    };
-
-    const claimed = await pipelineState.claim(runId, initialState, {
-    });
-    if (!claimed.applied) {
-        const alreadyRunning = claimed.state?.status === 'running';
-        return {
-            ok: false,
-            code: alreadyRunning ? 'PIPELINE_ALREADY_RUNNING' : 'PIPELINE_NOT_IDLE',
-            message: alreadyRunning
-                ? 'Another pipeline is already active. Open the popup to review or stop it first.'
-                : 'Reset the completed or failed pipeline before starting a new one.',
-            state: claimed.state,
-        };
-    }
-
-    try { await chrome.alarms.clear(ALARM_NAME); }
-    catch (error) { console.warn('[Alarm] Could not clear an old polling alarm:', error); }
-    setBadge('...', '#6b7a8d').catch(error => console.warn('[Badge] Start badge failed:', error));
-
-    runPipeline(
-        runId,
-        uploadFile ? uploadFile.filename : message.pdfUrl,
-        message.pageUrl || null,
-        uploadFile,
-        sourceType,
-        message.sourceTitle || null
-    ).catch(error => console.error('[Pipeline] Unhandled setup failure:', error));
-
-    return { ok: true, runId, message: 'Pipeline started' };
+    // Persist the wakeup before acknowledging. A lost reply can be reconciled by
+    // request ID or the active source key without repeating notebook creation.
+    await syncQueueRuntime();
+    kickQueue();
+    return { ok: true, runId: result.state.runId, duplicate: !!result.duplicate, message: 'Paper saved in queue' };
 }
 
 async function stopPipelineRequest(requestedRunId) {
     await bootReconciliationPromise;
-    const state = await getState();
-    if (!requestedRunId || !canStopPipeline(state, requestedRunId)) {
-        return {
-            ok: false,
-            code: 'PIPELINE_NOT_STOPPABLE',
-            message: 'This pipeline has already advanced or is no longer the active run.',
-            state,
-        };
-    }
-
-    const replacement = {
-        ...INITIAL_STATE,
-        status: 'idle',
-        stepDetail: 'Monitoring stopped. No further work will be started.',
-    };
-    const stopped = await pipelineState.invalidate(requestedRunId, replacement, {
-        expectedSteps: ['wait_source', 'wait_artifacts', 'wait_pdf_access', 'download_pdf'],
-        afterWrite: async () => {
-            await chrome.alarms.clear(ALARM_NAME);
-        },
+    const result = await pipelineState.transact(queue => {
+        const job = queue.jobs.find(item => item.runId === requestedRunId);
+        if (!job || !(job.status === 'queued' || job.step === 'queued_pdf' || canStopPipeline(job, requestedRunId))) return null;
+        Object.assign(job, { status: 'stopped', completedAt: new Date().toISOString() });
+        return { state: job };
     });
-    if (stopped.applied) {
-        clearBadge().catch(error => console.warn('[Badge] Clear badge failed:', error));
-    }
-    return stopped.applied
-        ? { ok: true, message: replacement.stepDetail }
-        : {
-            ok: false,
-            code: 'PIPELINE_NOT_STOPPABLE',
-            message: 'This pipeline changed before it could be stopped.',
-            state: stopped.state,
-        };
+    if (!result.applied) return { ok: false, code: 'PIPELINE_NOT_STOPPABLE', message: 'This job has already advanced. Refresh the queue.' };
+    await releaseJobPdf(requestedRunId);
+    kickQueue();
+    return { ok: true, state: result.state };
+}
+
+async function clearFinishedJobs() {
+    await bootReconciliationPromise;
+    await pipelineState.transact(queue => {
+        queue.jobs = queue.jobs.filter(isUnfinishedJob);
+        return {};
+    });
+    await syncQueueRuntime();
+    return { ok: true };
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -1363,8 +1372,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
 
+    if (message.type === 'GET_QUEUE') {
+        bootReconciliationPromise.then(getQueue).then(sendResponse)
+            .catch(error => sendResponse({ error: error.message }));
+        return true;
+    }
+    if (message.type === 'PAUSE_QUEUE') {
+        bootReconciliationPromise.then(() => pipelineState.transact(queue => {
+            queue.paused = !!message.paused;
+            return {};
+        })).then(async () => { await syncQueueRuntime(); kickQueue(); sendResponse({ ok: true }); })
+            .catch(error => sendResponse({ ok: false, message: error.message }));
+        return true;
+    }
     if (message.type === 'GET_STATE') {
-        bootReconciliationPromise.then(() => getState()).then(sendResponse);
+        bootReconciliationPromise.then(() => getState(message.runId)).then(sendResponse);
         return true;
     }
 
@@ -1380,19 +1402,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === 'RESET_STATE') {
-        bootReconciliationPromise
-            .then(() => resetState({
-                afterWrite: async () => {
-                    await chrome.alarms.clear(ALARM_NAME);
-                },
-            }))
-            .then(state => {
-                if (state) clearBadge().catch(error => console.warn('[Badge] Clear badge failed:', error));
-                sendResponse(state
-                    ? { ok: true }
-                    : { ok: false, code: 'PIPELINE_ALREADY_RUNNING', message: 'Stop the active pipeline before resetting.' });
-            })
-            .catch(error => sendResponse({ ok: false, message: error?.message || 'Could not reset pipeline state' }));
+        clearFinishedJobs().then(sendResponse)
+            .catch(error => sendResponse({ ok: false, message: error.message }));
         return true;
     }
 

@@ -1,3 +1,4 @@
+import { withRequestDeadline } from './request-deadline.js';
 /**
  * NotebookLM API client for Chrome Extension (service worker context).
  * 
@@ -172,6 +173,7 @@ let _csrfToken = null;
 let _sessionId = null;
 let _retrySleep = sleep;
 let _mutationTimeoutMs = 15000;
+let _readTimeoutMs = 15000;
 
 const READ_ONLY_RPC_METHODS = new Set([
   RPCMethod.GET_NOTEBOOK,
@@ -220,10 +222,10 @@ async function fetchTokens() {
   for (const baseUrl of candidates) {
     const homepageUrl = `${baseUrl}/`;
     try {
-      const response = await fetch(homepageUrl, {
-        credentials: 'include',
-        redirect: 'follow',
-      });
+      const { response, html } = await withRequestDeadline(async signal => {
+        const response = await fetch(homepageUrl, { credentials: 'include', redirect: 'follow', signal });
+        return { response, html: response.ok ? await response.text() : '' };
+      }, _readTimeoutMs);
 
       if (!response.ok) {
         failures.push(`${baseUrl} returned HTTP ${response.status}`);
@@ -237,7 +239,6 @@ async function fetchTokens() {
         continue;
       }
 
-      const html = await response.text();
       const csrfMatch = html.match(/"SNlM0e"\s*:\s*"([^"]+)"/);
       const sessionMatch = html.match(/"FdrFJe"\s*:\s*"([^"]+)"/);
       if (!csrfMatch || !sessionMatch) {
@@ -528,15 +529,26 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false) {
       ? setTimeout(() => abortController.abort(), _mutationTimeoutMs)
       : null;
     try {
-      response = await fetch(url, {
+      const fetchRpc = signal => fetch(url, {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
         },
         body,
-        ...(abortController ? { signal: abortController.signal } : {}),
+        ...(signal ? { signal } : {}),
       });
+
+      if (isReadOnly) {
+        const read = await withRequestDeadline(async signal => {
+          const response = await fetchRpc(signal);
+          return { response, text: response.ok ? await response.text() : '' };
+        }, _readTimeoutMs);
+        response = read.response;
+        responseText = read.text;
+      } else {
+        response = await fetchRpc(abortController?.signal);
+      }
 
       // Receiving headers confirms that NotebookLM accepted the request. Stop
       // the transport abort timer so a slow streamed body cannot cancel a
@@ -546,10 +558,8 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false) {
         timeoutId = null;
       }
 
-      if (response.ok) {
-        if (isReadOnly) {
-          responseText = await response.text();
-        } else {
+      if (response.ok && !isReadOnly) {
+        {
           let bodyTimeoutId;
           try {
             responseText = await Promise.race([
@@ -799,7 +809,8 @@ async function registerFileSource(notebookId, filename) {
 }
 
 async function startResumableUpload(notebookId, filename, fileSize, sourceId, mimeType) {
-  const response = await fetch(`${appUrl('/upload/_/')}?authuser=0`, {
+  const response = await withRequestDeadline(signal => fetch(`${appUrl('/upload/_/')}?authuser=0`, {
+    signal,
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -816,7 +827,7 @@ async function startResumableUpload(notebookId, filename, fileSize, sourceId, mi
       SOURCE_NAME: filename,
       SOURCE_ID: sourceId,
     }),
-  });
+  }), 25000);
 
   if (!response.ok) {
     throw new Error(`Failed to start file upload: HTTP ${response.status} ${response.statusText}`);
@@ -831,7 +842,8 @@ async function startResumableUpload(notebookId, filename, fileSize, sourceId, mi
 }
 
 async function uploadFileBytes(uploadUrl, binaryPayload, mimeType = 'application/pdf') {
-  const response = await fetch(uploadUrl, {
+  const response = await withRequestDeadline(signal => fetch(uploadUrl, {
+    signal,
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -842,7 +854,7 @@ async function uploadFileBytes(uploadUrl, binaryPayload, mimeType = 'application
       'x-goog-upload-offset': '0',
     },
     body: binaryPayload,
-  });
+  }), 25000);
 
   if (!response.ok) {
     throw new Error(`Failed to upload file bytes: HTTP ${response.status} ${response.statusText}`);
@@ -864,8 +876,12 @@ async function addFileSource(notebookId, filename, fileData, mimeType = 'applica
   }
 
   const sourceId = await registerFileSource(notebookId, filename);
-  const uploadUrl = await startResumableUpload(notebookId, filename, binaryPayload.byteLength, sourceId, mimeType);
-  await uploadFileBytes(uploadUrl, binaryPayload, mimeType);
+  try {
+    const uploadUrl = await startResumableUpload(notebookId, filename, binaryPayload.byteLength, sourceId, mimeType);
+    await uploadFileBytes(uploadUrl, binaryPayload, mimeType);
+  } catch (error) {
+    throw mutationUncertainError(RPCMethod.ADD_SOURCE_FILE, 'The registered file upload could not be confirmed. ' + error.message);
+  }
 
   console.log(`[NotebookLM API] Uploaded file source: ${sourceId} (${filename})`);
   return { id: sourceId, title: filename };
@@ -1827,6 +1843,7 @@ export {
 
 // Internal hooks used only by the deterministic Node test suite.
 export const __testing = {
+  setReadTimeout(ms) { _readTimeoutMs = ms; },
   RPCMethod,
   requestTemplateOptions,
   artifactClientOptions,

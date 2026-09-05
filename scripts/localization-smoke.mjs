@@ -19,8 +19,9 @@ export async function localizationSmoke({ popup, evaluate, reload, root, complet
         ` });
         try {
             const title = 'Settings "<Source>" $1';
-            await evaluate(popup, `chrome.storage.local.set({pipelineState:${JSON.stringify({ ...completedState, notebookTitle: title })}, userSettings:{language:'ko',generateAudio:false,generateInfographic:true,audioPrompt:'Keep my prompt $1'}})`);
+            await evaluate(popup, `globalThis.__smoke.setFixtureState(${JSON.stringify({ ...completedState, notebookTitle: title })}, {userSettings:{language:'ko',generateAudio:false,generateInfographic:true,audioPrompt:'Keep my prompt $1'}})`);
             await reload(popup);
+  await evaluate(popup, `document.querySelector('[data-show]')?.click()`);
             const done = await evaluate(popup, `({title:document.querySelector('.nb-title').textContent,
                 text:document.querySelector('.completed-box').innerText, width:document.documentElement.scrollWidth,
                 bottom:document.querySelector('.completed-box').getBoundingClientRect().bottom})`);
@@ -64,8 +65,9 @@ export async function localizationSmoke({ popup, evaluate, reload, root, complet
                 { status:'running', step:'wait_pdf_access', stepDetail:'Permission needed' },
                 { status:'running', step:'wait_artifacts', tasks:[{status:'completed'},{status:'in_progress'}] },
             ]) {
-                await evaluate(popup, `chrome.storage.local.set({pipelineState:${JSON.stringify({ ...completedState, ...fixture })}})`);
+                await evaluate(popup, `globalThis.__smoke.setFixtureState(${JSON.stringify({ ...completedState, ...fixture })})`);
                 await reload(popup);
+  await evaluate(popup, `document.querySelector('[data-show]')?.click()`);
                 const view = await evaluate(popup, `({text:document.getElementById('content').innerText,width:document.documentElement.scrollWidth,
                     error:document.querySelector('.pipeline-error-box')?.textContent,
                     resume:document.getElementById('btn-resume-pdf')?.textContent,

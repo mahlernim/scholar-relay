@@ -78,6 +78,7 @@ function reset() {
   __testing.resetTokens();
   __testing.setRetrySleep(async () => {});
   __testing.setMutationTimeout(15000);
+  __testing.setReadTimeout(15000);
 }
 
 test.beforeEach(reset);
@@ -829,4 +830,38 @@ test('source ingestion only reports a known explicit status', async () => {
     : rpcResponse(__testing.RPCMethod.GET_NOTEBOOK, [[null, rows]]));
   assert.deepEqual((await listSources('notebook-id-12345')).map(source => source.status),
     [0, 0, 0, 0, 0, 0, 0, SourceStatus.PROCESSING, SourceStatus.READY, SourceStatus.ERROR, SourceStatus.PREPARING]);
+});
+
+test('stalled authentication and read bodies have bounded waits without blocking later requests', async () => {
+  __testing.setReadTimeout(1);
+  installFetch(() => new Promise(() => {}));
+  await assert.rejects(fetchTokens(), /AUTH_REQUIRED/);
+  let reads = 0;
+  installFetch(url => {
+    if (url.endsWith('/')) return tokenResponse();
+    reads++;
+    return { ...mockResponse(), text: () => new Promise(() => {}) };
+  });
+  await assert.rejects(listSources('notebook-id-12345'), /failed after 3 attempts/);
+  assert.equal(reads, 3);
+  installFetch(url => url.endsWith('/') ? tokenResponse() : rpcResponse(__testing.RPCMethod.GET_NOTEBOOK, [[null, []]]));
+  assert.deepEqual(await listSources('notebook-id-12345'), []);
+});
+
+test('a failed registered upload remains uncertain and never repeats registration or finalization', async () => {
+  let registrations = 0;
+  let finalizations = 0;
+  installFetch(url => {
+    if (url === 'https://notebook.google.com/') return tokenResponse();
+    if (url.includes('batchexecute')) {
+      registrations++;
+      return rpcResponse(__testing.RPCMethod.ADD_SOURCE_FILE, [['source-id-12345']]);
+    }
+    if (url.includes('/upload/_/')) return mockResponse({ headers: { 'x-goog-upload-url': 'https://upload.example/finalize' } });
+    finalizations++;
+    throw new Error('Connection lost after finalization');
+  });
+  await assert.rejects(addFileSource('notebook-id-12345', 'paper.pdf', [1, 2, 3]), { code: 'TRANSIENT_MUTATION_UNCERTAIN' });
+  assert.equal(registrations, 1);
+  assert.equal(finalizations, 1);
 });

@@ -32,6 +32,10 @@ $runtimeFiles = @(
     'popup.html',
     'popup.js',
     'runtime-policy.js',
+    'job-queue.js',
+    'queued-pdfs.js',
+    'settings.js',
+    'request-deadline.js',
     'source-import.js',
     'site-permissions.js'
 )

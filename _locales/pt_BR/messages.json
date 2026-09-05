@@ -804,5 +804,97 @@
   "ui_dccf5581": {
     "message": "Detalhes dos artefatos",
     "description": "Artifact details"
+  },
+  "ui_e46778ea": {
+    "message": "Fila de artigos",
+    "description": "Paper queue"
+  },
+  "ui_9e437c74": {
+    "message": "Na fila",
+    "description": "Queued"
+  },
+  "ui_98bfff6f": {
+    "message": "Preparando",
+    "description": "Preparing"
+  },
+  "ui_863f19ee": {
+    "message": "Interrompido",
+    "description": "Stopped"
+  },
+  "ui_cf1d1846": {
+    "message": "Adicionar à fila",
+    "description": "Add to queue"
+  },
+  "ui_1512a308": {
+    "message": "Salvar PDF na fila",
+    "description": "Save PDF to queue"
+  },
+  "ui_d5809db3": {
+    "message": "Adicionar página à fila",
+    "description": "Add page to queue"
+  },
+  "ui_c66a1109": {
+    "message": "Adicionar outro artigo",
+    "description": "Add another paper"
+  },
+  "ui_fc5bf3cc": {
+    "message": "Remover da fila",
+    "description": "Remove from queue"
+  },
+  "ui_6810ced4": {
+    "message": "Interromper este trabalho",
+    "description": "Stop this job"
+  },
+  "ui_acc12e9e": {
+    "message": "Pausar fila",
+    "description": "Pause queue"
+  },
+  "ui_ab9aefe9": {
+    "message": "Retomar fila",
+    "description": "Resume queue"
+  },
+  "ui_13e397ca": {
+    "message": "Trabalhos recentes",
+    "description": "Recent jobs"
+  },
+  "ui_7b37dc98": {
+    "message": "Limpar trabalhos encerrados",
+    "description": "Clear finished jobs"
+  },
+  "ui_caf6d280": {
+    "message": "Fila pausada. Os trabalhos já iniciados continuam.",
+    "description": "Queue paused. Jobs already started continue."
+  },
+  "ui_c7972f4e": {
+    "message": "Um artigo é preparado por vez. Até três notebooks podem gerar simultaneamente.",
+    "description": "Prepare one paper at a time. Up to three notebooks can generate together."
+  },
+  "ui_c744f96c": {
+    "message": "Salvo. Você pode fechar esta janela. Mantenha o Chrome aberto para iniciar os artigos na fila.",
+    "description": "Saved. You can close this popup. Keep Chrome running to start queued papers."
+  },
+  "ui_a6133a54": {
+    "message": "Solicitações aceitas. O Gemini Notebook continuará gerando mesmo se você fechar o Chrome. Você pode adicionar outro artigo.",
+    "description": "Requests accepted. Gemini Notebook will keep generating even if you close Chrome. You can add another paper."
+  },
+  "ui_8481df34": {
+    "message": "Você pode fechar esta janela. Mantenha o Chrome aberto até que as solicitações de geração sejam aceitas.",
+    "description": "You can close this popup. Keep Chrome running until the artifact requests are accepted."
+  },
+  "ui_440cb2bf": {
+    "message": "Este artigo precisa de atenção. Os outros artigos na fila podem continuar.",
+    "description": "This paper needs attention. Other queued papers can continue."
+  },
+  "ui_e5cfc00b": {
+    "message": "Algumas solicitações podem continuar em execução no Gemini Notebook. Confira o resultado neste notebook.",
+    "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
+  },
+  "ui_314695f8": {
+    "message": "Os resultados estão prontos. Você pode seguir para outro artigo.",
+    "description": "Artifacts are ready. You can move on to another paper."
+  },
+  "ui_232cd7e": {
+    "message": "Salvando PDF. Mantenha esta janela aberta...",
+    "description": "Saving PDF. Keep this popup open..."
   }
 }

@@ -59,8 +59,9 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 
 1. PDF, arXiv 논문 또는 웹페이지를 열고 ScholarRelay 아이콘을 클릭합니다.
 2. 필요하면 **설정**에서 노트북, 아티팩트, 사용 환경 설정을 조정합니다.
-3. 감지된 소스를 사용하거나 로컬 PDF를 선택해 생성을 시작합니다.
-4. 진행 상태를 확인하고 완료 후 **Gemini Notebook에서 열기**를 클릭합니다.
+3. 감지된 소스를 **대기열에 추가**하거나 로컬 PDF를 저장합니다. 저장이 확인될 때까지 팝업을 열어 두세요.
+4. 다른 논문을 열어 추가합니다. 각 논문은 추가 당시의 설정으로 별도 노트북과 결과물을 만듭니다.
+5. 대기열에서 진행 상태를 확인하고 **노트북 열기**를 클릭합니다.
 
 ### 설정
 
@@ -72,7 +73,11 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 
 컬렉션 추가에 실패해도 소스 처리와 아티팩트 생성은 계속됩니다. 컬렉션 목록은 현재 로그인한 Gemini Notebook 계정에서 불러옵니다.
 
-아티팩트 언어는 오디오를 끈 상태에서도 오디오, 동영상, 보고서, 인포그래픽, 슬라이드 자료, 데이터 표에 공통으로 적용됩니다. 작업 중 팝업을 닫아도 계속 진행됩니다. 모니터링 중지는 이 워크플로를 중지하지만 Gemini Notebook에서 이미 시작된 작업은 계속될 수 있습니다.
+아티팩트 언어는 오디오를 끈 상태에서도 오디오, 동영상, 보고서, 인포그래픽, 슬라이드 자료, 데이터 표에 공통으로 적용됩니다. 각 작업의 설정은 대기열에 추가할 때 저장됩니다.
+
+논문은 하나씩 준비하며 최대 3개 노트북에서 동시에 결과물을 생성합니다. 저장 후 팝업을 닫아도 되지만 생성 요청이 접수될 때까지 Chrome을 실행해 두세요. 모든 요청의 접수가 확인되면 Chrome을 닫아도 Gemini Notebook에서 생성이 계속된다는 안내가 표시됩니다. 대기열 일시정지는 새 작업만 멈추고, 개별 작업 중지는 다른 논문에 영향을 주지 않습니다. 결과가 불확실하면 기존 노트북을 확인하세요.
+
+대기열에는 미완료 작업을 최대 20개까지 저장합니다. 로컬 PDF는 업로드를 위해 일시적으로 기기에 저장하며 파일당 40 MiB, 합계 100 MiB로 제한됩니다. 업로드, 실패 또는 작업 제거 후 파일을 삭제합니다. 최근 종료 작업은 최대 50개를 보관하며 **종료된 작업 지우기**로 기록을 삭제할 수 있습니다.
 
 ### 권한 및 문제 해결
 
@@ -141,7 +146,11 @@ When switching from a manual installation to the store version, note your settin
 
 Source processing and artifact generation continue if collection assignment fails. Collections are loaded from the currently signed-in Gemini Notebook account.
 
-Artifact language is shared by audio, video, reports, infographics, slide decks, and data tables, even with Audio disabled. You can close the popup while work runs. Stop Monitoring ends this workflow, but work already started in Gemini Notebook may continue.
+Artifact language is shared by audio, video, reports, infographics, slide decks, and data tables, even with Audio disabled. Each job keeps the settings selected when it was added.
+
+The queue prepares one paper at a time and monitors generation in up to three notebooks together. Once saved, you can close the popup. Keep Chrome running until all artifact requests are accepted. The popup then confirms that Gemini Notebook will keep generating even if Chrome closes. Pause queue stops new starts. Stopping one job leaves other papers alone. If an outcome is uncertain, check the existing notebook.
+
+The queue holds up to 20 unfinished jobs. Local PDFs are saved temporarily on your device, up to 40 MiB each and 100 MiB combined, and removed after upload, failure, or removal from the queue. Up to 50 recent finished jobs are retained. Use **Clear finished jobs** to remove that history.
 
 ### Permissions and troubleshooting
 

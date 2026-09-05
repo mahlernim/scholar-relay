@@ -804,5 +804,97 @@
   "ui_dccf5581": {
     "message": "Artefaktdetails",
     "description": "Artifact details"
+  },
+  "ui_e46778ea": {
+    "message": "Artikelwarteschlange",
+    "description": "Paper queue"
+  },
+  "ui_9e437c74": {
+    "message": "In Warteschlange",
+    "description": "Queued"
+  },
+  "ui_98bfff6f": {
+    "message": "Wird vorbereitet",
+    "description": "Preparing"
+  },
+  "ui_863f19ee": {
+    "message": "Gestoppt",
+    "description": "Stopped"
+  },
+  "ui_cf1d1846": {
+    "message": "Zur Warteschlange hinzufügen",
+    "description": "Add to queue"
+  },
+  "ui_1512a308": {
+    "message": "PDF in Warteschlange speichern",
+    "description": "Save PDF to queue"
+  },
+  "ui_d5809db3": {
+    "message": "Seite zur Warteschlange hinzufügen",
+    "description": "Add page to queue"
+  },
+  "ui_c66a1109": {
+    "message": "Weiteren Artikel hinzufügen",
+    "description": "Add another paper"
+  },
+  "ui_fc5bf3cc": {
+    "message": "Aus Warteschlange entfernen",
+    "description": "Remove from queue"
+  },
+  "ui_6810ced4": {
+    "message": "Diesen Auftrag stoppen",
+    "description": "Stop this job"
+  },
+  "ui_acc12e9e": {
+    "message": "Warteschlange pausieren",
+    "description": "Pause queue"
+  },
+  "ui_ab9aefe9": {
+    "message": "Warteschlange fortsetzen",
+    "description": "Resume queue"
+  },
+  "ui_13e397ca": {
+    "message": "Letzte Aufträge",
+    "description": "Recent jobs"
+  },
+  "ui_7b37dc98": {
+    "message": "Beendete Aufträge löschen",
+    "description": "Clear finished jobs"
+  },
+  "ui_caf6d280": {
+    "message": "Warteschlange pausiert. Bereits gestartete Aufträge laufen weiter.",
+    "description": "Queue paused. Jobs already started continue."
+  },
+  "ui_c7972f4e": {
+    "message": "Ein Artikel wird nach dem anderen vorbereitet. Bis zu drei Notebooks können gleichzeitig generieren.",
+    "description": "Prepare one paper at a time. Up to three notebooks can generate together."
+  },
+  "ui_c744f96c": {
+    "message": "Gespeichert. Sie können dieses Popup schließen. Lassen Sie Chrome geöffnet, um Artikel in der Warteschlange zu starten.",
+    "description": "Saved. You can close this popup. Keep Chrome running to start queued papers."
+  },
+  "ui_a6133a54": {
+    "message": "Anfragen angenommen. Gemini Notebook generiert weiter, auch wenn Sie Chrome schließen. Sie können einen weiteren Artikel hinzufügen.",
+    "description": "Requests accepted. Gemini Notebook will keep generating even if you close Chrome. You can add another paper."
+  },
+  "ui_8481df34": {
+    "message": "Sie können dieses Popup schließen. Lassen Sie Chrome geöffnet, bis die Generierungsanfragen angenommen wurden.",
+    "description": "You can close this popup. Keep Chrome running until the artifact requests are accepted."
+  },
+  "ui_440cb2bf": {
+    "message": "Dieser Artikel erfordert Aufmerksamkeit. Andere Artikel in der Warteschlange können fortfahren.",
+    "description": "This paper needs attention. Other queued papers can continue."
+  },
+  "ui_e5cfc00b": {
+    "message": "Einige Anfragen laufen möglicherweise noch in Gemini Notebook. Prüfen Sie das Ergebnis in diesem Notebook.",
+    "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
+  },
+  "ui_314695f8": {
+    "message": "Die Ergebnisse sind fertig. Sie können mit einem weiteren Artikel fortfahren.",
+    "description": "Artifacts are ready. You can move on to another paper."
+  },
+  "ui_232cd7e": {
+    "message": "PDF wird gespeichert. Lassen Sie dieses Popup geöffnet...",
+    "description": "Saving PDF. Keep this popup open..."
   }
 }

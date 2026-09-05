@@ -804,5 +804,97 @@
   "ui_dccf5581": {
     "message": "アーティファクトの詳細",
     "description": "Artifact details"
+  },
+  "ui_e46778ea": {
+    "message": "論文キュー",
+    "description": "Paper queue"
+  },
+  "ui_9e437c74": {
+    "message": "待機中",
+    "description": "Queued"
+  },
+  "ui_98bfff6f": {
+    "message": "準備中",
+    "description": "Preparing"
+  },
+  "ui_863f19ee": {
+    "message": "停止済み",
+    "description": "Stopped"
+  },
+  "ui_cf1d1846": {
+    "message": "キューに追加",
+    "description": "Add to queue"
+  },
+  "ui_1512a308": {
+    "message": "PDFをキューに保存",
+    "description": "Save PDF to queue"
+  },
+  "ui_d5809db3": {
+    "message": "ページをキューに追加",
+    "description": "Add page to queue"
+  },
+  "ui_c66a1109": {
+    "message": "別の論文を追加",
+    "description": "Add another paper"
+  },
+  "ui_fc5bf3cc": {
+    "message": "キューから削除",
+    "description": "Remove from queue"
+  },
+  "ui_6810ced4": {
+    "message": "このジョブを停止",
+    "description": "Stop this job"
+  },
+  "ui_acc12e9e": {
+    "message": "キューを一時停止",
+    "description": "Pause queue"
+  },
+  "ui_ab9aefe9": {
+    "message": "キューを再開",
+    "description": "Resume queue"
+  },
+  "ui_13e397ca": {
+    "message": "最近のジョブ",
+    "description": "Recent jobs"
+  },
+  "ui_7b37dc98": {
+    "message": "終了したジョブを消去",
+    "description": "Clear finished jobs"
+  },
+  "ui_caf6d280": {
+    "message": "キューは一時停止中です。開始済みのジョブは続行します。",
+    "description": "Queue paused. Jobs already started continue."
+  },
+  "ui_c7972f4e": {
+    "message": "論文は1件ずつ準備します。最大3つのノートブックで同時に生成できます。",
+    "description": "Prepare one paper at a time. Up to three notebooks can generate together."
+  },
+  "ui_c744f96c": {
+    "message": "保存済みです。このポップアップは閉じられます。待機中の論文を開始するにはChromeを起動したままにしてください。",
+    "description": "Saved. You can close this popup. Keep Chrome running to start queued papers."
+  },
+  "ui_a6133a54": {
+    "message": "リクエストは受理されました。Chromeを閉じてもGemini Notebookで生成が続きます。別の論文を追加できます。",
+    "description": "Requests accepted. Gemini Notebook will keep generating even if you close Chrome. You can add another paper."
+  },
+  "ui_8481df34": {
+    "message": "このポップアップは閉じられます。成果物の生成リクエストが受理されるまでChromeを起動したままにしてください。",
+    "description": "You can close this popup. Keep Chrome running until the artifact requests are accepted."
+  },
+  "ui_440cb2bf": {
+    "message": "この論文は確認が必要です。キュー内の他の論文は続行できます。",
+    "description": "This paper needs attention. Other queued papers can continue."
+  },
+  "ui_e5cfc00b": {
+    "message": "一部のリクエストはGemini Notebookで続行中の可能性があります。このノートブックで結果を確認してください。",
+    "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
+  },
+  "ui_314695f8": {
+    "message": "成果物が完成しました。別の論文に進めます。",
+    "description": "Artifacts are ready. You can move on to another paper."
+  },
+  "ui_232cd7e": {
+    "message": "PDFを保存中です。このポップアップを開いたままにしてください...",
+    "description": "Saving PDF. Keep this popup open..."
   }
 }
