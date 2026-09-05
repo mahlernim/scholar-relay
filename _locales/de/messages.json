@@ -796,5 +796,13 @@
   "ui_67fd3b38": {
     "message": "Notebook $1 ist teilweise bereit. $2/$3 Artefakte bereit, $4 fehlgeschlagen. Zum Öffnen klicken.",
     "description": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open."
+  },
+  "ui_6fa973d2": {
+    "message": "Prüfung erforderlich",
+    "description": "Needs checking"
+  },
+  "ui_dccf5581": {
+    "message": "Artefaktdetails",
+    "description": "Artifact details"
   }
 }

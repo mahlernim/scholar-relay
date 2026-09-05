@@ -26,6 +26,7 @@ import {
   listSources,
   QuizDifficulty,
   QuizQuantity,
+  SourceStatus,
   VideoFormat,
   VideoStyle,
 } from '../notebooklm-api.js';
@@ -353,7 +354,7 @@ test('notebook creation uses the migrated template block', async () => {
   installFetch((url, options) => {
     if (url.endsWith('/')) return tokenResponse();
     params = decodeRpcParams(options);
-    return rpcResponse(__testing.RPCMethod.CREATE_NOTEBOOK, [['notebook-id-12345']]);
+    return rpcResponse(__testing.RPCMethod.CREATE_NOTEBOOK, ['Compatibility test', null, 'notebook-id-12345']);
   });
 
   const notebook = await createNotebook('Compatibility test');
@@ -754,4 +755,78 @@ test('artifact status 1 is pending and status 2 is processing', async () => {
   const processing = await listArtifactStatuses('notebook-id-12345');
   assert.equal(pending.get('artifact-id-12345').status, 'pending');
   assert.equal(processing.get('artifact-id-12345').status, 'in_progress');
+});
+
+test('notebook creation reads the ID field instead of a title or nested IDs', async () => {
+  for (const wrap of [false, true]) {
+    reset();
+    const row = ['Pharmacology', [['unrelated-source-id']], 'notebook-id-12345'];
+    installFetch(url => url.endsWith('/') ? tokenResponse()
+      : rpcResponse(__testing.RPCMethod.CREATE_NOTEBOOK, wrap ? [row] : row));
+    assert.equal((await createNotebook('Pharmacology')).id, 'notebook-id-12345');
+  }
+  for (const result of [['Pharmacology'], ['Pharmacology', null, null], { id: 'notebook-id-12345' }]) {
+    reset();
+    let writes = 0;
+    installFetch(url => {
+      if (url.endsWith('/')) return tokenResponse();
+      writes++;
+      return rpcResponse(__testing.RPCMethod.CREATE_NOTEBOOK, result);
+    });
+    await assert.rejects(createNotebook('Pharmacology'), { code: 'TRANSIENT_MUTATION_UNCERTAIN' });
+    assert.equal(writes, 1);
+  }
+});
+
+test('missing mutation envelopes and malformed artifact IDs remain uncertain', async () => {
+  for (const method of [__testing.RPCMethod.CREATE_ARTIFACT, __testing.RPCMethod.UPDATE_NOTE]) {
+    reset();
+    let writes = 0;
+    installFetch(url => {
+      if (url.endsWith('/')) return tokenResponse();
+      writes++;
+      return mockResponse({ body: 'truncated response' });
+    });
+    await assert.rejects(__testing.rpcCall(method, [], '/', method === __testing.RPCMethod.UPDATE_NOTE),
+      { code: 'TRANSIENT_MUTATION_UNCERTAIN' });
+    assert.equal(writes, 1);
+  }
+  for (const result of [[], [[null, 'Pharmacology', 1, null, 3]]]) {
+    reset();
+    installFetch(url => url.endsWith('/') ? tokenResponse() : rpcResponse(__testing.RPCMethod.CREATE_ARTIFACT, result));
+    await assert.rejects(generateAudio('notebook-id-12345', ['source-id-12345']),
+      { code: 'TRANSIENT_MUTATION_UNCERTAIN' });
+  }
+  reset();
+  installFetch(url => url.endsWith('/') ? tokenResponse() : mockResponse({
+    body: `)]}'\n${JSON.stringify([['wrb.fr', __testing.RPCMethod.UPDATE_NOTE, 'not-json']])}`,
+  }));
+  await assert.rejects(__testing.rpcCall(__testing.RPCMethod.UPDATE_NOTE, [], '/', true),
+    { code: 'TRANSIENT_MUTATION_UNCERTAIN' });
+});
+
+test('initial completed media needs usable output for each media artifact type', async () => {
+  const cases = [
+    [generateAudio, 1, artifact => { artifact[6] = []; artifact[6][5] = [['https://example.org/audio.mp3']]; }],
+    [generateVideo, 3, artifact => { artifact[8] = [['https://example.org/video.mp4']]; }],
+    [generateInfographic, 7, artifact => { artifact[14] = [null, null, [[null, ['https://example.org/image.png']]]]; }],
+    [generateSlideDeck, 8, artifact => { artifact[16] = [null, null, null, 'https://example.org/slides.pdf']; }],
+  ];
+  for (const [generate, type, addMedia] of cases) {
+    reset();
+    const artifact = ['artifact-id-12345', 'A title', type, null, 3];
+    installFetch(url => url.endsWith('/') ? tokenResponse() : rpcResponse(__testing.RPCMethod.CREATE_ARTIFACT, [artifact]));
+    assert.equal((await generate('notebook-id-12345', ['source-id-12345'])).status, 'in_progress');
+    addMedia(artifact);
+    assert.equal((await generate('notebook-id-12345', ['source-id-12345'])).status, 'completed');
+  }
+});
+
+test('source ingestion only reports a known explicit status', async () => {
+  const statusBlocks = [undefined, null, [], [null], {}, [null, '2'], [null, 99], [null, 1], [null, 2], [null, 3], [null, 5]];
+  const rows = statusBlocks.map((block, index) => [[`source-id-${index}-12345`], 'Title', null, block]);
+  installFetch(url => url.endsWith('/') ? tokenResponse()
+    : rpcResponse(__testing.RPCMethod.GET_NOTEBOOK, [[null, rows]]));
+  assert.deepEqual((await listSources('notebook-id-12345')).map(source => source.status),
+    [0, 0, 0, 0, 0, 0, 0, SourceStatus.PROCESSING, SourceStatus.READY, SourceStatus.ERROR, SourceStatus.PREPARING]);
 });

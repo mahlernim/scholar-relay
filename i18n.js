@@ -38,18 +38,25 @@ export function localizeStaticDocument(doc = document) {
     }
 }
 
+export function artifactLabel(type) {
+    return t({
+        audio: '🎧 Audio Overview', video: '🎬 Video Overview', report: '📄 Report',
+        quiz: '❓ Quiz', flashcards: '🃏 Flashcards', infographic: '🖼 Infographic',
+        slide_deck: '📊 Slide Deck', mind_map: '🧠 Mind Map', data_table: '📋 Data Table',
+    }[type] || 'Artifact');
+}
+
+export function artifactStatusLabel(status) {
+    return t({ completed: 'Ready', failed: 'Failed', in_progress: 'Generating',
+        pending: 'Waiting', uncertain: 'Needs checking' }[status] || 'Waiting');
+}
+
 export function progressDetail(state) {
     // Presentation is derived from stable state, so old saved English states work too.
     if (state.step === 'wait_artifacts') {
         const tasks = state.tasks || [];
-        const names = {
-            audio: '🎧 Audio Overview', video: '🎬 Video Overview', report: '📄 Report',
-            quiz: '❓ Quiz', flashcards: '🃏 Flashcards', infographic: '🖼 Infographic',
-            slide_deck: '📊 Slide Deck', mind_map: '🧠 Mind Map', data_table: '📋 Data Table',
-        };
-        const status = { completed: 'Ready', failed: 'Failed', in_progress: 'Generating', pending: 'Waiting' };
         const summary = t('$1 of $2 artifacts ready.', [tasks.filter(task => task.status === 'completed').length, tasks.length]);
-        const details = tasks.map(task => `${t(names[task.type] || 'Artifact')} · ${t(status[task.status] || 'Waiting')}`);
+        const details = tasks.map(task => `${artifactLabel(task.type)} · ${artifactStatusLabel(task.status)}`);
         const started = Date.parse(state.stepStartedAt);
         if (Number.isFinite(started)) details.push(t('Elapsed time: $1 min.', [Math.max(0, Math.round((Date.now() - started) / 60000))]));
         return [summary, ...details].join('\n');

@@ -807,7 +807,9 @@ async function tickSourcePoll(state) {
             } catch (e) {
                 if (e?.code === 'PIPELINE_STALE_RUN') throw e;
                 console.warn(`[Pipeline] Failed to start ${type}:`, e.message);
-                tasks.push({ type, taskId: null, status: 'failed', error: e.message });
+                tasks.push({ type, taskId: null,
+                    status: e?.code === 'TRANSIENT_MUTATION_UNCERTAIN' ? 'uncertain' : 'failed',
+                    error: e.message, code: e?.code || null });
             }
             await transitionRun(runId, {
                 tasks: [...tasks],
@@ -990,6 +992,10 @@ async function tickArtifactPoll(state) {
 
     const allDone = updatedTasks.every(t => t.status !== 'in_progress');
     if (allDone && updatedTasks.length > 0) {
+        if (updatedTasks.some(t => t.status === 'uncertain')) {
+            await failPipeline(runId, 'Uncertain artifact generation. Some requests may have been accepted. Check this notebook before starting again.');
+            return;
+        }
         const completedCount = updatedTasks.filter(t => t.status === 'completed').length;
         if (completedCount === 0) {
             await failPipeline(runId, 'All artifact generations failed. No artifacts were generated.');

@@ -205,7 +205,7 @@ const server = createServer(async (request, response) => {
     const params = JSON.parse(JSON.parse(new URLSearchParams(body).get('f.req'))[0][0][1]);
     const method = requestUrl.searchParams.get('rpcids');
     let result = [[null, []]];
-    if (method === 'CCqFvf') { imports.notebookTitles.push(params[0]); result = [['smoke-notebook-id']]; }
+    if (method === 'CCqFvf') { imports.notebookTitles.push(params[0]); result = [params[0], null, 'smoke-notebook-id']; }
     if (method === 'izAoDd') { imports.urls.push(params[0][0][2][0]); result = [['smoke-url-source-id']]; }
     if (method === 'o4cbdc') { imports.uploads++; result = [['smoke-file-source-id']]; }
     response.writeHead(200, { 'content-type': 'application/json' });
@@ -307,6 +307,11 @@ try {
   assert(view.summary && view.details.includes(errorText) && view.collapsed, 'Error summary and collapsed diagnostics were not preserved');
   await evaluate(popup, `document.querySelector('.workflow-details').open=true`);
   assert((await evaluate(popup, `document.getElementById('content').innerText`)).includes(errorText), 'Expanded error diagnostics are inaccessible');
+
+  await evaluate(popup, `chrome.storage.local.set({pipelineState:{status:'error',runId:'uncertain-ui',step:'error',error:'Uncertain artifact generation. Check this notebook before starting again.',pdfUrl:'paper.pdf',tasks:[{type:'audio',status:'uncertain',error:'Accepted response stalled'}]}})`);
+  await reload(popup);
+  view = await evaluate(popup, `({summary:document.querySelector('.pipeline-error-box')?.innerText,details:[...document.querySelectorAll('details')].find(el=>el.querySelector('summary')?.textContent==='Artifact details')?.textContent})`);
+  assert(view.summary.includes('could not be confirmed') && view.details?.includes('Needs checking') && view.details.includes('Accepted response stalled'), 'Uncertain task diagnostics were lost');
 
   await evaluate(popup, `document.getElementById('btn-gear').click()`);
   await delay(150);
