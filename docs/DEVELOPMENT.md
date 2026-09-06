@@ -387,3 +387,17 @@ All seven descriptions in [the submitted listing](releases/v1.4.0-store-listing.
 Submission succeeded on September 5, 2026, around `2026-09-05T02:50Z`, with the confirmation “Your extension was submitted for review”. Automatic publication after approval was checked. A subsequent Package view confirmed Pending review, submitted version 1.4.0, revision `00005`, all seven languages, and Published 1.3.0. Pending review is not public availability. Verify the public version and localized listing after approval. Keep #14 open until post-publication search evidence is recorded and keep unrelated #25 open.
 
 A fresh public listing read at approximately `2026-09-05T02:51Z` independently confirmed version 1.3.0 and two languages. The v1.4.0 queue and seven-language listing were not yet public.
+
+### v1.4.1 reliability hotfix and store submission
+
+[PR #49](https://github.com/mahlernim/scholar-relay/pull/49) closed #43 through #45 after both exact-head checks passed at `26a72179d9e8a085efcb5937452f836d016f0ff6`. Both merged-main checks passed in [run 34043210299](https://github.com/mahlernim/scholar-relay/actions/runs/34043210299) at release target `e6130fda038e5ed3cca3b6569782481437494b89`. Validation includes 106 tests, seven-locale Chrome smoke, and an exact-byte 40 MiB PDF transfer after a worker restart.
+
+[GitHub v1.4.1](https://github.com/mahlernim/scholar-relay/releases/tag/v1.4.1) was published at `2026-09-06T15:45:15Z`, targeting that merged commit. The canonical ZIP contains 30 allowlisted runtime files, embeds version 1.4.1, and is 126,601 bytes. The checksum sidecar and downloaded GitHub assets were verified against the local release artifact. The ZIP SHA-256 is below.
+
+```text
+4b31f685d73479d9e92d46de759bc9b342363ee839e57f3fb48469bc216617fe
+```
+
+The pending v1.4.0 store review was canceled because it contained the reliability defects fixed in v1.4.1. The same canonical v1.4.1 ZIP was uploaded to existing item `epopghhfmpokhbalmnfcopmplffphdbb`. The Package view confirmed version 1.4.1, all seven languages, and unchanged permissions before submission.
+
+Submission succeeded on September 7, 2026, with the confirmation “Your extension was submitted for review”. The dashboard showed `Status: Pending review` at `2026-09-06T15:54:07Z`. Automatic publication after approval was selected. Pending review is not public availability, and the public listing remains version 1.3.0 until approval. Verify the public version and localized listing after approval.
