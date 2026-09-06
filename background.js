@@ -1017,11 +1017,16 @@ async function dispatchNextJob() {
         if (error?.code !== 'PIPELINE_STALE_RUN') await failPipeline(job.runId, error.message);
     } finally {
         const current = await getState(job.runId);
-        if (!['queued', 'auth', 'create_notebook', 'add_source', 'download_pdf', 'upload_pdf', 'queued_pdf'].includes(current.step)) {
+        if (!shouldRetainJobPdf(current)) {
             await releaseJobPdf(job.runId);
         }
         dispatchAgain = true;
     }
+}
+
+function shouldRetainJobPdf(job) {
+    return ['queued', 'auth', 'create_notebook', 'add_source', 'download_pdf', 'upload_pdf', 'queued_pdf', 'wait_pdf_access']
+        .includes(job?.step);
 }
 
 async function releaseJobPdf(runId) {
@@ -1038,7 +1043,7 @@ async function releaseJobPdf(runId) {
 async function handlePollAlarm(alarm) {
     if (alarm.name !== ALARM_NAME) return;
     try {
-        await bootReconciliationPromise;
+        await ensureBootReconciled();
         const ran = await runExclusivePollTick(async () => {
             const queue = await getQueue();
             // Different notebooks may be polled together. Only one can still be
@@ -1092,7 +1097,7 @@ const fallbackPdf = createPdfFallback({
 });
 
 async function resumePdfFallback(message) {
-    await bootReconciliationPromise;
+    await ensureBootReconciled();
     let file = null;
     if (message.fileDataBase64) file = decodeQueuedPdf(message.fileDataBase64, message.fileName);
     const payloadId = file ? crypto.randomUUID() : null;
@@ -1121,9 +1126,32 @@ async function resumePdfFallback(message) {
     return { ok: true, state: result.state };
 }
 
-const bootReconciliationPromise = reconcilePipelineRuntime()
-    .then(() => { kickQueue(); })
-    .catch(error => { console.error('[Recovery] Initial reconciliation failed:', error); throw error; });
+async function runBootReconciliation() {
+    try {
+        await reconcilePipelineRuntime();
+        kickQueue();
+        return true;
+    } catch (error) {
+        console.error('[Recovery] Initial reconciliation failed:', error);
+        return false;
+    }
+}
+
+let bootReconciliationPromise = runBootReconciliation();
+let bootRetryPromise = null;
+
+async function ensureBootReconciled() {
+    if (await bootReconciliationPromise) return;
+    const retry = bootRetryPromise || (bootRetryPromise = runBootReconciliation()
+        .then(succeeded => {
+            if (succeeded) bootReconciliationPromise = Promise.resolve(true);
+            return succeeded;
+        })
+        .finally(() => { bootRetryPromise = null; }));
+    if (!await retry) {
+        throw new Error('ScholarRelay could not restore its saved queue. Try again in a moment.');
+    }
+}
 
 // =========================================================================
 // Pipeline orchestration (steps 1-3: synchronous network calls)
@@ -1251,7 +1279,8 @@ function assertArtifactSelection(settings) {
 function decodeQueuedPdf(base64, filename) {
     assertPdfUploadSize(decodedBase64ByteLength(base64));
     if (!hasBase64PdfSignature(base64)) throw new Error('The selected file does not contain a PDF signature.');
-    const binary = atob(base64);
+    const payload = base64.includes(',') ? base64.slice(base64.indexOf(',') + 1) : base64;
+    const binary = atob(payload.replace(/\s+/g, ''));
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     return { filename: filename || 'paper.pdf', fileData: bytes.buffer, mimeType: 'application/pdf' };
@@ -1263,7 +1292,7 @@ function assertQueuePdfBudget(queue, bytes) {
 }
 
 async function startPipelineRequest(message, uploadFile = null) {
-    await bootReconciliationPromise;
+    await ensureBootReconciled();
     const settings = { ...DEFAULT_SETTINGS, ...(message.settings || await getSettings()) };
     assertArtifactSelection(settings);
     let file = null;
@@ -1320,7 +1349,7 @@ async function startPipelineRequest(message, uploadFile = null) {
 }
 
 async function stopPipelineRequest(requestedRunId) {
-    await bootReconciliationPromise;
+    await ensureBootReconciled();
     const result = await pipelineState.transact(queue => {
         const job = queue.jobs.find(item => item.runId === requestedRunId);
         if (!job || !(job.status === 'queued' || job.step === 'queued_pdf' || canStopPipeline(job, requestedRunId))) return null;
@@ -1334,7 +1363,7 @@ async function stopPipelineRequest(requestedRunId) {
 }
 
 async function clearFinishedJobs() {
-    await bootReconciliationPromise;
+    await ensureBootReconciled();
     await pipelineState.transact(queue => {
         queue.jobs = queue.jobs.filter(isUnfinishedJob);
         return {};
@@ -1373,12 +1402,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === 'GET_QUEUE') {
-        bootReconciliationPromise.then(getQueue).then(sendResponse)
+        ensureBootReconciled().then(getQueue).then(sendResponse)
             .catch(error => sendResponse({ error: error.message }));
         return true;
     }
     if (message.type === 'PAUSE_QUEUE') {
-        bootReconciliationPromise.then(() => pipelineState.transact(queue => {
+        ensureBootReconciled().then(() => pipelineState.transact(queue => {
             queue.paused = !!message.paused;
             return {};
         })).then(async () => { await syncQueueRuntime(); kickQueue(); sendResponse({ ok: true }); })
@@ -1386,12 +1415,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
     if (message.type === 'GET_STATE') {
-        bootReconciliationPromise.then(() => getState(message.runId)).then(sendResponse);
+        ensureBootReconciled().then(() => getState(message.runId)).then(sendResponse)
+            .catch(error => sendResponse({ ok: false, message: error?.message || 'Could not load pipeline state' }));
         return true;
     }
 
     if (message.type === 'LIST_COLLECTIONS') {
-        bootReconciliationPromise.then(() => listCollections())
+        ensureBootReconciled().then(() => listCollections())
             .then(collections => sendResponse({ ok: true, collections }))
             .catch(error => sendResponse({
                 ok: false,
@@ -1419,7 +1449,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({ ok: false, message: 'Detection was not associated with a browser tab.' });
             return false;
         }
-        chrome.storage.local.set({ detectedPdf }).then(() => sendResponse({ ok: true }));
+        chrome.storage.local.set({ detectedPdf }).then(() => sendResponse({ ok: true }))
+            .catch(error => sendResponse({ ok: false, message: error?.message || 'Could not save PDF detection' }));
         return true;
     }
 });

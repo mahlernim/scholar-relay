@@ -407,7 +407,6 @@ function decodeResponse(rawResponse, rpcId, allowNull = false) {
 
 function extractFirstIdFromResult(result) {
   const MAX_DEPTH = 8;
-  const ID_PATTERN = /^[A-Za-z0-9_-]{10,}$/;
   const visited = new Set();
 
   function walk(node, depth = 0) {
@@ -429,7 +428,7 @@ function extractFirstIdFromResult(result) {
       const sourceMatch = value.match(/source\/([A-Za-z0-9_-]{10,})/i);
       if (sourceMatch) return sourceMatch[1];
 
-      if (ID_PATTERN.test(value)) return value;
+      if (isLikelyOpaqueId(value)) return value;
 
       if (value.startsWith('{') || value.startsWith('[')) {
         try {
@@ -446,8 +445,6 @@ function extractFirstIdFromResult(result) {
 
     if (typeof node === 'number') {
       const value = String(node);
-      if (ID_PATTERN.test(value)) return value;
-      if (value.length >= 10) return value;
       return null;
     }
 
@@ -478,6 +475,13 @@ function extractFirstIdFromResult(result) {
   }
 
   return walk(result, 0);
+}
+
+function isLikelyOpaqueId(value) {
+  if (!/^[A-Za-z0-9_-]{10,}$/.test(value) || /^\d+$/.test(value)) return false;
+  if (/^[a-z]+(?:_[a-z]+)*$/.test(value) || /^[A-Z]+(?:_[A-Z]+)*$/.test(value)) return false;
+  if (/^[A-Z][a-z]+$/.test(value)) return false;
+  return true;
 }
 
 // =========================================================================
@@ -1730,6 +1734,7 @@ async function listArtifactStatuses(notebookId) {
 
     let status;
     switch (statusCode) {
+      case ArtifactStatus.UNKNOWN: status = 'in_progress'; break;
       case ArtifactStatus.PROCESSING: status = 'in_progress'; break;
       case ArtifactStatus.PENDING: status = 'pending'; break;
       case ArtifactStatus.COMPLETED:
@@ -1849,6 +1854,7 @@ export const __testing = {
   artifactClientOptions,
   collectionRequestOptions,
   rpcCall,
+  extractFirstIdFromResult,
   resetTokens() {
     _csrfToken = null;
     _sessionId = null;

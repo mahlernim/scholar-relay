@@ -758,6 +758,25 @@ test('artifact status 1 is pending and status 2 is processing', async () => {
   assert.equal(processing.get('artifact-id-12345').status, 'in_progress');
 });
 
+test('unknown artifact status keeps polling and generic values are not IDs', async () => {
+  installFetch(url => {
+    if (url.endsWith('/')) return tokenResponse();
+    const artifact = Array(5).fill(null);
+    artifact[0] = 'artifact-id-12345';
+    artifact[2] = 1;
+    artifact[4] = 0;
+    return rpcResponse(__testing.RPCMethod.LIST_ARTIFACTS, [[artifact]]);
+  });
+
+  const statuses = await listArtifactStatuses('notebook-id-12345');
+  assert.equal(statuses.get('artifact-id-12345').status, 'in_progress');
+  for (const value of ['application', 'study_guide', 'PENDING_REVIEW', '1725000000000']) {
+    assert.equal(__testing.extractFirstIdFromResult(value), null);
+  }
+  assert.equal(__testing.extractFirstIdFromResult('artifact-id-12345'), 'artifact-id-12345');
+  assert.equal(__testing.extractFirstIdFromResult('AbCdEfGhIjKlMnOp'), 'AbCdEfGhIjKlMnOp');
+});
+
 test('notebook creation reads the ID field instead of a title or nested IDs', async () => {
   for (const wrap of [false, true]) {
     reset();
