@@ -18,7 +18,7 @@ import { withRequestDeadline } from '../request-deadline.js';
 const source = (await readFile(new URL('../background.js', import.meta.url), 'utf8'))
   .replace(/^import\s+[\s\S]*?from\s+'[^']+';\r?\n/gm, '');
 
-async function worker() {
+async function worker({ failInitialQueueRead = false } = {}) {
   const data = { pipelineState: { status: 'idle' }, userSettings: { chimeEnabled: false, notificationEnabled: false } };
   Object.defineProperty(data, 'pipelineState', {
     get: () => data.jobQueue?.jobs.at(-1) || { status: 'idle' },
@@ -28,7 +28,16 @@ async function worker() {
   const logs = [];
   const notifications = [];
   let listener;
+  let messageListener;
   const hooks = {};
+  if (failInitialQueueRead) {
+    hooks.read = key => {
+      if (key === 'jobQueue') {
+        hooks.read = null;
+        throw new Error('Temporary queue read failure');
+      }
+    };
+  }
   const noop = async () => {};
   const event = { addListener() {} };
   const apiMocks = Object.fromEntries(Object.entries(api).map(([key, value]) => [key,
@@ -46,7 +55,7 @@ async function worker() {
       } },
       alarms: { get: async () => null, clear: noop, create: noop, onAlarm: { addListener(fn) { listener = fn; } } },
       action: { setBadgeText: noop, setBadgeBackgroundColor: noop },
-      runtime: { onMessage: event },
+      runtime: { onMessage: { addListener(fn) { messageListener = fn; } } },
       notifications: { onClicked: event, onButtonClicked: event, onClosed: event,
         create: async (id, options) => notifications.push({ id, ...options }) },
       tabs: { create: noop },
@@ -55,8 +64,15 @@ async function worker() {
   vm.runInContext(source, context);
   await vm.runInContext('bootReconciliationPromise', context);
   await new Promise(resolve => setImmediate(resolve));
-  const functions = vm.runInContext('({startPipelineRequest, stopPipelineRequest, tickArtifactPoll, tickSourcePoll, resumePdfFallback, reconcilePipelineRuntime, getQueue})', context);
-  return { data, logs, notifications, hooks, context, listener, files, ...functions };
+  const functions = vm.runInContext('({startPipelineRequest, stopPipelineRequest, tickArtifactPoll, tickSourcePoll, resumePdfFallback, reconcilePipelineRuntime, getQueue, decodeQueuedPdf, shouldRetainJobPdf, ensureBootReconciled})', context);
+  return { data, logs, notifications, hooks, context, listener, messageListener, files, ...functions };
+}
+
+function sendWorkerMessage(workerState, message, sender = {}) {
+  return new Promise(resolve => {
+    const asyncResponse = workerState.messageListener(message, sender, resolve);
+    if (asyncResponse !== true) resolve(undefined);
+  });
 }
 
 test('completion and failure notifications use localized guidance without changing worker diagnostics', async () => {
@@ -328,6 +344,36 @@ test('queued PDFs are persisted before acknowledgment and removed with only thei
   assert.equal(w.files.size, 0);
   w.data.jobQueue.jobs.push({ ...running(), runId: 'large-saved-file', payloadBytes: jobs.MAX_QUEUED_PDF_BYTES });
   await assert.rejects(w.startPipelineRequest({}, file), /100 MiB/);
+});
+
+test('queued PDF data URLs decode correctly and payloads survive permission waits', async () => {
+  const w = await worker();
+  const raw = '%PDF-1.7\n durable fallback';
+  const decoded = w.decodeQueuedPdf(`data:application/pdf;base64,${btoa(raw)}`, 'fallback.pdf');
+  assert.equal(new TextDecoder().decode(decoded.fileData), raw);
+  assert.equal(w.shouldRetainJobPdf({ step: 'wait_pdf_access' }), true);
+  assert.equal(w.shouldRetainJobPdf({ step: 'wait_source' }), false);
+});
+
+test('boot reconciliation retries after a transient failure and message errors respond', async () => {
+  const w = await worker({ failInitialQueueRead: true });
+  assert.ok(w.logs.some(row => row[0] === 'error' && row[1].includes('Initial reconciliation failed')));
+  const recovered = await sendWorkerMessage(w, { type: 'GET_STATE', runId: 'missing' });
+  assert.equal(recovered.status, 'idle');
+
+  w.hooks.read = key => {
+    if (key === 'jobQueue') throw new Error('Queue unavailable');
+  };
+  const stateError = await sendWorkerMessage(w, { type: 'GET_STATE', runId: 'missing' });
+  assert.equal(stateError.ok, false);
+  assert.equal(stateError.message, 'Queue unavailable');
+  w.hooks.read = null;
+
+  w.hooks.write = () => { throw new Error('Storage unavailable'); };
+  const detectionError = await sendWorkerMessage(w, { type: 'DETECT_PDF', data: { pageUrl: 'https://example.org/paper.pdf' } },
+    { tab: { id: 7, url: 'https://example.org/paper.pdf' } });
+  assert.equal(detectionError.ok, false);
+  assert.equal(detectionError.message, 'Storage unavailable');
 });
 
 test('a paper awaiting PDF access does not block the next paper or let resume steal its slot', async () => {
