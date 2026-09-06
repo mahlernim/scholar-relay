@@ -8,6 +8,7 @@ import {
   addUrlSource,
   ArtifactStatus,
   createNotebook,
+  ensureTokens,
   fetchTokens,
   generateAudio,
   generateDataTable,
@@ -18,6 +19,7 @@ import {
   generateSlideDeck,
   generateVideo,
   getNotebookUrl,
+  getNotebookTitle,
   InfographicDetail,
   InfographicOrientation,
   InfographicStyle,
@@ -82,6 +84,46 @@ function reset() {
 }
 
 test.beforeEach(reset);
+
+test('concurrent token requests share one authentication fetch', async () => {
+  let release;
+  const calls = installFetch(() => new Promise(resolve => { release = resolve; }));
+  const first = ensureTokens();
+  const second = ensureTokens();
+  await Promise.resolve();
+  assert.equal(calls.length, 1);
+  release(tokenResponse());
+  assert.deepEqual(await Promise.all([first, second]), [
+    { csrfToken: 'csrf-token', sessionId: 'session-id' },
+    { csrfToken: 'csrf-token', sessionId: 'session-id' },
+  ]);
+  assert.equal(calls.length, 1);
+});
+
+test('chunk parser preserves a JSON record spanning multiple lines', () => {
+  const envelope = [['wrb.fr', __testing.RPCMethod.GET_NOTEBOOK,
+    JSON.stringify([['A title', 'A prompt\nwith another line', 'notebook-id-12345']])]];
+  const record = JSON.stringify(envelope, null, 2);
+  const byteCount = new TextEncoder().encode(record).byteLength;
+  assert.deepEqual(__testing.parseChunkedResponse(`${byteCount}\n${record}\n`), [envelope]);
+});
+
+test('notebook title reads only the confirmed title slot', async () => {
+  installFetch(url => url.endsWith('/') ? tokenResponse()
+    : rpcResponse(__testing.RPCMethod.GET_NOTEBOOK, [['Actual title', null, 'AbCdEfGhIjKlMnOp']]));
+  assert.equal(await getNotebookTitle('AbCdEfGhIjKlMnOp'), 'Actual title');
+
+  reset();
+  installFetch(url => url.endsWith('/') ? tokenResponse()
+    : rpcResponse(__testing.RPCMethod.GET_NOTEBOOK, [['AbCdEfGhIjKlMnOp', null, 'another-notebook-id']]));
+  assert.equal(await getNotebookTitle('another-notebook-id'), null);
+});
+
+test('upload deadline scales to the bounded PDF size', () => {
+  assert.equal(__testing.uploadDeadlineMs(0), 25000);
+  assert.equal(__testing.uploadDeadlineMs(256 * 1024), 26000);
+  assert.equal(__testing.uploadDeadlineMs(40 * 1024 * 1024), 185000);
+});
 
 test('URL import classifies explicit rejection without treating authentication or quota as PDF failures', async () => {
   for (const status of [400, 401, 403, 422, 429, 500]) {

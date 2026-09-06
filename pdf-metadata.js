@@ -34,6 +34,17 @@ function decodeXmlText(value) {
     .replace(/&amp;/gi, '&');
 }
 
+function decodePdfBytes(raw) {
+  if (raw.length >= 2 && raw[0] === 0xfe && raw[1] === 0xff) {
+    let result = '';
+    for (let i = 2; i + 1 < raw.length; i += 2) {
+      result += String.fromCharCode((raw[i] << 8) | raw[i + 1]);
+    }
+    return result;
+  }
+  return new TextDecoder('windows-1252').decode(raw);
+}
+
 function decodePdfLiteral(value) {
   const bytes = [];
   for (let i = 0; i < value.length; i++) {
@@ -56,15 +67,7 @@ function decodePdfLiteral(value) {
     }
   }
 
-  const raw = new Uint8Array(bytes);
-  if (raw.length >= 2 && raw[0] === 0xfe && raw[1] === 0xff) {
-    let result = '';
-    for (let i = 2; i + 1 < raw.length; i += 2) {
-      result += String.fromCharCode((raw[i] << 8) | raw[i + 1]);
-    }
-    return result;
-  }
-  return new TextDecoder('windows-1252').decode(raw);
+  return decodePdfBytes(new Uint8Array(bytes));
 }
 
 function normalizeTitle(value) {
@@ -73,11 +76,35 @@ function normalizeTitle(value) {
 
 function isUsefulTitle(value) {
   const title = normalizeTitle(value);
-  if (title.length < 4) return false;
+  const shortAcronym = /^[A-Z][A-Z0-9.+-]{1,11}$/.test(title);
+  const cjkCharacters = title.match(/[\p{Script=Han}\p{Script=Hangul}\p{Script=Hiragana}\p{Script=Katakana}]/gu) || [];
+  if (title.length < 4 && !shortAcronym && cjkCharacters.length < 2) return false;
   if (/^(?:https?|file|blob|chrome-extension):/i.test(title)) return false;
   if (/^(?:untitled|download|document|article|paper|full[-_ ]?text|local[-_ ]?upload)(?:\s*\d+)?(?:\.pdf)?$/i.test(title)) return false;
   if (/^[^\s]+\.pdf(?:[?#].*)?$/i.test(title)) return false;
   return true;
+}
+
+function extractPdfLiteral(value) {
+  const marker = value.match(/\/Title\s*\(/);
+  if (!marker || marker.index === undefined) return null;
+  const start = marker.index + marker[0].length;
+  let depth = 1;
+  let escaped = false;
+  for (let i = start; i < value.length; i++) {
+    const char = value[i];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+    if (char === '(') depth++;
+    else if (char === ')' && --depth === 0) return value.slice(start, i);
+  }
+  return null;
 }
 
 function extractPdfMetadataTitle(payload) {
@@ -96,8 +123,8 @@ function titleFromWindows(windows) {
 
   const decoded = windows.map(bytes => new TextDecoder('windows-1252').decode(bytes));
   for (const latin1 of decoded) {
-    const literalMatch = latin1.match(/\/Title\s*\(((?:\\.|[^\\)])*)\)/s);
-    const literalTitle = normalizeTitle(literalMatch ? decodePdfLiteral(literalMatch[1]) : '');
+    const literal = extractPdfLiteral(latin1);
+    const literalTitle = normalizeTitle(literal === null ? '' : decodePdfLiteral(literal));
     if (isUsefulTitle(literalTitle)) return literalTitle;
   }
 
@@ -105,9 +132,12 @@ function titleFromWindows(windows) {
     const hexMatch = latin1.match(/\/Title\s*<([0-9a-f\s]+)>/i);
     if (hexMatch) {
       const hex = hexMatch[1].replace(/\s+/g, '');
-      const hexBytes = new Uint8Array((hex.length / 2) | 0);
-      for (let i = 0; i < hexBytes.length; i++) hexBytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-      const hexTitle = normalizeTitle(decodePdfLiteral(Array.from(hexBytes, byte => String.fromCharCode(byte)).join('')));
+      const hexBytes = new Uint8Array(Math.ceil(hex.length / 2));
+      for (let i = 0; i < hexBytes.length; i++) {
+        const pair = hex.slice(i * 2, i * 2 + 2).padEnd(2, '0');
+        hexBytes[i] = parseInt(pair, 16);
+      }
+      const hexTitle = normalizeTitle(decodePdfBytes(hexBytes));
       if (isUsefulTitle(hexTitle)) return hexTitle;
     }
   }
@@ -131,7 +161,9 @@ function titleFromFilename(filename) {
   try { stem = decodeURIComponent(stem); } catch (_) { /* keep original */ }
   stem = normalizeTitle(stem.replace(/[_]+/g, ' ').replace(/\s+-\s+/g, ' '));
   const wordCount = (stem.match(/[\p{L}]{3,}/gu) || []).length;
-  return wordCount >= 2 && isUsefulTitle(stem) ? stem : null;
+  const shortAcronym = /^[A-Z][A-Z0-9.+-]{1,11}$/.test(stem);
+  const cjkCharacters = stem.match(/[\p{Script=Han}\p{Script=Hangul}\p{Script=Hiragana}\p{Script=Katakana}]/gu) || [];
+  return (wordCount >= 2 || shortAcronym || cjkCharacters.length >= 2) && isUsefulTitle(stem) ? stem : null;
 }
 
 function choosePdfTitle({ payload, pageTitle, filename } = {}) {

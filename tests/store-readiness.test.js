@@ -33,13 +33,14 @@ test('store manifest uses minimum permissions and a production-safe alarm baseli
 });
 
 test('ScholarRelay branding and package identity stay aligned', async () => {
-  const [manifestText, packageText, englishLocaleText, koreanLocaleText, popupText, backgroundText, readmeText, privacyText, packageScript] =
+  const [manifestText, packageText, englishLocaleText, koreanLocaleText, popupText, popupScriptText, backgroundText, readmeText, privacyText, packageScript] =
     await Promise.all([
       readFile(new URL('../manifest.json', import.meta.url), 'utf8'),
       readFile(new URL('../package.json', import.meta.url), 'utf8'),
       readFile(new URL('../_locales/en/messages.json', import.meta.url), 'utf8'),
       readFile(new URL('../_locales/ko/messages.json', import.meta.url), 'utf8'),
       readFile(new URL('../popup.html', import.meta.url), 'utf8'),
+      readFile(new URL('../popup.js', import.meta.url), 'utf8'),
       readFile(new URL('../background.js', import.meta.url), 'utf8'),
       readFile(new URL('../README.md', import.meta.url), 'utf8'),
       readFile(new URL('../PRIVACY.md', import.meta.url), 'utf8'),
@@ -62,6 +63,11 @@ test('ScholarRelay branding and package identity stay aligned', async () => {
   assert.match(koreanLocale.extensionDescription.message, /Gemini Notebook/);
   assert.doesNotMatch(`${popupText}\n${backgroundText}`, /Chrome PDF to NotebookLM/);
   assert.match(popupText, /Open in Gemini Notebook|Gemini Notebook names/);
+  assert.match(popupScriptText, /lastProgressSignature/);
+  assert.match(popupScriptText, /addEventListener\('keydown'/);
+  assert.match(popupScriptText, /aria-expanded/);
+  assert.match(popupScriptText, /state\.status === 'stopped'.*cls = 'stopped'/);
+  assert.match(popupScriptText, /state\.status === 'completed'.*state\.tasks\.some/);
   assert.match(readmeText, /formerly NotebookLM/);
   assert.match(privacyText, /^# Privacy Policy for ScholarRelay/m);
   assert.match(packageScript, /scholar-relay-v\$\(\$manifest\.version\)\.zip/);

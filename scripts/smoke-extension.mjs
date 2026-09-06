@@ -330,8 +330,9 @@ try {
   await delay(150);
   await reload(popup);
   await evaluate(popup, `document.getElementById('btn-gear').click()`);
-  view = await evaluate(popup, `({language:document.getElementById('s-language').value,audio:document.getElementById('s-generateAudio').checked,shared:!document.getElementById('s-language').closest('#sec-audio'),visible:document.getElementById('s-language').getBoundingClientRect().height>0})`);
+  view = await evaluate(popup, `(() => { const header=document.querySelector('#sec-audio .s-section-header'); const before=header.getAttribute('aria-expanded'); header.focus(); header.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true})); return {language:document.getElementById('s-language').value,audio:document.getElementById('s-generateAudio').checked,shared:!document.getElementById('s-language').closest('#sec-audio'),visible:document.getElementById('s-language').getBoundingClientRect().height>0,role:header.getAttribute('role'),tabindex:header.getAttribute('tabindex'),before,expanded:header.getAttribute('aria-expanded'),controls:header.getAttribute('aria-controls')}; })()`);
   assert(view.language==='ko' && !view.audio && view.shared && view.visible, 'Shared language is not accessible and persistent with Audio disabled');
+  assert(view.role==='button' && view.tabindex==='0' && view.expanded!==view.before && view.controls==='sec-audio-content', `Artifact section lacks keyboard or ARIA behavior: ${JSON.stringify(view)}`);
   await evaluate(popup, `document.getElementById('btn-gear').click()`);
 
   await popup.call('Emulation.setDeviceMetricsOverride', { width: 360, height: 600, deviceScaleFactor: 1, mobile: false });
@@ -417,10 +418,20 @@ try {
   const layout = await evaluate(popup, `({height:document.body.getBoundingClientRect().height,width:document.documentElement.scrollWidth,
     resultBottom:document.querySelector('.completed-box').getBoundingClientRect().bottom,
     linkBottom:document.querySelector('.notebook-link').getBoundingClientRect().bottom,
-    collapsed:!document.querySelector('.workflow-details').open})`);
+    collapsed:!document.querySelector('.workflow-details').open,
+    artifactDetails:[...document.querySelectorAll('details')].find(el=>el.querySelector('summary')?.textContent==='Artifact details')?.textContent})`);
   assert(layout.height <= 600 && layout.width <= 360, 'Completed popup overflows its viewport');
   assert(layout.resultBottom < 600 && layout.linkBottom < 600 && layout.collapsed, 'Results are not immediately visible');
+  assert(layout.artifactDetails?.includes('Audio Overview') && layout.artifactDetails.includes('Infographic'), 'Successful artifact details are hidden');
+  await evaluate(popup, `(() => { const details=[...document.querySelectorAll('details')].find(el=>el.querySelector('summary')?.textContent==='Artifact details'); details.open=true; details.querySelector('summary').focus(); })()`);
+  await delay(2200);
+  assert(await evaluate(popup, `document.activeElement?.textContent==='Artifact details' && document.activeElement?.parentElement?.open`), 'Unchanged polling rebuilt progress markup');
   console.log(`Completed popup layout: ${JSON.stringify(layout)}`);
+
+  await evaluate(popup, `globalThis.__smoke.setFixtureState(${JSON.stringify({ ...completedState, status: 'stopped', step: 'wait_artifacts' })})`);
+  await reload(popup);
+  await evaluate(popup, `document.querySelector('[data-show]')?.click()`);
+  assert(await evaluate(popup, `document.querySelector('.step-indicator.stopped') && getComputedStyle(document.querySelector('.step-indicator.stopped')).animationName==='none'`), 'Stopped work still uses an active animation');
 
   const quotedTitle = `A "quoted" title 'with' <markup> & symbols`;
   const quotedUrl = `${origin}/notebook/smoke?q="quoted"&other='value'`;

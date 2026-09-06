@@ -256,6 +256,12 @@
       color: white;
     }
 
+    .step-indicator.stopped {
+      background: var(--surface-alt);
+      border: 1.5px solid var(--text-dim);
+      color: var(--text-dim);
+    }
+
     @keyframes pulse {
 
       0%,
@@ -511,6 +517,11 @@
 
     .s-section-header:hover .s-section-title {
       color: var(--text);
+    }
+
+    .s-section-header[role="button"]:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
     }
 
     .s-section-arrow {

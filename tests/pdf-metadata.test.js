@@ -26,6 +26,25 @@ test('falls back to the PDF Info Title literal', () => {
   assert.equal(extractPdfMetadataTitle(payload), 'A useful (paper) title');
 });
 
+test('preserves balanced literal parentheses and raw hex backslashes', () => {
+  assert.equal(extractPdfMetadataTitle(bytes('%PDF-1.4\n/Title (Study (pilot) results)\n%%EOF')),
+    'Study (pilot) results');
+  assert.equal(extractPdfMetadataTitle(bytes('%PDF-1.4\n/Title <415c42207469746c65>\n%%EOF')),
+    'A\\B title');
+});
+
+test('retains useful acronyms and short East Asian titles', () => {
+  for (const title of ['BERT', 'VGG', 'GAN']) {
+    assert.equal(isUsefulTitle(title), true);
+    assert.equal(titleFromFilename(`${title}.pdf`), title);
+  }
+  for (const title of ['논문', '研究', '研究法']) {
+    assert.equal(isUsefulTitle(title), true);
+    assert.equal(titleFromFilename(`${title}.pdf`), title);
+  }
+  assert.equal(titleFromFilename('x.pdf'), null);
+});
+
 test('prefers PDF metadata over a URL-shaped page title', () => {
   const payload = bytes('<dc:title><rdf:Alt><rdf:li>Proper paper title</rdf:li></rdf:Alt></dc:title>');
   assert.deepEqual(choosePdfTitle({

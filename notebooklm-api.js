@@ -171,6 +171,7 @@ const SourceStatus = {
 
 let _csrfToken = null;
 let _sessionId = null;
+let _tokenFetchPromise = null;
 let _retrySleep = sleep;
 let _mutationTimeoutMs = 15000;
 let _readTimeoutMs = 15000;
@@ -265,9 +266,13 @@ async function fetchTokens() {
 }
 
 async function ensureTokens() {
-  if (!_csrfToken || !_sessionId) {
-    await fetchTokens();
+  if (_csrfToken && _sessionId) return { csrfToken: _csrfToken, sessionId: _sessionId };
+  if (!_tokenFetchPromise) {
+    _tokenFetchPromise = fetchTokens().finally(() => {
+      _tokenFetchPromise = null;
+    });
   }
+  await _tokenFetchPromise;
   return { csrfToken: _csrfToken, sessionId: _sessionId };
 }
 
@@ -322,31 +327,66 @@ function parseChunkedResponse(responseText) {
   if (!responseText || !responseText.trim()) return [];
 
   const chunks = [];
-  const lines = responseText.trim().split('\n');
-  let i = 0;
+  const text = responseText.trim();
+  let cursor = 0;
 
-  while (i < lines.length) {
-    const line = lines[i].trim();
-    if (!line) { i++; continue; }
-
-    // Try as byte count
-    if (/^\d+$/.test(line)) {
-      i++;
-      if (i < lines.length) {
-        try {
-          chunks.push(JSON.parse(lines[i]));
-        } catch (e) {
-          console.warn(`[RPC] Skipping malformed chunk at line ${i + 1}`);
+  const skipWhitespace = () => {
+    while (cursor < text.length && /\s/.test(text[cursor])) cursor++;
+  };
+  const skipLine = () => {
+    const newline = text.indexOf('\n', cursor);
+    cursor = newline === -1 ? text.length : newline + 1;
+  };
+  const jsonEnd = start => {
+    const first = text[start];
+    if (first !== '[' && first !== '{' && first !== '"') {
+      const newline = text.indexOf('\n', start);
+      return newline === -1 ? text.length : newline;
+    }
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (let i = start; i < text.length; i++) {
+      const char = text[i];
+      if (inString) {
+        if (escaped) escaped = false;
+        else if (char === '\\') escaped = true;
+        else if (char === '"') {
+          inString = false;
+          if (first === '"') return i + 1;
         }
+        continue;
       }
-      i++;
-    } else {
-      try {
-        chunks.push(JSON.parse(line));
-      } catch (e) {
-        console.warn(`[RPC] Skipping non-JSON line at ${i + 1}`);
+      if (char === '"') inString = true;
+      else if (char === '[' || char === '{') depth++;
+      else if (char === ']' || char === '}') {
+        depth--;
+        if (depth === 0) return i + 1;
       }
-      i++;
+    }
+    return text.length;
+  };
+
+  while (cursor < text.length) {
+    skipWhitespace();
+    if (cursor >= text.length) break;
+
+    const lineEnd = text.indexOf('\n', cursor);
+    const firstLine = text.slice(cursor, lineEnd === -1 ? text.length : lineEnd).trim();
+    if (/^\d+$/.test(firstLine)) {
+      skipLine();
+      skipWhitespace();
+    }
+    if (cursor >= text.length) break;
+
+    const end = jsonEnd(cursor);
+    const record = text.slice(cursor, end);
+    try {
+      chunks.push(JSON.parse(record));
+      cursor = end;
+    } catch (e) {
+      console.warn('[RPC] Skipping malformed response record');
+      skipLine();
     }
   }
   return chunks;
@@ -858,11 +898,17 @@ async function uploadFileBytes(uploadUrl, binaryPayload, mimeType = 'application
       'x-goog-upload-offset': '0',
     },
     body: binaryPayload,
-  }), 25000);
+  }), uploadDeadlineMs(binaryPayload.byteLength));
 
   if (!response.ok) {
     throw new Error(`Failed to upload file bytes: HTTP ${response.status} ${response.statusText}`);
   }
+}
+
+function uploadDeadlineMs(byteLength) {
+  const bytes = Number.isFinite(byteLength) && byteLength > 0 ? byteLength : 0;
+  const transferSeconds = Math.ceil(bytes / (256 * 1024));
+  return Math.min(300000, 25000 + transferSeconds * 1000);
 }
 
 /**
@@ -1789,21 +1835,12 @@ async function getNotebookTitle(notebookId) {
 
   if (!Array.isArray(result) || result.length === 0) return null;
 
-  // Search top-level result and one level down for the first non-trivial string
-  // that looks like a notebook title (not a URL or ID).
-  const candidates = Array.isArray(result[0]) ? result[0] : result;
-  for (const item of candidates) {
-    if (typeof item === 'string' && item.length > 1 && item.length < 200
-      && !item.startsWith('http') && !/^[0-9a-f\-]{20,}$/i.test(item)) {
-      return item;
-    }
-  }
-  // Fallback: check result[0][2] which is a common position for titles
+  // GET_NOTEBOOK returns a Project row with title at index 0 and ID at index 2.
   const nbInfo = result[0];
-  if (Array.isArray(nbInfo) && nbInfo.length > 2 && typeof nbInfo[2] === 'string' && nbInfo[2]) {
-    return nbInfo[2];
-  }
-  return null;
+  if (!Array.isArray(nbInfo)) return null;
+  const title = typeof nbInfo[0] === 'string' ? nbInfo[0].replace(/^thought\n/, '').trim() : '';
+  return title && title.length <= 300 && !isLikelyOpaqueId(title) && !/^https?:\/\//i.test(title)
+    ? title : null;
 }
 
 // ES module exports for use in background.js
@@ -1858,6 +1895,7 @@ export const __testing = {
   resetTokens() {
     _csrfToken = null;
     _sessionId = null;
+    _tokenFetchPromise = null;
     _baseUrl = DEFAULT_BASE_URL;
   },
   getBaseUrl() {
@@ -1869,4 +1907,6 @@ export const __testing = {
   setMutationTimeout(ms) {
     _mutationTimeoutMs = Number.isFinite(ms) && ms >= 0 ? ms : 15000;
   },
+  parseChunkedResponse,
+  uploadDeadlineMs,
 };

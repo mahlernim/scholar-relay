@@ -28,6 +28,13 @@ test('Dublin Core is case insensitive and precedes structured article and social
   assert.equal(result.sourceTitle, 'Dublin Core paper title');
 });
 
+test('short acronyms and East Asian scholarly titles are retained', () => {
+  for (const title of ['GAN', '논문', '研究']) {
+    const result = inspectPaperPage(page({ meta: [['citation_title', title]] }), 'https://example.org/article');
+    assert.equal(result.sourceTitle, title);
+  }
+});
+
 test('article JSON-LD precedes Open Graph and headings, while malformed data is ignored', () => {
   const result = inspectPaperPage(page({ meta: [['og:title', 'Social title']], heading: 'Heading',
     json: ['bad JSON', JSON.stringify({ '@graph': [{ '@type': 'WebSite', name: 'Not the article' },
