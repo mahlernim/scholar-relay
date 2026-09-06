@@ -23,6 +23,7 @@ const contentEl = document.getElementById('content');
 const queueEl = document.getElementById('job-queue');
 let selectedRunId = null;
 let lastQueueHtml = '';
+let lastProgressSignature = null;
 let queueSnapshot = { jobs: [], paused: false };
 
 function handoffMessage(job) {
@@ -332,19 +333,34 @@ function updateReportPromptHint() {
 
 function initSectionHeaders() {
     document.querySelectorAll('.s-section-header').forEach(header => {
-        header.addEventListener('click', (e) => {
-            // Clicking the toggle label/input must NOT trigger expand/collapse
-            if (e.target.closest('.s-header-toggle')) return;
-            const section = header.closest('.s-section');
-            if (!section) return;
-            // Mind Map has no content -- don't toggle it
-            if (!section.querySelector('.s-section-content')) return;
+        const section = header.closest('.s-section');
+        const content = section?.querySelector('.s-section-content');
+        // Mind Map has no collapsible content.
+        if (!section || !content) return;
+        content.id ||= `${section.id}-content`;
+        header.setAttribute('role', 'button');
+        header.setAttribute('tabindex', '0');
+        header.setAttribute('aria-controls', content.id);
+        header.setAttribute('aria-expanded', String(section.classList.contains('expanded')));
+
+        const toggleSection = () => {
             const expanding = !section.classList.contains('expanded');
             section.classList.toggle('expanded', expanding);
+            header.setAttribute('aria-expanded', String(expanding));
             const arrow = header.querySelector('.s-section-arrow');
             if (arrow && arrow.style.visibility !== 'hidden') {
                 arrow.textContent = expanding ? '▾' : '▸';
             }
+        };
+        header.addEventListener('click', (e) => {
+            // Clicking the toggle label/input must NOT trigger expand/collapse.
+            if (e.target.closest('.s-header-toggle')) return;
+            toggleSection();
+        });
+        header.addEventListener('keydown', (e) => {
+            if (e.target.closest('.s-header-toggle') || !['Enter', ' '].includes(e.key)) return;
+            e.preventDefault();
+            toggleSection();
         });
     });
 }
@@ -482,6 +498,8 @@ async function detectAndRender() {
 // =========================================================================
 
 function renderDetection(data) {
+    lastProgressSignature = null;
+    delete contentEl.dataset.renderMode;
     const truncated = data.pdfUrl.length > 80 ? data.pdfUrl.substring(0, 77) + '...' : data.pdfUrl;
     const sourceLabel = {
         direct_pdf_url: 'Direct PDF', pdf_content_type: 'PDF document',
@@ -521,6 +539,8 @@ function renderDetection(data) {
 }
 
 function renderNoPdf() {
+    lastProgressSignature = null;
+    delete contentEl.dataset.renderMode;
     contentEl.innerHTML = `
     <div class="no-pdf">
       <div class="icon">📄</div>
@@ -549,12 +569,15 @@ function showError(detail) {
 
 function renderProgress(state) {
     if (!state) return;
+    const renderSignature = JSON.stringify(state);
+    if (contentEl.dataset.renderMode === 'progress' && renderSignature === lastProgressSignature) return;
     const openDetails = new Set([...contentEl.querySelectorAll('details[open]')].map(el => el.querySelector('summary')?.textContent));
     const currentStepIndex = STEPS.findIndex(s => s.keys.includes(state.step));
 
     const stepsHtml = STEPS.map((step, idx) => {
         let cls = 'pending', content = idx + 1;
         if (state.status === 'error' && idx === currentStepIndex) { cls = 'error'; content = '!'; }
+        else if (state.status === 'stopped' && idx === currentStepIndex) { cls = 'stopped'; content = '■'; }
         else if (idx < currentStepIndex || state.step === 'done') { cls = 'done'; content = '✓'; }
         else if (idx === currentStepIndex) { cls = 'active'; content = '●'; }
         const detail = idx === currentStepIndex && state.status !== 'error' && state.step !== 'wait_pdf_access' ? progressDetail(state) : '';
@@ -607,7 +630,7 @@ function renderProgress(state) {
     if (state.status === 'error') {
         bottomHtml += errorHtml(state.error || state.stepDetail || 'The workflow stopped.');
     }
-    if ((state.tasks || []).some(task => task.error)) {
+    if ((state.tasks || []).length && (state.status === 'completed' || state.tasks.some(task => task.error))) {
         bottomHtml += `<details class="workflow-details"><summary>${escapeHtml(t('Artifact details'))}</summary>${state.tasks.map(task =>
             `<div class="step-detail">${escapeHtml(artifactLabel(task.type))} · ${escapeHtml(artifactStatusLabel(task.status))}${task.error ? `<div>${escapeHtml(task.error)}</div>` : ''}</div>`
         ).join('')}</details>`;
@@ -634,6 +657,8 @@ function renderProgress(state) {
     ${['completed', 'queued', 'stopped'].includes(state.status)
         ? `${bottomHtml}<details class="workflow-details"><summary>${escapeHtml(t("Workflow details"))}</summary><div class="pipeline">${stepsHtml}</div></details>`
         : `<div class="pipeline">${stepsHtml}</div>${bottomHtml}`}`;
+    contentEl.dataset.renderMode = 'progress';
+    lastProgressSignature = renderSignature;
 
     contentEl.querySelectorAll('details').forEach(el => {
         el.open = openDetails.has(el.querySelector('summary')?.textContent);

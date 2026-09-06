@@ -8,7 +8,9 @@ export function inspectPaperPage(doc = null, pageUrl = null, publish = false) {
             .replace(/^Title:\s*/i, '').replace(/^\[[\d.]+(?:v\d+)?\]\s*/, '')
             .replace(/\s*\|\s*(?:arXiv(?:\.org)?|PLOS One|eLife|The BMJ|Nature|Frontiers).*$/i, '')
             .replace(/^Frontiers\s*\|\s*/i, '').trim();
-        if (title.length < 4 || /^(?:https?|file|blob|chrome-extension):/i.test(title) ||
+        const shortAcronym = /^[A-Z][A-Z0-9.+-]{1,11}$/.test(title);
+        const cjkCharacters = title.match(/[\p{Script=Han}\p{Script=Hangul}\p{Script=Hiragana}\p{Script=Katakana}]/gu) || [];
+        if ((title.length < 4 && !shortAcronym && cjkCharacters.length < 2) || /^(?:https?|file|blob|chrome-extension):/i.test(title) ||
             /\.pdf(?:[?#].*)?$/i.test(title) || /^[\d.]+(?:v\d+)?$/.test(title) ||
             /^(?:untitled|download|document|article|paper|full[- ]?text|home)$/i.test(title) ||
             /^(?:log[ -]?in|sign[ -]?in|access denied|client challenge|just a moment|checking your browser|verify (?:you are|you're) human)(?:\b|$)/i.test(title)) return null;
