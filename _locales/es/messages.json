@@ -916,5 +916,17 @@
   "ui_19f575ce": {
     "message": "Intentar conexión",
     "description": "Try connection"
+  },
+  "ui_244aa556": {
+    "message": "$1/$2 listos",
+    "description": "$1/$2 ready"
+  },
+  "ui_b78d0565": {
+    "message": "Tiempo en cola",
+    "description": "Time queued"
+  },
+  "ui_faff56b8": {
+    "message": "Tiempo transcurrido",
+    "description": "Elapsed time"
   }
 }

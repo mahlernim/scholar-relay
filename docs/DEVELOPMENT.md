@@ -429,3 +429,13 @@ English: Keep queued papers and PDFs during a connection outage instead of faili
 한국어: 연결 장애가 발생해도 대기 중인 논문과 PDF를 실패 처리하지 않고 보관합니다. 사용자가 연결을 다시 시도할 수 있습니다. 오류 알림에서 해당 논문의 상세 화면을 열며 실패한 단계와 부분 완료 결과를 유지합니다.
 
 No existing release package or store submission is changed. Regression coverage includes persisted holds, worker restart, PDF bytes, stale resume, independent pause, ongoing monitoring, no mutation replay and safe notification routing. Browser checks cover the job link, failed-stage display and connection action.
+
+### September 8 compact queue progress
+
+Issues #56 and #57 reuse the queue's phase row for a small activity indicator, confirmed artifact counts and elapsed time. The clock uses saved timestamps and freezes terminal jobs at completion. Only its text changes on local timer ticks, leaving card markup, focus, expanded history and network polling unchanged. Counts appear after artifact submission is settled rather than treating the partial submission list as the final total. Reduced motion disables both queue rotation and the existing active-step pulse.
+
+English: See elapsed time and completed artifact counts without adding height to the queue cards. The no-PDF message no longer has a decorative file icon or excessive padding. Both page import and local upload remain available.
+
+한국어: 대기열 카드의 높이를 늘리지 않고 경과 시간과 완료된 아티팩트 수를 표시합니다. PDF 미감지 안내의 장식용 파일 아이콘과 과도한 여백을 제거했습니다. 웹페이지 가져오기와 로컬 PDF 업로드는 그대로 사용할 수 있습니다.
+
+All seven UI catalogs are updated. Deterministic checks cover timestamps, stopped and completed jobs, partial submission and activity state. Browser checks cover seven-language layouts, live text updates, stable card height and focus, expanded history, reduced motion and both no-PDF actions. Existing release versions and submitted packages are unchanged.

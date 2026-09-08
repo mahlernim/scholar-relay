@@ -916,5 +916,17 @@
   "ui_19f575ce": {
     "message": "Try connection",
     "description": "Try connection"
+  },
+  "ui_244aa556": {
+    "message": "$1/$2 ready",
+    "description": "$1/$2 ready"
+  },
+  "ui_b78d0565": {
+    "message": "Time queued",
+    "description": "Time queued"
+  },
+  "ui_faff56b8": {
+    "message": "Elapsed time",
+    "description": "Elapsed time"
   }
 }
