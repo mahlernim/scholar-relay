@@ -73,6 +73,14 @@ export function progressDetail(state) {
     }[state.step] || 'Work in progress...');
 }
 
+export function generationLimitSummary(tasks = []) {
+    const limited = tasks.filter(task => task.status === 'failed' &&
+        (task.code === 'RATE_LIMITED' || /^RATE_LIMITED:/.test(task.error || '')));
+    if (!limited.length) return '';
+    return t('Generation is limited for $1. Try again later in the existing notebook.',
+        [[...new Set(limited.map(task => artifactLabel(task.type)))].join(', ')]);
+}
+
 export function errorSummary(detail) {
     const text = typeof detail === 'object' ? String(detail?.message || detail?.error || '') : String(detail || '');
     const code = detail?.code || text.match(/^([A-Z_]+):/)?.[1];

@@ -928,5 +928,9 @@
   "ui_faff56b8": {
     "message": "経過時間",
     "description": "Elapsed time"
+  },
+  "ui_c6bbc618": {
+    "message": "$1 の生成が制限されています。後で既存のノートブックで再試行してください。",
+    "description": "Generation is limited for $1. Try again later in the existing notebook."
   }
 }

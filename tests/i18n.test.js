@@ -2,12 +2,24 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
-import { messageKey, t, progressDetail, errorSummary } from '../i18n.js';
+import { messageKey, t, progressDetail, errorSummary, generationLimitSummary } from '../i18n.js';
 
 const locales = ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR'];
 const rows = JSON.parse(await readFile(new URL('../docs/localization/messages.json', import.meta.url), 'utf8'));
 const catalogs = Object.fromEntries(await Promise.all(locales.map(async locale => [locale,
     JSON.parse(await readFile(new URL(`../_locales/${locale}/messages.json`, import.meta.url), 'utf8'))])));
+
+test('generation limits name only confirmed failed artifacts and retain legacy codes', () => {
+    const limited = { type: 'audio', status: 'failed', code: 'RATE_LIMITED' };
+    for (const tasks of [[limited], [limited, { type: 'report', status: 'completed' }]]) {
+        assert.match(generationLimitSummary(tasks), /limited.*Audio Overview/);
+        assert.doesNotMatch(generationLimitSummary(tasks), /Report|daily|reset|quota/);
+    }
+    assert.match(generationLimitSummary([{ ...limited, code: null, error: 'RATE_LIMITED: API limit' }]), /limited/);
+    assert.equal(generationLimitSummary([{ ...limited, status: 'uncertain' }]), '');
+    assert.equal(generationLimitSummary([{ ...limited, code: 'TRANSIENT_MUTATION_UNCERTAIN', error: 'HTTP 429' }]), '');
+    assert.equal(generationLimitSummary([{ ...limited, code: null, error: 'Storage quota exceeded' }]), '');
+});
 
 test('all seven shipped catalogs match the translation source and preserve placeholders', () => {
     execFileSync(process.execPath, ['scripts/build-locales.mjs', '--check']);

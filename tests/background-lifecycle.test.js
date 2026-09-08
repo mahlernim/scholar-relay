@@ -107,6 +107,16 @@ function running(tasks = []) {
     stepStartedAt: new Date().toISOString(), tasks };
 }
 
+test('all-failed generation retains quota diagnostics and notifies with the affected artifact', async () => {
+  const w = await worker();
+  w.data.userSettings.notificationEnabled = true;
+  w.context.listArtifactStatuses = async () => new Map();
+  w.data.pipelineState = running([{ type: 'audio', status: 'failed', code: 'RATE_LIMITED', error: 'RATE_LIMITED: API limit' }]);
+  await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  assert.match(w.notifications[0].message, /Generation is limited.*Audio Overview/);
+  assert.equal(w.data.pipelineState.tasks[0].code, 'RATE_LIMITED');
+});
+
 test('backend rejects no-artifact starts without creating or claiming a notebook', async () => {
   const w = await worker();
   Object.assign(w.data.userSettings, { generateAudio: false, generateInfographic: false });

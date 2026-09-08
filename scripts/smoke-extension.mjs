@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { localizationSmoke } from './localization-smoke.mjs';
-import { recoverySmoke, compactProgressSmoke } from './review-smoke.mjs';
+import { recoverySmoke, compactProgressSmoke, generationLimitSmoke } from './review-smoke.mjs';
 
 const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const tempRoot = await mkdtemp(join(tmpdir(), 'scholar-relay-smoke-'));
@@ -448,6 +448,7 @@ try {
   await localizationSmoke({ popup, evaluate, reload, root: sourceRoot, completedState });
   await recoverySmoke({ popup, evaluate, reload, completedState });
   await compactProgressSmoke({ popup, evaluate, reload, root: sourceRoot, origin });
+  await generationLimitSmoke({ popup, evaluate, reload, root: sourceRoot, completedState });
 
   // Exercise the real Chrome message bridge and the complete file upload client.
   await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'idle'})`);

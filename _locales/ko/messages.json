@@ -928,5 +928,9 @@
   "ui_faff56b8": {
     "message": "경과 시간",
     "description": "Elapsed time"
+  },
+  "ui_c6bbc618": {
+    "message": "$1 생성이 제한되었습니다. 나중에 기존 노트북에서 다시 시도하세요.",
+    "description": "Generation is limited for $1. Try again later in the existing notebook."
   }
 }

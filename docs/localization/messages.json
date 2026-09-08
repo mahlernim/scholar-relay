@@ -229,5 +229,6 @@
   "Try connection": ["다시 연결", "再接続", "Intentar conexión", "Réessayer la connexion", "Verbindung versuchen", "Tentar conexão"],
   "$1/$2 ready": ["$1/$2개 완료", "$1/$2 完了", "$1/$2 listos", "$1/$2 prêts", "$1/$2 fertig", "$1/$2 prontos"],
   "Time queued": ["대기 시간", "待機時間", "Tiempo en cola", "Temps en file", "Wartezeit", "Tempo na fila"],
-  "Elapsed time": ["경과 시간", "経過時間", "Tiempo transcurrido", "Temps écoulé", "Verstrichene Zeit", "Tempo decorrido"]
+  "Elapsed time": ["경과 시간", "経過時間", "Tiempo transcurrido", "Temps écoulé", "Verstrichene Zeit", "Tempo decorrido"],
+  "Generation is limited for $1. Try again later in the existing notebook.": ["$1 생성이 제한되었습니다. 나중에 기존 노트북에서 다시 시도하세요.", "$1 の生成が制限されています。後で既存のノートブックで再試行してください。", "La generación de $1 está limitada. Inténtalo más tarde en el cuaderno existente.", "La génération de $1 est limitée. Réessayez plus tard dans le notebook existant.", "Die Erstellung von $1 ist eingeschränkt. Versuche es später im vorhandenen Notebook erneut.", "A geração de $1 está limitada. Tente novamente mais tarde no notebook existente."]
 }
