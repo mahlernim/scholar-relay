@@ -1,4 +1,4 @@
-import { jobHandoff, isUnfinishedJob } from './job-queue.js';
+import { jobHandoff, isUnfinishedJob, jobElapsedText, jobReadyCount, hasJobActivity } from './job-queue.js';
 import { DEFAULT_SETTINGS as DEFAULTS } from './settings.js';
 import { t, localizeStaticDocument, progressDetail, errorSummary, artifactLabel, artifactStatusLabel } from './i18n.js';
 import { inspectPaperPage } from './content.js';
@@ -48,6 +48,29 @@ function queuePhase(job) {
     return job.step === 'wait_artifacts' ? t('Generating') : t('Preparing');
 }
 
+function queueStatusHtml(job) {
+    const count = jobReadyCount(job);
+    const activity = hasJobActivity(job) ? ' is-active' : '';
+    const phase = queuePhase(job);
+    const countText = count ? t('$1/$2 ready', [count.ready, count.total]) : '';
+    const clockLabel = job.status === 'queued' ? t('Time queued') : t('Elapsed time');
+    // Clock content is deliberately excluded from the HTML comparison below.
+    return '<div class="job-phase"><span class="job-activity' + activity + '" aria-hidden="true"></span>' +
+        '<span class="job-phase-label" title="' + escapeHtml(phase) + '">' + escapeHtml(phase) + '</span>' +
+        (count ? '<span class="job-ready-count">' + escapeHtml(countText) + '</span>' : '') +
+        '<span class="job-elapsed" data-elapsed="' + escapeHtml(job.runId) + '" title="' + escapeHtml(clockLabel) + '" role="timer" aria-live="off"></span></div>';
+}
+
+function updateElapsedTimes() {
+    const jobs = new Map(queueSnapshot.jobs.map(job => [job.runId, job]));
+    const now = Date.now();
+    for (const element of queueEl.querySelectorAll('[data-elapsed]')) {
+        const job = jobs.get(element.dataset.elapsed);
+        const text = job ? jobElapsedText(job, now) : '';
+        if (element.textContent !== text) element.textContent = text;
+    }
+}
+
 async function refreshQueue() {
     const queue = await chrome.runtime.sendMessage({ type: 'GET_QUEUE' });
     if (!Array.isArray(queue?.jobs)) throw new Error(queue?.error || 'Could not read the saved queue.');
@@ -59,7 +82,7 @@ async function refreshQueue() {
             ['wait_source','wait_artifacts','wait_pdf_access','download_pdf','queued_pdf'].includes(job.step));
         return '<article class="job-card" data-job="' + escapeHtml(job.runId) + '">' +
             '<button class="job-title" data-show="' + escapeHtml(job.runId) + '">' + escapeHtml(job.sourceTitle || job.notebookTitle || job.pdfUrl || t('Source')) + '</button>' +
-            '<div class="job-phase">' + escapeHtml(queuePhase(job)) + '</div>' +
+            queueStatusHtml(job) +
             '<p class="job-hint">' + escapeHtml(handoffMessage(job)) + '</p>' +
             '<div class="job-actions">' + (job.notebookUrl ? '<a href="' + escapeHtml(job.notebookUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(t('Open Notebook')) + '</a>' : '') +
             (canStop ? '<button data-stop="' + escapeHtml(job.runId) + '">' + escapeHtml(job.status === 'queued' || job.step === 'queued_pdf' ? t('Remove from queue') : t('Stop this job')) + '</button>' : '') + '</div></article>';
@@ -109,6 +132,7 @@ async function refreshQueue() {
             } catch (error) { showError(error.message); }
         });
     }
+    updateElapsedTimes();
     const selected = queue.jobs.find(job => job.runId === selectedRunId);
     if (selected) renderProgress(selected);
     return queue;
@@ -555,8 +579,7 @@ function renderNoPdf() {
     delete contentEl.dataset.renderMode;
     contentEl.innerHTML = `
     <div class="no-pdf">
-      <div class="icon">📄</div>
-      ${escapeHtml(t("No PDF detected on this page."))}<br>
+      ${escapeHtml(t("No PDF detected on this page."))}
       <span style="font-size:11px; color:var(--text-dim)">${escapeHtml(t("You can still try importing this page URL directly."))}</span>
     </div>
     <button class="btn-generate" id="btn-start-url">${escapeHtml(t('Add page to queue'))}</button>
@@ -1141,10 +1164,12 @@ function readFileAsBase64(file) {
 let pollInterval = null;
 let pollInFlight = false;
 let pollingEnabled = false;
+let elapsedTimer = null;
 
 function startPolling() {
     if (pollingEnabled) return;
     pollingEnabled = true;
+    elapsedTimer = setInterval(updateElapsedTimes, 1000);
     const tick = async () => {
         if (!pollingEnabled || pollInFlight) return;
         pollInFlight = true;
@@ -1166,6 +1191,8 @@ function startPolling() {
 
 function stopPolling() {
     pollingEnabled = false;
+    clearInterval(elapsedTimer);
+    elapsedTimer = null;
     if (pollInterval) {
         clearTimeout(pollInterval);
     }

@@ -22,6 +22,27 @@ export function jobHandoff(job) {
     return 'preparing';
 }
 
+// Presentation helpers read persisted timestamps. They never poll or write state.
+export function jobElapsedText(job, now = Date.now()) {
+    const start = Date.parse(job.status === 'queued' ? job.queuedAt : job.startedAt || job.queuedAt);
+    const end = isUnfinishedJob(job) ? now : Date.parse(job.completedAt);
+    if (!Number.isFinite(start) || !Number.isFinite(end)) return '';
+    const seconds = Math.floor(Math.max(0, end - start) / 1000);
+    const pad = value => String(value).padStart(2, '0');
+    if (seconds < 3600) return `${pad(Math.floor(seconds / 60))}:${pad(seconds % 60)}`;
+    return `${Math.floor(seconds / 3600)}:${pad(Math.floor(seconds / 60) % 60)}:${pad(seconds % 60)}`;
+}
+
+export function jobReadyCount(job) {
+    // During submission, tasks contains only requests attempted so far.
+    if (!['wait_artifacts', 'done'].includes(job.failedStep || job.step) || !job.tasks?.length) return null;
+    return { ready: job.tasks.filter(task => task.status === 'completed').length, total: job.tasks.length };
+}
+
+export function hasJobActivity(job) {
+    return job.status === 'running' && !['wait_pdf_access', 'queued_pdf'].includes(job.step);
+}
+
 // One serialized writer for the whole queue. A late callback may update only
 // its own running job, with the same step checks used by the original pipeline.
 export function createJobQueue({ read, write }) {

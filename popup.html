@@ -117,17 +117,11 @@
     }
 
     .no-pdf {
-      text-align: center;
-      padding: 24px 16px;
+      text-align: left;
+      padding: 6px 0;
       color: var(--text-dim);
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .no-pdf .icon {
-      font-size: 32px;
-      margin-bottom: 8px;
-      opacity: 0.5;
+      font-size: 12px;
+      line-height: 1.4;
     }
 
     /* ---- Notebook title bar ---- */
@@ -733,6 +727,16 @@
     .job-title { display: block; width: 100%; font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
     .job-title:hover { text-decoration: underline; }
     .job-phase { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-top: 4px; }
+    .job-phase { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .job-phase-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .job-ready-count { flex: 0 0 auto; }
+    .job-elapsed { flex: 0 0 auto; min-width: 8ch; margin-left: auto; text-align: right; font-variant-numeric: tabular-nums; }
+    .job-activity { width: 8px; height: 8px; flex: 0 0 8px; border: 1px solid currentColor; border-radius: 50%; }
+    .job-activity.is-active { border-top-color: transparent; animation: job-spin 0.9s linear infinite; }
+    @keyframes job-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .job-activity.is-active, .step-indicator.active { animation: none; }
+    }
     .job-hint { margin: 5px 0 8px; font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; color: var(--text-dim); }
     .handoff-note { font-size: 12px; line-height: 1.5; padding: 9px; margin: 8px 0; background: var(--surface-alt); border-radius: 5px; }
     #finished-jobs { font-size: 12px; margin-top: 8px; }
