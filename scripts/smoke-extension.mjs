@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { localizationSmoke } from './localization-smoke.mjs';
+import { recoverySmoke } from './review-smoke.mjs';
 
 const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const tempRoot = await mkdtemp(join(tmpdir(), 'scholar-relay-smoke-'));
@@ -445,6 +446,7 @@ try {
   assert(escaped.summary.includes('Source imported. No artifacts requested.'), 'Empty-task completion claims artifact output');
 
   await localizationSmoke({ popup, evaluate, reload, root: sourceRoot, completedState });
+  await recoverySmoke({ popup, evaluate, reload, completedState });
 
   // Exercise the real Chrome message bridge and the complete file upload client.
   await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'idle'})`);

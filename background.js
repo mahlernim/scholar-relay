@@ -581,8 +581,69 @@ async function completePipeline(runId) {
     console.log('[Pipeline] Completed successfully');
 }
 
-async function failPipeline(runId, errorMsg, notebookId = null, canDeleteBlankNotebook = false) {
-    await requireActiveRun(runId);
+function failureDiagnostic(error, step) {
+    const message = typeof error === 'string' ? error : error?.message || 'Unknown error';
+    const code = error?.code || message.match(/^([A-Z_]+):/)?.[1] || null;
+    return { code, message: message.slice(0, 2000), failedStep: step, failedAt: new Date().toISOString() };
+}
+
+function jobDetailsUrl(runId) {
+    return chrome.runtime.getURL('popup.html') + '?runId=' + encodeURIComponent(runId);
+}
+
+async function notifyJobAttention(state, error) {
+    if ((await getJobSettings(state.runId)).notificationEnabled === false) return;
+    const id = `pipeline-error:${state.runId}`;
+    try {
+        await rememberNotificationTarget(id, jobDetailsUrl(state.runId));
+        const title = (state.sourceTitle || state.notebookTitle || t('Source')).slice(0, 120);
+        await chrome.notifications.create(id, {
+            type: 'basic', iconUrl: 'icons/icon128.png', title: t('ScholarRelay Error'),
+            message: `${title} · ${errorSummary(error)}`, priority: 2,
+        });
+    } catch (error) { console.warn('[Notification] Could not show job attention:', error); }
+}
+
+// Only session discovery before notebook creation can return safely to the queue.
+async function holdForSession(runId, error) {
+    if (error?.phase !== 'auth_discovery' || ![
+        'AUTH_REQUIRED', 'SESSION_RATE_LIMITED', 'SESSION_UNAVAILABLE', 'SESSION_UNRECOGNIZED',
+    ].includes(error.code)) return false;
+    const diagnostic = failureDiagnostic(error, 'auth');
+    const result = await pipelineState.transact(queue => {
+        const job = queue.jobs.find(item => item.runId === runId);
+        if (job?.status !== 'running' || job.step !== 'auth' || job.notebookId) return null;
+        const notify = !queue.serviceBlock;
+        queue.serviceBlock ||= { ...diagnostic, id: crypto.randomUUID(), runId };
+        Object.assign(job, { status: 'queued', step: 'queued', startedAt: null,
+            stepStartedAt: null, connectionError: diagnostic });
+        return { state: job, notify };
+    });
+    if (!result.applied) return false;
+    if (result.notify) await notifyJobAttention(result.state, diagnostic);
+    return true;
+}
+
+async function resumeServiceBlock(blockId) {
+    await ensureBootReconciled();
+    const result = await pipelineState.transact(queue => {
+        if (!queue.serviceBlock || queue.serviceBlock.id !== blockId) return null;
+        queue.serviceBlock = null;
+        for (const job of queue.jobs) {
+            if (job.status === 'queued') delete job.connectionError;
+        }
+        return {};
+    });
+    if (!result.applied) return { ok: false, message: 'The connection hold has changed. Refresh the queue.' };
+    // Do not change an independent user pause or replay any remote mutation.
+    await syncQueueRuntime();
+    kickQueue();
+    return { ok: true };
+}
+
+async function failPipeline(runId, errorInput, notebookId = null, canDeleteBlankNotebook = false) {
+    const state = await requireActiveRun(runId);
+    const diagnostic = failureDiagnostic(errorInput, state.step);
     let cleanupMessage = '';
     if (notebookId && canDeleteBlankNotebook) {
         try {
@@ -594,29 +655,13 @@ async function failPipeline(runId, errorMsg, notebookId = null, canDeleteBlankNo
         }
     }
 
-    const finalError = `${errorMsg}${cleanupMessage}`.trim();
+    const finalError = `${diagnostic.message}${cleanupMessage}`.trim();
     const failedState = await transitionRun(runId, {
-        status: 'error',
-        step: 'error',
-        stepDetail: finalError,
-        error: finalError,
-        completedAt: new Date().toISOString(),
-    }, {
+        status: 'error', step: 'error', failedStep: diagnostic.failedStep, failure: diagnostic,
+        stepDetail: finalError, error: finalError, completedAt: new Date().toISOString(),
     });
     if (!failedState) return;
-
-    const settings = await getJobSettings(runId);
-
-    if (settings.notificationEnabled !== false) {
-        chrome.notifications.create(`pipeline-error:${runId}`, {
-            type: 'basic',
-            iconUrl: 'icons/icon128.png',
-            title: t('ScholarRelay Error'),
-            message: errorSummary(finalError),
-            priority: 2,
-        });
-    }
-
+    await notifyJobAttention(failedState, { ...diagnostic, message: finalError });
     console.error('[Pipeline] Error:', finalError);
 }
 
@@ -968,12 +1013,12 @@ const runExclusivePollTick = createExclusiveRunner();
 async function syncQueueRuntime() {
     const result = await pipelineState.transact(queue => ({ afterWrite: async () => {
         const active = queue.jobs.filter(isUnfinishedJob);
-        if (active.some(job => job.status === 'running') || (!queue.paused && active.length)) {
+        if (active.some(job => job.status === 'running') || (!queue.paused && !queue.serviceBlock && active.length)) {
             await chrome.alarms.create(ALARM_NAME, { periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES });
         } else {
             await chrome.alarms.clear(ALARM_NAME);
         }
-        await setBadge(active.length ? String(active.length) : queue.jobs.some(job => job.status === 'error') ? '!' : '', '#6b7a8d');
+        await setBadge(queue.serviceBlock ? '!' : active.length ? String(active.length) : queue.jobs.some(job => job.status === 'error') ? '!' : '', '#6b7a8d');
     } }));
     if (result.effectError) throw result.effectError;
 }
@@ -1001,7 +1046,7 @@ async function dispatchNextJob() {
         if (!job) return null;
         const resume = job.step === 'queued_pdf';
         Object.assign(job, { status: 'running', step: resume ? 'wait_pdf_access' : 'auth',
-            startedAt: job.startedAt || new Date().toISOString(), stepStartedAt: new Date().toISOString() });
+            startedAt: job.startedAt || new Date().toISOString(), stepStartedAt: new Date().toISOString(), connectionError: null });
         return { state: job, resume };
     });
     if (!claimed.applied) return;
@@ -1256,9 +1301,9 @@ async function runPipeline(runId, pdfUrl, pageUrl, uploadFile = null, sourceType
             console.log(`[Pipeline] Ignoring stale run ${runId}`);
             return;
         }
-        const msg = err?.message || 'Unknown error';
+        if (!notebookId && !sourceMutationStarted && await holdForSession(runId, err)) return;
         console.error('[Pipeline] Setup error:', err);
-        await failPipeline(runId, msg, notebookId, !!notebookId && !sourceMutationStarted);
+        await failPipeline(runId, err, notebookId, !!notebookId && !sourceMutationStarted);
     }
 }
 
@@ -1373,6 +1418,12 @@ async function clearFinishedJobs() {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'RESUME_SERVICE') {
+        resumeServiceBlock(message.blockId).then(sendResponse)
+            .catch(error => sendResponse({ ok: false, message: error.message }));
+        return true;
+    }
+
     if (message.type === 'RESUME_PDF_FALLBACK') {
         resumePdfFallback(message).then(sendResponse)
             .catch(error => sendResponse({ ok: false, code: error.code, message: error.message }));
@@ -1459,34 +1510,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Notification handlers
 // =========================================================================
 
-// Clicking the notification body opens the notebook
-chrome.notifications.onClicked.addListener(async (notificationId) => {
-    if (notificationId.startsWith('pipeline-complete:')) {
-        const notebookUrl = await takeNotificationTarget(notificationId);
-        if (notebookUrl) {
-            chrome.tabs.create({ url: notebookUrl });
-        }
-        chrome.notifications.clear(notificationId);
-    }
-});
+function safeNotificationTarget(value) {
+    try {
+        const url = new URL(value);
+        const popup = new URL(chrome.runtime.getURL('popup.html'));
+        if (url.protocol === popup.protocol && url.host === popup.host && url.pathname === popup.pathname) return url.href;
+        if (url.protocol === 'https:' && !url.username && !url.password && !url.port &&
+            ['notebook.google.com', 'notebooklm.google.com'].includes(url.hostname) &&
+            /^\/notebook\/[A-Za-z0-9_-]+\/?$/.test(url.pathname)) return url.href;
+    } catch (_) { /* Discard invalid or unrelated persisted targets. */ }
+    return null;
+}
 
-// Handling the "Open Notebook" / "Dismiss" action buttons
-chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIndex) => {
-    if (notificationId.startsWith('pipeline-complete:')) {
-        const notebookUrl = await takeNotificationTarget(notificationId);
-        if (buttonIndex === 0) {
-            if (notebookUrl) {
-                chrome.tabs.create({ url: notebookUrl });
-            }
-        }
-        // buttonIndex 1 = "Dismiss" -- just clear
-        chrome.notifications.clear(notificationId);
-    }
-});
+function isJobNotification(id) {
+    return /^(pipeline-complete|pipeline-error):/.test(id);
+}
 
-chrome.notifications.onClosed.addListener(notificationId => {
-    if (notificationId.startsWith('pipeline-complete:')) {
-        takeNotificationTarget(notificationId).catch(error => console.warn('[Notification] Could not clear target:', error));
+async function handleNotification(id, open = true) {
+    if (!isJobNotification(id)) return;
+    try {
+        const saved = await takeNotificationTarget(id);
+        const target = safeNotificationTarget(saved) ||
+            (id.startsWith('pipeline-error:') ? jobDetailsUrl(id.slice('pipeline-error:'.length)) : null);
+        if (open && target) await chrome.tabs.create({ url: target });
+        await chrome.notifications.clear(id);
+    } catch (error) { console.warn('[Notification] Could not handle job notification:', error); }
+}
+
+chrome.notifications.onClicked.addListener(id => handleNotification(id));
+chrome.notifications.onButtonClicked.addListener((id, index) => handleNotification(id, index === 0));
+chrome.notifications.onClosed.addListener(id => {
+    if (isJobNotification(id)) {
+        takeNotificationTarget(id).catch(error => console.warn('[Notification] Could not clear target:', error));
     }
 });
 

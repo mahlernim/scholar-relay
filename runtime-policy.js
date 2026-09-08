@@ -142,6 +142,7 @@ export function interruptedPipelineUpdate(state) {
   return {
     status: 'error',
     step: 'error',
+    failedStep: state?.step || null,
     stepDetail: message,
     error: message,
     completedAt: new Date().toISOString(),

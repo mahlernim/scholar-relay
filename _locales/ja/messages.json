@@ -904,5 +904,17 @@
   "ui_77e33d8c": {
     "message": "Gemini Notebook のセッションを認識できませんでした。Gemini Notebook を開いて詳細を確認してください。",
     "description": "Could not recognize the Gemini Notebook session. Open Gemini Notebook and check the details."
+  },
+  "ui_959074fd": {
+    "message": "接続を待っています。論文は保存されています。",
+    "description": "Waiting for connection. Your paper is saved."
+  },
+  "ui_dc5fc1be": {
+    "message": "接続が必要",
+    "description": "Connection needed"
+  },
+  "ui_19f575ce": {
+    "message": "再接続",
+    "description": "Try connection"
   }
 }

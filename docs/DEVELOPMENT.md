@@ -419,3 +419,13 @@ Discovery reports sign-in requirements only for explicit unauthorized responses 
 English: Avoid misleading sign-in advice when Gemini Notebook is unavailable or its session page is not recognized. Share overlapping session refreshes without replaying uncertain notebook, source or artifact creation.
 
 한국어: Gemini Notebook 연결 장애나 세션 페이지 인식 실패를 로그인 필요로 잘못 안내하지 않습니다. 동시에 발생하는 세션 갱신을 공유하며 결과가 불확실한 노트북, 소스, 아티팩트 생성은 다시 실행하지 않습니다.
+
+### September 8 queue recovery and error navigation
+
+Issues #54 and #55 add a persisted connection hold only when session discovery fails before notebook creation. Unstarted jobs and PDFs stay saved. Accepted jobs keep being monitored. An explicit connection retry clears only the matching hold, not the user's independent pause. Errors after setup and uncertain mutations never enter this retry path. Error notifications open an extension details tab for their job, even before a notebook exists. Failure-stage and bounded diagnostic fields survive alongside partial results. Notification targets are validated before navigation.
+
+English: Keep queued papers and PDFs during a connection outage instead of failing each paper. Retry the connection explicitly. Error notifications identify the paper and open its details with the failed stage retained.
+
+한국어: 연결 장애가 발생해도 대기 중인 논문과 PDF를 실패 처리하지 않고 보관합니다. 사용자가 연결을 다시 시도할 수 있습니다. 오류 알림에서 해당 논문의 상세 화면을 열며 실패한 단계와 부분 완료 결과를 유지합니다.
+
+No existing release package or store submission is changed. Regression coverage includes persisted holds, worker restart, PDF bytes, stale resume, independent pause, ongoing monitoring, no mutation replay and safe notification routing. Browser checks cover the job link, failed-stage display and connection action.

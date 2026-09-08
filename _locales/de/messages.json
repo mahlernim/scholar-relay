@@ -904,5 +904,17 @@
   "ui_77e33d8c": {
     "message": "Die Gemini Notebook-Sitzung wurde nicht erkannt. Öffnen Sie Gemini Notebook und prüfen Sie die Details.",
     "description": "Could not recognize the Gemini Notebook session. Open Gemini Notebook and check the details."
+  },
+  "ui_959074fd": {
+    "message": "Warten auf Verbindung. Ihr Artikel ist gespeichert.",
+    "description": "Waiting for connection. Your paper is saved."
+  },
+  "ui_dc5fc1be": {
+    "message": "Verbindung erforderlich",
+    "description": "Connection needed"
+  },
+  "ui_19f575ce": {
+    "message": "Verbindung versuchen",
+    "description": "Try connection"
   }
 }
