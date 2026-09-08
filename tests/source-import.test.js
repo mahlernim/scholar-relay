@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { canFallback, createPdfFallback, isPdfImport, isConfirmedImportRejection } from '../source-import.js';
+import { canFallback, createPdfFallback, isPdfImport, isConfirmedImportRejection, pdfWaitReason } from '../source-import.js';
 import { createPipelineStateCoordinator, runtimeRecoveryAction, canStopPipeline } from '../runtime-policy.js';
 
 function harness(overrides = {}) {
@@ -52,6 +52,28 @@ test('blocked download resumes with a selected file and does not create another 
   await Promise.all([h.fallback('run', { resume: true, file: { filename: 'paper.pdf' } }),
     h.fallback('run', { resume: true, file: { filename: 'paper.pdf' } })]);
   assert.deepEqual(h.calls, ['upload:notebook', 'poll']);
+});
+
+test('download waits retain the cause and notify only once across retries and restart', async () => {
+  for (const [message, reason] of [['SITE_ACCESS_REQUIRED: missing permission', 'permission'],
+    ['HTTP 403 while downloading source PDF', 'publisher'], ['Failed to fetch', 'download']]) {
+    let notices = 0;
+    const h = harness({ download: async () => { throw new Error(message); }, notify: async state => {
+      notices++; assert.equal(state.pdfWaitReason, reason);
+    } });
+    await h.fallback('run');
+    const saved = await h.getState();
+    assert.equal(saved.step, 'wait_pdf_access');
+    assert.equal(saved.stepDetail, message);
+    assert.ok(Number.isFinite(Date.parse(saved.attentionSince)));
+    const restarted = harness({ download: async () => { throw new Error(message); }, notify: async () => { notices++; } });
+    restarted.set(saved);
+    await restarted.fallback('run', { resume: true });
+    assert.equal(notices, 1);
+    await restarted.fallback('run', { resume: true, file: { filename: 'paper.pdf' } });
+    assert.deepEqual(restarted.calls, ['upload:notebook', 'poll']);
+    assert.equal(pdfWaitReason({ stepDetail: message }), reason);
+  }
 });
 
 test('cancellation during download prevents upload', async () => {

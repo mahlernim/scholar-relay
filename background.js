@@ -24,7 +24,7 @@ import { withRequestDeadline } from './request-deadline.js';
 import { DEFAULT_SETTINGS } from './settings.js';
 import { createJobQueue, canStartNextJob, isUnfinishedJob, MAX_QUEUED_JOBS, MAX_QUEUED_PDF_BYTES } from './job-queue.js';
 import { createQueuedPdfStore } from './queued-pdfs.js';
-import { t, errorSummary } from './i18n.js';
+import { t, errorSummary, pdfWaitSummary } from './i18n.js';
 import {
     fetchTokens,
     getNotebookUrl,
@@ -598,8 +598,8 @@ async function notifyJobAttention(state, error) {
         await rememberNotificationTarget(id, jobDetailsUrl(state.runId));
         const title = (state.sourceTitle || state.notebookTitle || t('Source')).slice(0, 120);
         await chrome.notifications.create(id, {
-            type: 'basic', iconUrl: 'icons/icon128.png', title: t('ScholarRelay Error'),
-            message: `${title} · ${errorSummary(error)}`, priority: 2,
+            type: 'basic', iconUrl: 'icons/icon128.png', title: state.step === 'wait_pdf_access' ? t('Action needed') : t('ScholarRelay Error'),
+            message: `${title} · ${state.step === 'wait_pdf_access' ? pdfWaitSummary(state) : errorSummary(error)}`, priority: 2,
         });
     } catch (error) { console.warn('[Notification] Could not show job attention:', error); }
 }
@@ -1113,12 +1113,20 @@ chrome.alarms.onAlarm.addListener(handlePollAlarm);
 
 async function reconcilePipelineRuntime() {
     const settings = await getSettings();
+    const attention = [];
     await pipelineState.transact(queue => {
         for (const job of queue.jobs) {
             job.settings ||= { ...settings };
             const action = runtimeRecoveryAction(job, false);
             if (action === 'wait_pdf_access') {
-                Object.assign(job, { step: 'wait_pdf_access', stepDetail: 'PDF download was paused. Open the popup to resume or select a PDF.' });
+                if (job.step !== 'wait_pdf_access') {
+                    Object.assign(job, { step: 'wait_pdf_access', attentionSince: new Date().toISOString(),
+                        pdfWaitReason: 'download', stepDetail: 'PDF download was paused. Open the popup to resume or select a PDF.' });
+                }
+                if (!job.attentionNotified) {
+                    job.attentionNotified = true;
+                    attention.push(job.runId);
+                }
             } else if (action === 'interrupt' && job.step !== 'queued_pdf') {
                 Object.assign(job, interruptedPipelineUpdate(job));
             }
@@ -1130,6 +1138,10 @@ async function reconcilePipelineRuntime() {
     await pdfStore.prune(queue.jobs.filter(job => isUnfinishedJob(job)).map(job => job.payloadId).filter(Boolean));
     await chrome.storage.local.remove('pipelineState');
     await syncQueueRuntime();
+    for (const runId of attention) {
+        const state = await getState(runId);
+        if (state.status === 'running' && state.step === 'wait_pdf_access') await notifyJobAttention(state, state.stepDetail);
+    }
 }
 
 const fallbackPdf = createPdfFallback({
@@ -1139,6 +1151,7 @@ const fallbackPdf = createPdfFallback({
     upload: (notebookId, file) => addFileSource(notebookId, file.filename, file.fileData, file.mimeType),
     poll: () => chrome.alarms.create(ALARM_NAME, { periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES }),
     fail: failPipeline,
+    notify: state => notifyJobAttention(state, state.stepDetail),
 });
 
 async function resumePdfFallback(message) {

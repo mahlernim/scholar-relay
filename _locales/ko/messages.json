@@ -928,5 +928,37 @@
   "ui_faff56b8": {
     "message": "경과 시간",
     "description": "Elapsed time"
+  },
+  "ui_72bb088c": {
+    "message": "조치 필요",
+    "description": "Action needed"
+  },
+  "ui_4a78a7bf": {
+    "message": "대기 $1",
+    "description": "Waiting $1"
+  },
+  "ui_e8233afc": {
+    "message": "사용자 조치 대기",
+    "description": "Waiting for you"
+  },
+  "ui_f7066e40": {
+    "message": "작업 종료",
+    "description": "Dismiss job"
+  },
+  "ui_45c40cb9": {
+    "message": "PDF 업로드하고 계속",
+    "description": "Upload PDF & Continue"
+  },
+  "ui_38f2e1ae": {
+    "message": "다운로드 권한이 필요합니다. 접근을 허용하거나 PDF를 선택하면 기존 노트북에서 계속 진행합니다.",
+    "description": "Download permission is needed. Allow access or select a PDF to continue in this notebook."
+  },
+  "ui_e431d4b": {
+    "message": "출판사에서 PDF 다운로드를 차단했습니다. 직접 다운로드한 PDF를 선택하면 기존 노트북에서 계속 진행합니다.",
+    "description": "The publisher blocked the PDF download. Select a downloaded PDF to continue in this notebook."
+  },
+  "ui_56d74e8d": {
+    "message": "PDF를 다운로드하지 못했습니다. PDF를 선택하면 기존 노트북에서 계속 진행합니다.",
+    "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
   }
 }

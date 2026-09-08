@@ -62,7 +62,7 @@ export async function localizationSmoke({ popup, evaluate, reload, root, complet
             assert(saved.language === 'ko' && saved.audioPrompt === 'Keep my prompt $1' && saved.generateAudio === false, `${locale} save altered preferences`);
             for (const fixture of [
                 { status:'error', step:'add_source', error:'Mutation outcome unknown <raw diagnostic>' },
-                { status:'running', step:'wait_pdf_access', stepDetail:'Permission needed' },
+                { status:'running', step:'wait_pdf_access', stepDetail:'SITE_ACCESS_REQUIRED: Permission needed' },
                 { status:'running', step:'wait_artifacts', tasks:[{status:'completed'},{status:'in_progress'}] },
             ]) {
                 await evaluate(popup, `globalThis.__smoke.setFixtureState(${JSON.stringify({ ...completedState, ...fixture })})`);

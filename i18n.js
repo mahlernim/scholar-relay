@@ -1,3 +1,4 @@
+import { pdfWaitReason } from './source-import.js';
 // Source-English keys keep call sites readable. Catalog generation checks collisions.
 export function messageKey(source) {
     let hash = 2166136261;
@@ -98,4 +99,11 @@ export function errorSummary(detail) {
         ? 'Enable Allow access to file URLs in Chrome extension settings, or choose Upload Local PDF.'
         : 'This workflow needs attention. Check the details before continuing.';
     return t(source);
+}
+
+export function pdfWaitSummary(state) {
+    const reason = pdfWaitReason(state);
+    if (reason === 'permission') return t('Download permission is needed. Allow access or select a PDF to continue in this notebook.');
+    if (reason === 'publisher') return t('The publisher blocked the PDF download. Select a downloaded PDF to continue in this notebook.');
+    return t('The PDF could not be downloaded. Select a PDF to continue in this notebook.');
 }

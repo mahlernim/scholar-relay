@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { localizationSmoke } from './localization-smoke.mjs';
-import { recoverySmoke, compactProgressSmoke } from './review-smoke.mjs';
+import { recoverySmoke, compactProgressSmoke, pdfWaitSmoke } from './review-smoke.mjs';
 
 const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const tempRoot = await mkdtemp(join(tmpdir(), 'scholar-relay-smoke-'));
@@ -338,13 +338,13 @@ try {
 
   await popup.call('Emulation.setDeviceMetricsOverride', { width: 360, height: 600, deviceScaleFactor: 1, mobile: false });
   for (const step of ['wait_source','wait_pdf_access']) {
-    await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'running',runId:'ui-state',step:${JSON.stringify(step)},stepDetail:'Permission diagnostic',pdfUrl:'paper.pdf',originalPdfUrl:'${origin}/paper.pdf',notebookUrl:'${origin}/notebook/smoke',failedUrlSourceId:'failed-source',tasks:[]})`);
+    await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'running',runId:'ui-state',step:${JSON.stringify(step)},stepDetail:'SITE_ACCESS_REQUIRED: Permission diagnostic',pdfUrl:'paper.pdf',originalPdfUrl:'${origin}/paper.pdf',notebookUrl:'${origin}/notebook/smoke',failedUrlSourceId:'failed-source',tasks:[]})`);
     await reload(popup);
   await evaluate(popup, `document.querySelector('[data-show]')?.click()`);
     view = await evaluate(popup, `({text:document.getElementById('content').innerText,resume:!!document.getElementById('btn-resume-pdf'),file:!!document.getElementById('btn-fallback-file'),stop:!!document.getElementById('btn-abort'),width:document.documentElement.scrollWidth})`);
     assert(view.stop && view.width<=360, 'Running popup lacks stop control or clips horizontally');
     assert(!view.text.includes('failed-source'), 'Internal source ID leaked into primary wording');
-    assert(step==='wait_pdf_access' ? view.resume && view.file && view.text.includes('needs attention') : view.text.includes('Keep Chrome running'), `Permission wait incorrectly presents background progress: ${JSON.stringify(view)}`);
+    assert(step==='wait_pdf_access' ? view.resume && view.file && view.text.includes('Download permission is needed') : view.text.includes('Keep Chrome running'), `Permission wait incorrectly presents background progress: ${JSON.stringify(view)}`);
   }
 
 
@@ -448,6 +448,7 @@ try {
   await localizationSmoke({ popup, evaluate, reload, root: sourceRoot, completedState });
   await recoverySmoke({ popup, evaluate, reload, completedState });
   await compactProgressSmoke({ popup, evaluate, reload, root: sourceRoot, origin });
+  await pdfWaitSmoke({ popup, evaluate, reload, root: sourceRoot, completedState });
 
   // Exercise the real Chrome message bridge and the complete file upload client.
   await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'idle'})`);

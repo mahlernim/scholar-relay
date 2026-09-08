@@ -928,5 +928,37 @@
   "ui_faff56b8": {
     "message": "Tempo decorrido",
     "description": "Elapsed time"
+  },
+  "ui_72bb088c": {
+    "message": "Ação necessária",
+    "description": "Action needed"
+  },
+  "ui_4a78a7bf": {
+    "message": "Aguardando $1",
+    "description": "Waiting $1"
+  },
+  "ui_e8233afc": {
+    "message": "Aguardando sua ação",
+    "description": "Waiting for you"
+  },
+  "ui_f7066e40": {
+    "message": "Dispensar tarefa",
+    "description": "Dismiss job"
+  },
+  "ui_45c40cb9": {
+    "message": "Enviar PDF e continuar",
+    "description": "Upload PDF & Continue"
+  },
+  "ui_38f2e1ae": {
+    "message": "É necessária permissão para baixar. Permita o acesso ou selecione um PDF para continuar neste notebook.",
+    "description": "Download permission is needed. Allow access or select a PDF to continue in this notebook."
+  },
+  "ui_e431d4b": {
+    "message": "A editora bloqueou o download do PDF. Selecione um PDF baixado para continuar neste notebook.",
+    "description": "The publisher blocked the PDF download. Select a downloaded PDF to continue in this notebook."
+  },
+  "ui_56d74e8d": {
+    "message": "Não foi possível baixar o PDF. Selecione um PDF para continuar neste notebook.",
+    "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
   }
 }

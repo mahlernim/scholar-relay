@@ -928,5 +928,37 @@
   "ui_faff56b8": {
     "message": "Temps écoulé",
     "description": "Elapsed time"
+  },
+  "ui_72bb088c": {
+    "message": "Action requise",
+    "description": "Action needed"
+  },
+  "ui_4a78a7bf": {
+    "message": "En attente $1",
+    "description": "Waiting $1"
+  },
+  "ui_e8233afc": {
+    "message": "En attente de votre action",
+    "description": "Waiting for you"
+  },
+  "ui_f7066e40": {
+    "message": "Fermer la tâche",
+    "description": "Dismiss job"
+  },
+  "ui_45c40cb9": {
+    "message": "Importer un PDF et continuer",
+    "description": "Upload PDF & Continue"
+  },
+  "ui_38f2e1ae": {
+    "message": "Une autorisation de téléchargement est nécessaire. Autorisez l’accès ou choisissez un PDF pour continuer dans ce notebook.",
+    "description": "Download permission is needed. Allow access or select a PDF to continue in this notebook."
+  },
+  "ui_e431d4b": {
+    "message": "L’éditeur a bloqué le téléchargement du PDF. Choisissez un PDF téléchargé pour continuer dans ce notebook.",
+    "description": "The publisher blocked the PDF download. Select a downloaded PDF to continue in this notebook."
+  },
+  "ui_56d74e8d": {
+    "message": "Le PDF n’a pas pu être téléchargé. Choisissez un PDF pour continuer dans ce notebook.",
+    "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
   }
 }
