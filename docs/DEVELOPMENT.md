@@ -409,3 +409,13 @@ Issues #42, #46, #47, and #48 describe reproducible defects. Version 1.4.2 reads
 Issue #25 does not justify a behavior change. Current upstream evidence at [`teng-lin/notebooklm-py` commit `f31f0f9`](https://github.com/teng-lin/notebooklm-py/commit/f31f0f9d1db225242ac8f7754f955444b0fcff46) identifies status 5 as a suggestion rather than a real artifact and filters it from normal artifact listings. Status 6 remains unobserved on that transport, including 0 of 42 live artifacts and 0 of 301 recorded rows, so its name does not establish a user-review workflow. Upstream conservatively treats both states as non-terminal. ScholarRelay already filters suggestions and continues polling every status except confirmed completion or failure. Treating either state as successful, failed, or user-actionable would add an unsupported inference, so the existing behavior is retained and #25 can close without a code fix.
 
 The v1.4.1 Web Store submission remains unchanged and pending review. Version 1.4.2 is preparation for a later release and must not replace the submitted package until publication is separately authorized.
+
+### September 8 session-discovery review
+
+Issues #52 and #53 distinguish session discovery from remote mutation failure. Every explicit refresh now shares one in-flight operation, including queued setup and RPC recovery. A warm-cache caller waits for that refresh, and a late rejection of old credentials does not invalidate newer credentials. The fresh-session check at each job start and the single refresh after a confirmed RPC authentication rejection remain in place.
+
+Discovery reports sign-in requirements only for explicit unauthorized responses or recognized Google sign-in redirects from both candidate hosts. Rate limits, temporary transport/service failures and unrecognized markup retain separate bounded diagnostics. Diagnostics omit response bodies, transport exception text and redirect queries. English and Korean notes follow. Existing packages and the submitted store review are unchanged.
+
+English: Avoid misleading sign-in advice when Gemini Notebook is unavailable or its session page is not recognized. Share overlapping session refreshes without replaying uncertain notebook, source or artifact creation.
+
+한국어: Gemini Notebook 연결 장애나 세션 페이지 인식 실패를 로그인 필요로 잘못 안내하지 않습니다. 동시에 발생하는 세션 갱신을 공유하며 결과가 불확실한 노트북, 소스, 아티팩트 생성은 다시 실행하지 않습니다.

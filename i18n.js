@@ -74,7 +74,12 @@ export function progressDetail(state) {
 }
 
 export function errorSummary(detail) {
-    const text = String(detail || '');
+    const text = typeof detail === 'object' ? String(detail?.message || detail?.error || '') : String(detail || '');
+    const code = detail?.code || text.match(/^([A-Z_]+):/)?.[1];
+    if (code === 'SESSION_UNAVAILABLE') return t('Gemini Notebook is temporarily unreachable. Try connecting again later.');
+    if (code === 'SESSION_UNRECOGNIZED') return t('Could not recognize the Gemini Notebook session. Open Gemini Notebook and check the details.');
+    if (code === 'SESSION_RATE_LIMITED') return t('Gemini Notebook has reached a limit. Wait before starting more work.');
+    if (code === 'AUTH_REQUIRED') return t('Sign in to Gemini Notebook, then reopen this popup.');
     const source = /isn't a valid PDF|not a PDF|not a valid PDF|PDF signature/i.test(text)
         ? "This file isn't a valid PDF. Choose another file."
         : /unknown|uncertain|unconfirmed|timed? ?out|timeout|no source ID|did not respond|malformed|interrupted|avoid duplicate/i.test(text)
