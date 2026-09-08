@@ -21,12 +21,13 @@ import { httpOriginPattern, needsOptionalPdfAccess } from './site-permissions.js
 localizeStaticDocument();
 const contentEl = document.getElementById('content');
 const queueEl = document.getElementById('job-queue');
-let selectedRunId = null;
+let selectedRunId = new URLSearchParams(location.search).get('runId') || null;
 let lastQueueHtml = '';
 let lastProgressSignature = null;
 let queueSnapshot = { jobs: [], paused: false };
 
 function handoffMessage(job) {
+    if (job.status === 'queued' && queueSnapshot.serviceBlock) return t('Waiting for connection. Your paper is saved.');
     if (job.status === 'completed' && !job.tasks?.length) return t('Source imported. No artifacts requested.');
     return {
         saved: t('Saved. You can close this popup. Keep Chrome running to start queued papers.'),
@@ -39,6 +40,7 @@ function handoffMessage(job) {
 }
 
 function queuePhase(job) {
+    if (job.status === 'queued' && queueSnapshot.serviceBlock) return t('Connection needed');
     if (job.status === 'queued' || job.step === 'queued_pdf') return t('Queued');
     if (job.status === 'completed') return t('Ready');
     if (job.status === 'stopped') return t('Stopped');
@@ -65,6 +67,7 @@ async function refreshQueue() {
     const html = '<div class="queue-heading"><strong>' + escapeHtml(t('Paper queue')) + ' · ' + active.length + '</strong>' +
         '<button id="btn-pause-queue">' + escapeHtml(queue.paused ? t('Resume queue') : t('Pause queue')) + '</button></div>' +
         '<p class="s-help">' + escapeHtml(queue.paused ? t('Queue paused. Jobs already started continue.') : t('Prepare one paper at a time. Up to three notebooks can generate together.')) + '</p>' +
+        (queue.serviceBlock ? '<div class="queue-connection" role="status"><p class="s-help">' + escapeHtml(errorSummary(queue.serviceBlock)) + '</p><button class="btn-secondary" id="btn-retry-connection">' + escapeHtml(t('Try connection')) + '</button></div>' : '') +
         '<div class="job-list">' + active.map(card).join('') + '</div>' +
         (finished.length ? '<details id="finished-jobs"><summary>' + escapeHtml(t('Recent jobs')) + ' · ' + finished.length + '</summary><div class="job-list">' + finished.map(card).join('') + '</div><button class="btn-secondary" id="btn-clear-jobs">' + escapeHtml(t('Clear finished jobs')) + '</button></details>' : '');
     if (html !== lastQueueHtml) {
@@ -74,6 +77,15 @@ async function refreshQueue() {
         lastQueueHtml = html;
         if (wasOpen && queueEl.querySelector('#finished-jobs')) queueEl.querySelector('#finished-jobs').open = true;
         queueEl.querySelectorAll('.job-list').forEach((el,i) => { el.scrollTop = scrollPositions[i] || 0; });
+        queueEl.querySelector('#btn-retry-connection')?.addEventListener('click', async event => {
+            event.currentTarget.disabled = true;
+            try {
+                const response = await chrome.runtime.sendMessage({ type: 'RESUME_SERVICE', blockId: queueSnapshot.serviceBlock?.id });
+                if (!response?.ok) throw new Error(response?.message);
+                await refreshQueue();
+            } catch (error) { showError(error.message); }
+            finally { queueEl.querySelector('#btn-retry-connection')?.removeAttribute('disabled'); }
+        });
         queueEl.querySelectorAll('[data-show]').forEach(button => button.addEventListener('click', async () => {
             selectedRunId = button.dataset.show;
             renderProgress(queueSnapshot.jobs.find(job => job.runId === selectedRunId));
@@ -572,7 +584,7 @@ function renderProgress(state) {
     const renderSignature = JSON.stringify(state);
     if (contentEl.dataset.renderMode === 'progress' && renderSignature === lastProgressSignature) return;
     const openDetails = new Set([...contentEl.querySelectorAll('details[open]')].map(el => el.querySelector('summary')?.textContent));
-    const currentStepIndex = STEPS.findIndex(s => s.keys.includes(state.step));
+    const currentStepIndex = STEPS.findIndex(s => s.keys.includes(state.status === 'error' ? state.failedStep || state.step : state.step));
 
     const stepsHtml = STEPS.map((step, idx) => {
         let cls = 'pending', content = idx + 1;
@@ -607,7 +619,7 @@ function renderProgress(state) {
     <div class="collection-status warning">⚠️ ${escapeHtml(t('Collection assignment failed.'))}${collection.error ? `<details><summary>${escapeHtml(t('Details'))}</summary>${escapeHtml(collection.error)}</details>` : ''}</div>`
             : '';
 
-    let bottomHtml = '';
+    let bottomHtml = state.connectionError ? errorHtml(state.connectionError.message) : '';
     if (state.notebookUrl) {
         bottomHtml += `<a class="notebook-link" href="${escapeHtml(state.notebookUrl)}" target="_blank" rel="noopener noreferrer">📓 ${escapeHtml(t("Open in Gemini Notebook"))}</a>`;
     }

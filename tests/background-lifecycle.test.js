@@ -18,15 +18,19 @@ import { withRequestDeadline } from '../request-deadline.js';
 const source = (await readFile(new URL('../background.js', import.meta.url), 'utf8'))
   .replace(/^import\s+[\s\S]*?from\s+'[^']+';\r?\n/gm, '');
 
-async function worker({ failInitialQueueRead = false } = {}) {
+async function worker({ failInitialQueueRead = false, initialQueue = null, initialFiles = [], initialTargets = {} } = {}) {
   const data = { pipelineState: { status: 'idle' }, userSettings: { chimeEnabled: false, notificationEnabled: false } };
   Object.defineProperty(data, 'pipelineState', {
     get: () => data.jobQueue?.jobs.at(-1) || { status: 'idle' },
     set: state => { data.jobQueue = { version: 1, paused: false, jobs: state.runId ? [structuredClone(state)] : [] }; },
   });
-  const files = new Map();
+  if (initialQueue) data.jobQueue = structuredClone(initialQueue);
+  data.notificationTargets = structuredClone(initialTargets);
+  const files = new Map(initialFiles);
   const logs = [];
   const notifications = [];
+  const opened = [];
+  const notificationEvents = {};
   let listener;
   let messageListener;
   const hooks = {};
@@ -55,17 +59,18 @@ async function worker({ failInitialQueueRead = false } = {}) {
       } },
       alarms: { get: async () => null, clear: noop, create: noop, onAlarm: { addListener(fn) { listener = fn; } } },
       action: { setBadgeText: noop, setBadgeBackgroundColor: noop },
-      runtime: { onMessage: { addListener(fn) { messageListener = fn; } } },
-      notifications: { onClicked: event, onButtonClicked: event, onClosed: event,
+      runtime: { getURL: path => `chrome-extension://scholarrelay-test/${path}`, onMessage: { addListener(fn) { messageListener = fn; } } },
+      notifications: { onClicked: { addListener(fn) { notificationEvents.clicked = fn; } },
+        onButtonClicked: { addListener(fn) { notificationEvents.button = fn; } }, onClosed: event, clear: noop,
         create: async (id, options) => notifications.push({ id, ...options }) },
-      tabs: { create: noop },
+      tabs: { create: async options => opened.push(options.url) },
     },
   });
   vm.runInContext(source, context);
   await vm.runInContext('bootReconciliationPromise', context);
   await new Promise(resolve => setImmediate(resolve));
-  const functions = vm.runInContext('({startPipelineRequest, stopPipelineRequest, tickArtifactPoll, tickSourcePoll, resumePdfFallback, reconcilePipelineRuntime, getQueue, decodeQueuedPdf, shouldRetainJobPdf, ensureBootReconciled})', context);
-  return { data, logs, notifications, hooks, context, listener, messageListener, files, ...functions };
+  const functions = vm.runInContext('({startPipelineRequest, stopPipelineRequest, tickArtifactPoll, tickSourcePoll, resumePdfFallback, reconcilePipelineRuntime, getQueue, decodeQueuedPdf, shouldRetainJobPdf, ensureBootReconciled, failPipeline, holdForSession, safeNotificationTarget})', context);
+  return { data, logs, notifications, opened, notificationEvents, hooks, context, listener, messageListener, files, ...functions };
 }
 
 function sendWorkerMessage(workerState, message, sender = {}) {
@@ -413,4 +418,149 @@ test('queue capacity rejects a twenty-first unfinished job before any remote wri
   await assert.rejects(w.startPipelineRequest({ pdfUrl: 'https://example.org/extra.pdf' }), /queue is full/);
   assert.equal(w.data.jobQueue.jobs.length, 20);
   assert.equal(writes.length, 0);
+});
+
+
+function discoveryFailure() {
+  return Object.assign(new Error('SESSION_UNAVAILABLE: Gemini Notebook could not be reached. notebook.google.com: service HTTP 503'),
+    { code: 'SESSION_UNAVAILABLE', phase: 'auth_discovery' });
+}
+
+async function makeHeldQueue() {
+  const w = await worker();
+  const writes = installQueueService(w);
+  w.data.userSettings.notificationEnabled = true;
+  w.data.jobQueue.paused = true;
+  const first = await w.startPipelineRequest({}, { filename: 'saved.pdf', fileData: btoa('%PDF-1.7\n retained bytes') });
+  await w.startPipelineRequest({ pdfUrl: 'https://example.org/second.pdf' });
+  let attempts = 0;
+  w.context.fetchTokens = async () => { attempts++; throw discoveryFailure(); };
+  await sendWorkerMessage(w, { type: 'PAUSE_QUEUE', paused: false });
+  await settleUntil(() => w.notifications.length === 1);
+  return { w, writes, first, attempts: () => attempts };
+}
+
+test('shared session outage holds all unstarted jobs and PDFs without repeated notifications', async () => {
+  const { w, writes, first, attempts } = await makeHeldQueue();
+  assert.ok(w.data.jobQueue.serviceBlock.id);
+  assert.equal(w.data.jobQueue.serviceBlock.code, 'SESSION_UNAVAILABLE');
+  assert.equal(w.data.jobQueue.paused, false);
+  assert.ok(w.data.jobQueue.jobs.every(job => job.status === 'queued'));
+  assert.equal(w.files.size, 1);
+  assert.equal(w.data.jobQueue.jobs[0].payloadId, first.runId);
+  for (let i = 0; i < 3; i++) await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  assert.equal(attempts(), 1);
+  assert.equal(w.notifications.length, 1);
+  assert.equal(writes.length, 0);
+  assert.doesNotMatch(w.notifications[0].message, /Sign in/);
+});
+
+test('connection hold survives worker restart and resume uploads the retained PDF only once', async () => {
+  const { w, first } = await makeHeldQueue();
+  const restarted = await worker({ initialQueue: w.data.jobQueue, initialFiles: [...w.files] });
+  const writes = installQueueService(restarted);
+  let uploads = 0;
+  restarted.context.addFileSource = async (id, filename, bytes) => {
+    uploads++;
+    assert.equal(filename, 'saved.pdf');
+    assert.equal(new TextDecoder().decode(bytes), '%PDF-1.7\n retained bytes');
+    return { id: 'source-' + id };
+  };
+  assert.equal(writes.length, 0);
+  assert.equal(restarted.files.size, 1);
+  const response = await sendWorkerMessage(restarted, { type: 'RESUME_SERVICE', blockId: restarted.data.jobQueue.serviceBlock.id });
+  assert.equal(response.ok, true);
+  await settleUntil(() => restarted.data.jobQueue.jobs[0].step === 'wait_source' && restarted.files.size === 0);
+  assert.equal(restarted.data.jobQueue.jobs[0].runId, first.runId);
+  assert.equal(restarted.data.jobQueue.jobs[1].status, 'queued');
+  assert.equal(uploads, 1);
+  assert.equal(writes.filter(item => item.kind === 'notebook').length, 1);
+});
+
+test('stale resume does not clear a newer connection hold and resume preserves user pause', async () => {
+  const { w, writes } = await makeHeldQueue();
+  w.data.jobQueue.paused = true;
+  const id = w.data.jobQueue.serviceBlock.id;
+  assert.equal((await sendWorkerMessage(w, { type: 'RESUME_SERVICE', blockId: 'stale' })).ok, false);
+  assert.equal(w.data.jobQueue.serviceBlock.id, id);
+  assert.equal((await sendWorkerMessage(w, { type: 'RESUME_SERVICE', blockId: id })).ok, true);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(w.data.jobQueue.serviceBlock, null);
+  assert.equal(w.data.jobQueue.paused, true);
+  assert.equal(writes.length, 0);
+  assert.equal((await sendWorkerMessage(w, { type: 'RESUME_SERVICE', blockId: id })).ok, false);
+});
+
+test('already accepted jobs are monitored while connection discovery holds new starts', async () => {
+  const { w, attempts } = await makeHeldQueue();
+  w.data.jobQueue.jobs.push({ ...running([{ taskId: 'artifact-notebook-existing', status: 'in_progress' }]),
+    runId: 'accepted', notebookId: 'notebook-existing', settings: { notificationEnabled: false } });
+  await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  assert.equal(w.data.jobQueue.jobs.find(job => job.runId === 'accepted').status, 'completed');
+  assert.ok(w.data.jobQueue.serviceBlock);
+  assert.equal(attempts(), 1);
+});
+
+test('session errors after setup and uncertain mutations cannot be requeued by the hold guard', async () => {
+  const w = await worker();
+  for (const step of ['create_notebook', 'add_source', 'generate_artifacts', 'wait_artifacts']) {
+    w.data.pipelineState = { ...running(), step };
+    assert.equal(await w.holdForSession('old', discoveryFailure()), false);
+    assert.equal(w.data.jobQueue.serviceBlock, undefined);
+  }
+  const writes = installQueueService(w);
+  w.data.jobQueue.jobs = [];
+  w.context.createNotebook = async () => { writes.push({ kind: 'uncertain' }); throw Object.assign(new Error('Mutation outcome unknown'), { code: 'TRANSIENT_MUTATION_UNCERTAIN' }); };
+  await w.startPipelineRequest({ pdfUrl: 'https://example.org/uncertain.pdf' });
+  await settleUntil(() => w.data.jobQueue.jobs[0]?.status === 'error');
+  await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  assert.equal(writes.length, 1);
+  assert.equal(w.data.jobQueue.jobs[0].failedStep, 'create_notebook');
+  assert.equal(w.data.jobQueue.jobs[0].failure.code, 'TRANSIENT_MUTATION_UNCERTAIN');
+});
+
+test('paper-specific import errors do not hold the next queued paper', async () => {
+  const w = await worker();
+  installQueueService(w);
+  w.data.jobQueue.paused = true;
+  await w.startPipelineRequest({ pdfUrl: 'https://example.org/first.pdf' });
+  await w.startPipelineRequest({ pdfUrl: 'https://example.org/next.pdf' });
+  let imports = 0;
+  w.context.addUrlSource = async () => { if (++imports === 1) throw new Error('Paper unavailable'); return { id: 'next-source' }; };
+  await sendWorkerMessage(w, { type: 'PAUSE_QUEUE', paused: false });
+  await settleUntil(() => w.data.jobQueue.jobs[1].step === 'wait_source');
+  assert.equal(w.data.jobQueue.jobs[0].status, 'error');
+  assert.equal(w.data.jobQueue.jobs[0].failedStep, 'add_source');
+  assert.equal(w.data.jobQueue.serviceBlock, undefined);
+  assert.equal(imports, 2);
+});
+
+test('error notifications preserve the failed stage and open that job after restart or history clearing', async () => {
+  const w = await worker();
+  w.data.userSettings.notificationEnabled = true;
+  w.data.pipelineState = { ...running([{ type: 'audio', status: 'completed' }]), sourceTitle: 'Named paper' };
+  await w.failPipeline('old', Object.assign(new Error('Polling failed'), { code: 'READ_FAILED' }));
+  assert.equal(w.data.pipelineState.failedStep, 'wait_artifacts');
+  assert.equal(w.data.pipelineState.tasks[0].status, 'completed');
+  assert.equal(w.data.pipelineState.failure.code, 'READ_FAILED');
+  assert.match(w.notifications[0].message, /^Named paper/);
+  const restarted = await worker({ initialQueue: w.data.jobQueue, initialTargets: w.data.notificationTargets });
+  restarted.data.jobQueue.jobs = [];
+  await restarted.notificationEvents.clicked('pipeline-error:old');
+  assert.deepEqual(restarted.opened, ['chrome-extension://scholarrelay-test/popup.html?runId=old']);
+});
+
+test('notification routing rejects unsafe targets and preserves valid completion navigation', async () => {
+  const w = await worker();
+  for (const url of ['javascript:alert(1)', 'https://example.org/notebook/id',
+    'https://notebook.google.com.evil.test/notebook/id', 'https://user:pass@notebook.google.com/notebook/id',
+    'chrome-extension://other-extension/popup.html']) assert.equal(w.safeNotificationTarget(url), null);
+  w.data.notificationTargets['pipeline-complete:one'] = { notebookUrl: 'javascript:alert(1)' };
+  await w.notificationEvents.clicked('pipeline-complete:one');
+  assert.equal(w.opened.length, 0);
+  w.data.notificationTargets['pipeline-complete:two'] = { notebookUrl: 'https://notebook.google.com/notebook/accepted-id' };
+  await w.notificationEvents.clicked('pipeline-complete:two');
+  assert.deepEqual(w.opened, ['https://notebook.google.com/notebook/accepted-id']);
+  await w.notificationEvents.clicked('pipeline-error:missing');
+  assert.equal(w.opened.at(-1), 'chrome-extension://scholarrelay-test/popup.html?runId=missing');
 });

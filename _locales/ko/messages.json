@@ -904,5 +904,17 @@
   "ui_77e33d8c": {
     "message": "Gemini Notebook 세션을 인식하지 못했습니다. Gemini Notebook을 열고 상세 내용을 확인하세요.",
     "description": "Could not recognize the Gemini Notebook session. Open Gemini Notebook and check the details."
+  },
+  "ui_959074fd": {
+    "message": "연결을 기다리고 있습니다. 논문은 저장되어 있습니다.",
+    "description": "Waiting for connection. Your paper is saved."
+  },
+  "ui_dc5fc1be": {
+    "message": "연결 필요",
+    "description": "Connection needed"
+  },
+  "ui_19f575ce": {
+    "message": "다시 연결",
+    "description": "Try connection"
   }
 }

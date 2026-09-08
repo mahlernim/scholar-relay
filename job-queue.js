@@ -8,7 +8,7 @@ export const isPreparingJob = job => job.status === 'running' &&
     !['wait_artifacts', 'wait_pdf_access', 'queued_pdf'].includes(job.step);
 
 export function canStartNextJob(queue) {
-    return !queue.paused && !queue.jobs.some(isPreparingJob) &&
+    return !queue.paused && !queue.serviceBlock && !queue.jobs.some(isPreparingJob) &&
         queue.jobs.filter(job => job.status === 'running' && job.step === 'wait_artifacts').length < MAX_GENERATING_JOBS;
 }
 
