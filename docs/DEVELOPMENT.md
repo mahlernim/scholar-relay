@@ -439,3 +439,19 @@ English: See elapsed time and completed artifact counts without adding height to
 한국어: 대기열 카드의 높이를 늘리지 않고 경과 시간과 완료된 아티팩트 수를 표시합니다. PDF 미감지 안내의 장식용 파일 아이콘과 과도한 여백을 제거했습니다. 웹페이지 가져오기와 로컬 PDF 업로드는 그대로 사용할 수 있습니다.
 
 All seven UI catalogs are updated. Deterministic checks cover timestamps, stopped and completed jobs, partial submission and activity state. Browser checks cover seven-language layouts, live text updates, stable card height and focus, expanded history, reduced motion and both no-PDF actions. Existing release versions and submitted packages are unchanged.
+
+### v1.4.2 publication and API submission
+
+On September 8, 2026, the public listing and authenticated API confirmed v1.4.1 was published. PR #51 checks passed at a0a4e06408d21548ecaecc9d230fbdda85533321, and merged-main CI passed at a9ecdac489d3bd633dea090b026290dc5658fdf2 in run 34045282596. The release was built from a separate clean checkout at that commit, preserving unrelated local changes.
+
+[GitHub v1.4.2](https://github.com/mahlernim/scholar-relay/releases/tag/v1.4.2) was published with equivalent English and Korean notes. The canonical ZIP contains 30 allowlisted runtime files, embeds version 1.4.2, and is 127,696 bytes. Every decompressed file matches the release checkout. The downloaded GitHub ZIP matches the original and passes ZIP integrity verification. SHA-256 is `5f42ed67302c0e5928873b34599233cde629d31a6389d369022a4ba307288655`.
+
+The shared google-store-publisher CLI validated the artifact and produced a dry-run plan with warning blocking enabled, normal review, and automatic publication after approval. The same ZIP was submitted to existing item `epopghhfmpokhbalmnfcopmplffphdbb`. Upload returned `SUCCEEDED`, and both submission reconciliation and an independent status read returned submitted version 1.4.2 `PENDING_REVIEW`. Published remained 1.4.1. Pending review is not public availability.
+
+A dedicated Chrome Web Store service account was linked with explicit authorization. Local operator authentication uses short-lived impersonated tokens without a downloaded service-account key. The local runbook and fixed-target wrapper are at `%USERPROFILE%/.config/store-publisher/README.md` and `scholar-relay.ps1`. The wrapper invokes the shared CLI and works around its Windows gcloud launch failure. Status is read-only, submit defaults to a dry run, and execution requires the Execute switch. Do not replay uncertain submissions or cancel active review without authorization. No recurring monitor was created.
+
+The separately reported sign-in detection failure has not been confirmed fixed by v1.4.2. Concurrent token-request sharing should not be presented as proof that this reported problem is resolved.
+
+### v1.4.3 expedited release
+
+PRs #58, #59 and #60 merged in dependency order after their exact-head checks passed. Version 1.4.3 replaces the pending 1.4.2 submission with session discovery classification, fully shared token refreshes, durable connection holds, actionable error notifications and compact progress. The existing remote-mutation uncertainty safeguards remain unchanged. The original signed-in incident is not claimed to be reproduced or fully resolved.
