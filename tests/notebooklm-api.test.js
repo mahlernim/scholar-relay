@@ -896,7 +896,7 @@ test('source ingestion only reports a known explicit status', async () => {
 test('stalled authentication and read bodies have bounded waits without blocking later requests', async () => {
   __testing.setReadTimeout(1);
   installFetch(() => new Promise(() => {}));
-  await assert.rejects(fetchTokens(), /AUTH_REQUIRED/);
+  await assert.rejects(fetchTokens(), { code: 'SESSION_UNAVAILABLE' });
   let reads = 0;
   installFetch(url => {
     if (url.endsWith('/')) return tokenResponse();

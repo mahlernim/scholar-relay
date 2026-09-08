@@ -216,12 +216,21 @@ function collectionRequestOptions() {
  * Fetch CSRF token (SNlM0e) and session ID (FdrFJe) from NotebookLM homepage.
  * Since we're in a Chrome extension, browser cookies are sent automatically.
  */
-async function fetchTokens() {
+// Every forced refresh, including queued setup and RPC recovery, joins this promise.
+function fetchTokens() {
+  if (!_tokenFetchPromise) {
+    _tokenFetchPromise = discoverTokens().finally(() => { _tokenFetchPromise = null; });
+  }
+  return _tokenFetchPromise;
+}
+
+async function discoverTokens() {
   const candidates = [_baseUrl, ...PERSONAL_BASE_URLS.filter(url => url !== _baseUrl)];
   const failures = [];
 
   for (const baseUrl of candidates) {
     const homepageUrl = `${baseUrl}/`;
+    const host = new URL(baseUrl).hostname;
     try {
       const { response, html } = await withRequestDeadline(async signal => {
         const response = await fetch(homepageUrl, { credentials: 'include', redirect: 'follow', signal });
@@ -229,21 +238,26 @@ async function fetchTokens() {
       }, _readTimeoutMs);
 
       if (!response.ok) {
-        failures.push(`${baseUrl} returned HTTP ${response.status}`);
+        failures.push({ host, kind: response.status === 401 ? 'signin'
+          : response.status === 429 ? 'rate_limit' : response.status >= 500 ? 'service' : 'http',
+          httpStatus: response.status });
         continue;
       }
 
-      const responseHost = new URL(response.url || homepageUrl).hostname;
+      const responseUrl = new URL(response.url || homepageUrl);
+      const responseHost = responseUrl.hostname;
       const allowedHosts = PERSONAL_BASE_URLS.map(url => new URL(url).hostname);
       if (!allowedHosts.includes(responseHost)) {
-        failures.push(`${baseUrl} redirected to ${responseHost}`);
+        const signIn = responseHost === 'accounts.google.com' &&
+          /^\/(?:ServiceLogin|AccountChooser|(?:v\d+\/)?signin)(?:[/?]|$)/i.test(responseUrl.pathname);
+        failures.push({ host, kind: signIn ? 'signin' : 'redirect', redirectHost: responseHost });
         continue;
       }
 
       const csrfMatch = html.match(/"SNlM0e"\s*:\s*"([^"]+)"/);
       const sessionMatch = html.match(/"FdrFJe"\s*:\s*"([^"]+)"/);
       if (!csrfMatch || !sessionMatch) {
-        failures.push(`${baseUrl} did not provide an authenticated Gemini Notebook session`);
+        failures.push({ host, kind: 'format' });
         continue;
       }
 
@@ -256,24 +270,33 @@ async function fetchTokens() {
       console.log(`[NotebookLM API] Tokens fetched successfully from ${responseHost}`);
       return { csrfToken: _csrfToken, sessionId: _sessionId };
     } catch (error) {
-      failures.push(`${baseUrl} failed: ${error?.message || 'request failed'}`);
+      // Do not persist transport error text, response bodies or redirect queries.
+      failures.push({ host, kind: 'network' });
     }
   }
 
-  throw new Error(
-    `AUTH_REQUIRED: Could not find an authenticated Gemini Notebook (formerly NotebookLM) session. Sign in at ${DEFAULT_BASE_URL} and retry. ${failures.join('. ')}`
-  );
+  _csrfToken = null;
+  _sessionId = null;
+  const code = failures.some(item => item.kind === 'rate_limit') ? 'SESSION_RATE_LIMITED'
+    : failures.some(item => ['network', 'service'].includes(item.kind)) ? 'SESSION_UNAVAILABLE'
+    : failures.every(item => item.kind === 'signin') ? 'AUTH_REQUIRED' : 'SESSION_UNRECOGNIZED';
+  const description = {
+    AUTH_REQUIRED: 'Sign in to Gemini Notebook before connecting again.',
+    SESSION_RATE_LIMITED: 'Session discovery was rate limited. Wait before connecting again.',
+    SESSION_UNAVAILABLE: 'Gemini Notebook could not be reached. Try connecting again later.',
+    SESSION_UNRECOGNIZED: 'The Gemini Notebook session page was not recognized. Check the service and extension compatibility.',
+  }[code];
+  const details = failures.map(item => `${item.host}: ${item.kind}${item.httpStatus ? ` HTTP ${item.httpStatus}` : ''}`);
+  const error = new Error(`${code}: ${description} ${details.join('. ')}`);
+  Object.assign(error, { code, phase: 'auth_discovery', failures });
+  throw error;
 }
 
 async function ensureTokens() {
+  // A warm cache must not let new callers escape an in-flight forced refresh.
+  if (_tokenFetchPromise) return _tokenFetchPromise;
   if (_csrfToken && _sessionId) return { csrfToken: _csrfToken, sessionId: _sessionId };
-  if (!_tokenFetchPromise) {
-    _tokenFetchPromise = fetchTokens().finally(() => {
-      _tokenFetchPromise = null;
-    });
-  }
-  await _tokenFetchPromise;
-  return { csrfToken: _csrfToken, sessionId: _sessionId };
+  return fetchTokens();
 }
 
 // =========================================================================
@@ -643,9 +666,14 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false) {
         throw new Error('AUTH_REQUIRED: Gemini Notebook authentication failed after refreshing the session. Sign in again and retry.');
       }
       authRetried = true;
-      _csrfToken = null;
-      _sessionId = null;
-      await fetchTokens();
+      // A late rejection of old credentials must not invalidate a newer refresh.
+      if (_csrfToken === csrfToken && _sessionId === sessionId) {
+        _csrfToken = null;
+        _sessionId = null;
+        await fetchTokens();
+      } else {
+        await ensureTokens();
+      }
       continue;
     }
 

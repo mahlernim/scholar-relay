@@ -896,5 +896,13 @@
   "ui_232cd7e": {
     "message": "PDF wird gespeichert. Lassen Sie dieses Popup geöffnet...",
     "description": "Saving PDF. Keep this popup open..."
+  },
+  "ui_7ff14708": {
+    "message": "Gemini Notebook ist vorübergehend nicht erreichbar. Versuchen Sie später erneut, eine Verbindung herzustellen.",
+    "description": "Gemini Notebook is temporarily unreachable. Try connecting again later."
+  },
+  "ui_77e33d8c": {
+    "message": "Die Gemini Notebook-Sitzung wurde nicht erkannt. Öffnen Sie Gemini Notebook und prüfen Sie die Details.",
+    "description": "Could not recognize the Gemini Notebook session. Open Gemini Notebook and check the details."
   }
 }
