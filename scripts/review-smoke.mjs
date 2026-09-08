@@ -105,3 +105,41 @@ export async function compactProgressSmoke({ popup, evaluate, reload, root, orig
     await reload(popup);
     console.log('Compact progress smoke passed in seven locales: timers, counts, stable focus and height, reduced motion and no-PDF actions');
 }
+
+export async function generationLimitSmoke({ popup, evaluate, reload, root, completedState }) {
+    const { readFile, mkdir, writeFile } = await import('node:fs/promises');
+    const { join } = await import('node:path');
+    const { messageKey } = await import('../i18n.js');
+    const assert = (condition, message) => { if (!condition) throw new Error(message); };
+    const out = join(root, 'dist', 'generationLimitSmoke');
+    await mkdir(out, { recursive: true });
+    for (const locale of ['en','ko','ja','es','fr','de','pt_BR']) {
+        const catalog = JSON.parse(await readFile(join(root, '_locales', locale, 'messages.json'), 'utf8'));
+        const { identifier } = await popup.call('Page.addScriptToEvaluateOnNewDocument', { source:
+            `const catalog=${JSON.stringify(catalog)}; chrome.i18n.getMessage=(key,values=[])=>catalog[key]?.message.replace(/\\$(\\d+)/g,(_,i)=>values[i-1]??'')||'';` });
+        try {
+            for (const fixture of [{ ...completedState, status: 'error', step: 'error', tasks: [{type:'audio',status:'failed',code:'RATE_LIMITED',error:'RATE_LIMITED: API limit'}]},
+ { ...completedState, status: 'completed', step: 'done', tasks: [{type:'audio',status:'failed',code:'RATE_LIMITED'}, {type:'report',status:'completed'}]}]) {
+                await evaluate(popup, `globalThis.__smoke.setFixtureState(${JSON.stringify(fixture)})`);
+                await reload(popup);
+                await evaluate(popup, `document.querySelector('[data-show]').click()`);
+                const view = await evaluate(popup, `({hint:document.querySelector('.job-hint').textContent,
+                    warning:document.querySelector('.pipeline-error-box')?.textContent||'',ready:!!document.querySelector('.completed-box'),
+                    file:!!document.querySelector('[data-pdf-file]'),permission:!!document.querySelector('[data-pdf-permission]'),
+                    active:!!document.querySelector('.job-activity.is-active'),clock:document.querySelector('[data-elapsed]').textContent,
+                    width:document.documentElement.scrollWidth})`);
+                assert(view.width <= 360, `${locale} overflow`);
+                const expected = catalog[messageKey('Generation is limited for $1. Try again later in the existing notebook.')].message.split('$1')[0];
+                assert(view.hint.includes(expected) && view.warning.includes(expected), `${locale} generation limit hidden`);
+                if (fixture.status === 'completed') assert(view.ready, `${locale} successful result hidden`);
+            }
+            if (locale === 'en' || locale === 'ko') {
+                await evaluate(popup, `document.getElementById('job-queue').scrollIntoView({block:'start'})`);
+                await popup.call('Page.bringToFront');
+                const shot = await popup.call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+                await writeFile(join(out, `${locale}.png`), Buffer.from(shot.data, 'base64'));
+            }
+        } finally { await popup.call('Page.removeScriptToEvaluateOnNewDocument', { identifier }); }
+    }
+    console.log('generationLimitSmoke passed in seven locales');
+}

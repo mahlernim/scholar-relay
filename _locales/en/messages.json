@@ -928,5 +928,9 @@
   "ui_faff56b8": {
     "message": "Elapsed time",
     "description": "Elapsed time"
+  },
+  "ui_c6bbc618": {
+    "message": "Generation is limited for $1. Try again later in the existing notebook.",
+    "description": "Generation is limited for $1. Try again later in the existing notebook."
   }
 }

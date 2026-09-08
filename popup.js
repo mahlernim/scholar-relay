@@ -1,6 +1,6 @@
 import { jobHandoff, isUnfinishedJob, jobElapsedText, jobReadyCount, hasJobActivity } from './job-queue.js';
 import { DEFAULT_SETTINGS as DEFAULTS } from './settings.js';
-import { t, localizeStaticDocument, progressDetail, errorSummary, artifactLabel, artifactStatusLabel } from './i18n.js';
+import { t, localizeStaticDocument, progressDetail, errorSummary, generationLimitSummary, artifactLabel, artifactStatusLabel } from './i18n.js';
 import { inspectPaperPage } from './content.js';
 import { choosePdfTitle, choosePdfFileTitle } from './pdf-metadata.js';
 import { directDetectionMatchesTab } from './detection-policy.js';
@@ -27,6 +27,8 @@ let lastProgressSignature = null;
 let queueSnapshot = { jobs: [], paused: false };
 
 function handoffMessage(job) {
+    const limit = generationLimitSummary(job.tasks);
+    if (limit) return limit;
     if (job.status === 'queued' && queueSnapshot.serviceBlock) return t('Waiting for connection. Your paper is saved.');
     if (job.status === 'completed' && !job.tasks?.length) return t('Source imported. No artifacts requested.');
     return {
@@ -588,8 +590,7 @@ function renderNoPdf() {
     document.getElementById('btn-upload-manual').addEventListener('click', () => promptForPdfUpload(null));
 }
 
-function errorHtml(detail) {
-    const summary = errorSummary(detail);
+function errorHtml(detail, summary = errorSummary(detail)) {
     return `<div class="pipeline-error-box" role="alert">${escapeHtml(summary)}</div>
       ${detail !== summary ? `<details class="workflow-details"><summary>${escapeHtml(t("Details"))}</summary><div class="step-detail">${escapeHtml(detail)}</div></details>` : ''}`;
 }
@@ -663,7 +664,10 @@ function renderProgress(state) {
       </div>`;
     }
     if (state.status === 'error') {
-        bottomHtml += errorHtml(state.error || state.stepDetail || 'The workflow stopped.');
+        bottomHtml += errorHtml(state.error || state.stepDetail || 'The workflow stopped.', generationLimitSummary(state.tasks) || errorSummary(state.error || state.stepDetail));
+    }
+    if (state.status !== 'error' && generationLimitSummary(state.tasks)) {
+        bottomHtml += `<div class="pipeline-error-box" role="status">${escapeHtml(generationLimitSummary(state.tasks))}</div>`;
     }
     if ((state.tasks || []).length && (state.status === 'completed' || state.tasks.some(task => task.error))) {
         bottomHtml += `<details class="workflow-details"><summary>${escapeHtml(t('Artifact details'))}</summary>${state.tasks.map(task =>

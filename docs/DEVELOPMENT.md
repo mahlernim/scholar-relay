@@ -455,3 +455,10 @@ The separately reported sign-in detection failure has not been confirmed fixed b
 ### v1.4.3 expedited release
 
 PRs #58, #59 and #60 merged in dependency order after their exact-head checks passed. Version 1.4.3 replaces the pending 1.4.2 submission with session discovery classification, fully shared token refreshes, durable connection holds, actionable error notifications and compact progress. The existing remote-mutation uncertainty safeguards remain unchanged. The original signed-in incident is not claimed to be reproduced or fully resolved.
+
+
+### Generation-limit feedback candidate
+
+Issue #62 preserves per-artifact RATE_LIMITED diagnostics in a localized queue-card and job-view warning. Successful artifacts remain visible. Uncertain mutations and unrelated failures do not become quota claims. No reset time, daily allowance, global queue hold, or automatic generation retry is inferred.
+
+생성 제한이 발생한 아티팩트를 대기열 카드와 작업 화면에 표시하고 완료된 결과를 유지합니다. 결과가 불확실한 요청이나 다른 오류를 할당량 소진으로 표시하지 않으며 초기화 시각이나 자동 재시도를 추가하지 않습니다. 다음 릴리스 후보이며 배포된 동작은 변경되지 않았습니다.

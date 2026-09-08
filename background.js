@@ -24,7 +24,7 @@ import { withRequestDeadline } from './request-deadline.js';
 import { DEFAULT_SETTINGS } from './settings.js';
 import { createJobQueue, canStartNextJob, isUnfinishedJob, MAX_QUEUED_JOBS, MAX_QUEUED_PDF_BYTES } from './job-queue.js';
 import { createQueuedPdfStore } from './queued-pdfs.js';
-import { t, errorSummary } from './i18n.js';
+import { t, errorSummary, generationLimitSummary } from './i18n.js';
 import {
     fetchTokens,
     getNotebookUrl,
@@ -599,7 +599,7 @@ async function notifyJobAttention(state, error) {
         const title = (state.sourceTitle || state.notebookTitle || t('Source')).slice(0, 120);
         await chrome.notifications.create(id, {
             type: 'basic', iconUrl: 'icons/icon128.png', title: t('ScholarRelay Error'),
-            message: `${title} · ${errorSummary(error)}`, priority: 2,
+            message: `${title} · ${generationLimitSummary(state.tasks) || errorSummary(error)}`, priority: 2,
         });
     } catch (error) { console.warn('[Notification] Could not show job attention:', error); }
 }
