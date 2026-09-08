@@ -674,7 +674,7 @@ function renderProgress(state) {
             `<div class="step-detail">${escapeHtml(artifactLabel(task.type))} · ${escapeHtml(artifactStatusLabel(task.status))}${task.error ? `<div>${escapeHtml(task.error)}</div>` : ''}</div>`
         ).join('')}</details>`;
     }
-    bottomHtml += `<p class="handoff-note" role="status">${escapeHtml(handoffMessage(state))}</p>`;
+    if (!generationLimitSummary(state.tasks)) bottomHtml += `<p class="handoff-note" role="status">${escapeHtml(handoffMessage(state))}</p>`;
     if (state.status === 'running' && state.step === 'wait_pdf_access') {
         bottomHtml += `<button class="btn-generate" id="btn-resume-pdf">${escapeHtml(t("Allow Download & Continue"))}</button>
           <button class="btn-secondary" id="btn-fallback-file">${escapeHtml(t("Upload PDF Instead"))}</button>
