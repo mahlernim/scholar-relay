@@ -20,6 +20,8 @@ ScholarRelay(Scholar Relay)는 PDF, arXiv 연구 논문, 웹페이지를 Gemini 
 
 v1.3.2에서는 화면과 알림을 영어, 한국어, 일본어, 스페인어, 프랑스어, 독일어, 브라질 포르투갈어로 제공합니다. 화면 언어는 Chrome 설정을 따르며 지원하지 않는 언어에서는 영어를 사용합니다. 아티팩트 생성 언어는 별도 설정이며 기존 선택값은 유지됩니다. 기술 진단은 상세 내용에 원문으로 표시됩니다.
 
+1.4.3은 세션 연결 장애가 발생하면 시작 전 논문과 PDF를 보존하고 재연결을 기다립니다. 오류 알림에서 해당 작업을 열 수 있으며 대기열에 경과 시간과 완료 개수를 표시합니다.
+
 ### 주요 기능
 
 - 현재 탭에서 PDF, arXiv 논문, 웹페이지를 감지해 Gemini Notebook 소스로 추가합니다.
@@ -172,3 +174,7 @@ The consumer Gemini Notebook web application does not provide an official public
 ## License
 
 MIT. See [LICENSE](./LICENSE).
+
+### Version 1.4.3
+
+Session discovery failures hold unstarted papers and saved PDFs until you reconnect. Error notifications open the affected job. Compact queue rows show elapsed time and completed artifact counts.
