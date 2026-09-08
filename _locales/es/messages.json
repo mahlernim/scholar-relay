@@ -932,5 +932,37 @@
   "ui_c6bbc618": {
     "message": "La generación de $1 está limitada. Inténtalo más tarde en el cuaderno existente.",
     "description": "Generation is limited for $1. Try again later in the existing notebook."
+  },
+  "ui_72bb088c": {
+    "message": "Acción necesaria",
+    "description": "Action needed"
+  },
+  "ui_4a78a7bf": {
+    "message": "En espera $1",
+    "description": "Waiting $1"
+  },
+  "ui_e8233afc": {
+    "message": "Esperando tu acción",
+    "description": "Waiting for you"
+  },
+  "ui_f7066e40": {
+    "message": "Descartar tarea",
+    "description": "Dismiss job"
+  },
+  "ui_45c40cb9": {
+    "message": "Subir PDF y continuar",
+    "description": "Upload PDF & Continue"
+  },
+  "ui_38f2e1ae": {
+    "message": "Se necesita permiso de descarga. Permite el acceso o selecciona un PDF para continuar en este cuaderno.",
+    "description": "Download permission is needed. Allow access or select a PDF to continue in this notebook."
+  },
+  "ui_e431d4b": {
+    "message": "La editorial bloqueó la descarga del PDF. Selecciona un PDF descargado para continuar en este cuaderno.",
+    "description": "The publisher blocked the PDF download. Select a downloaded PDF to continue in this notebook."
+  },
+  "ui_56d74e8d": {
+    "message": "No se pudo descargar el PDF. Selecciona un PDF para continuar en este cuaderno.",
+    "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
   }
 }

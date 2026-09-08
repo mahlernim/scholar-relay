@@ -117,6 +117,19 @@ test('all-failed generation retains quota diagnostics and notifies with the affe
   assert.equal(w.data.pipelineState.tasks[0].code, 'RATE_LIMITED');
 });
 
+test('boot preserves PDF wait diagnostics and sends only one recovery notification', async () => {
+  const job = { ...running(), step: 'wait_pdf_access', pdfWaitReason: 'publisher',
+    stepDetail: 'HTTP 403 while downloading source PDF', attentionSince: '2026-09-08T00:00:00Z',
+    settings: { notificationEnabled: true } };
+  const w = await worker({ initialQueue: { version: 1, paused: true, jobs: [job] } });
+  assert.match(w.notifications[0].message, /publisher blocked/);
+  await w.reconcilePipelineRuntime();
+  assert.equal(w.notifications.length, 1);
+  assert.equal(w.data.jobQueue.jobs[0].stepDetail, job.stepDetail);
+  assert.equal(w.data.jobQueue.jobs[0].attentionSince, job.attentionSince);
+  assert.equal(w.data.jobQueue.jobs[0].notebookId, job.notebookId);
+});
+
 test('backend rejects no-artifact starts without creating or claiming a notebook', async () => {
   const w = await worker();
   Object.assign(w.data.userSettings, { generateAudio: false, generateInfographic: false });

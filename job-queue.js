@@ -24,7 +24,8 @@ export function jobHandoff(job) {
 
 // Presentation helpers read persisted timestamps. They never poll or write state.
 export function jobElapsedText(job, now = Date.now()) {
-    const start = Date.parse(job.status === 'queued' ? job.queuedAt : job.startedAt || job.queuedAt);
+    const waiting = job.status === 'running' && job.step === 'wait_pdf_access';
+    const start = Date.parse(waiting ? job.attentionSince : job.status === 'queued' ? job.queuedAt : job.startedAt || job.queuedAt);
     const end = isUnfinishedJob(job) ? now : Date.parse(job.completedAt);
     if (!Number.isFinite(start) || !Number.isFinite(end)) return '';
     const seconds = Math.floor(Math.max(0, end - start) / 1000);

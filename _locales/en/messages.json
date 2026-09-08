@@ -932,5 +932,37 @@
   "ui_c6bbc618": {
     "message": "Generation is limited for $1. Try again later in the existing notebook.",
     "description": "Generation is limited for $1. Try again later in the existing notebook."
+  },
+  "ui_72bb088c": {
+    "message": "Action needed",
+    "description": "Action needed"
+  },
+  "ui_4a78a7bf": {
+    "message": "Waiting $1",
+    "description": "Waiting $1"
+  },
+  "ui_e8233afc": {
+    "message": "Waiting for you",
+    "description": "Waiting for you"
+  },
+  "ui_f7066e40": {
+    "message": "Dismiss job",
+    "description": "Dismiss job"
+  },
+  "ui_45c40cb9": {
+    "message": "Upload PDF & Continue",
+    "description": "Upload PDF & Continue"
+  },
+  "ui_38f2e1ae": {
+    "message": "Download permission is needed. Allow access or select a PDF to continue in this notebook.",
+    "description": "Download permission is needed. Allow access or select a PDF to continue in this notebook."
+  },
+  "ui_e431d4b": {
+    "message": "The publisher blocked the PDF download. Select a downloaded PDF to continue in this notebook.",
+    "description": "The publisher blocked the PDF download. Select a downloaded PDF to continue in this notebook."
+  },
+  "ui_56d74e8d": {
+    "message": "The PDF could not be downloaded. Select a PDF to continue in this notebook.",
+    "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
   }
 }

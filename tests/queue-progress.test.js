@@ -5,6 +5,13 @@ import { jobElapsedText, jobReadyCount, hasJobActivity } from '../job-queue.js';
 const start = '2026-09-08T00:00:00Z';
 const now = Date.parse(start) + 125000;
 
+test('action-needed clocks measure only known waiting time, never total job age', () => {
+  const job = { status: 'running', step: 'wait_pdf_access', startedAt: '2026-09-07T16:00:00Z' };
+  assert.equal(jobElapsedText(job, now), '');
+  assert.equal(jobElapsedText({ ...job, attentionSince: start }, now), '02:05');
+  assert.equal(hasJobActivity(job), false);
+});
+
 test('queued and running clocks use their persisted timestamps after reopening', () => {
   assert.equal(jobElapsedText({ status: 'queued', queuedAt: start }, now), '02:05');
   assert.equal(jobElapsedText({ status: 'running', startedAt: start }, now), '02:05');
