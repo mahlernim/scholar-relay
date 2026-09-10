@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Scholar Relay | Automate your paper-to-study workflow</title>
+  <meta name="description" content="Save a Gemini Notebook study preset once, then apply it automatically to PDFs, arXiv papers, and webpages.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Scholar Relay | One preset. Multiple papers.">
+  <meta property="og:description" content="Automate paper import and study-material generation in Gemini Notebook.">
+  <meta property="og:image" content="https://ahn-lab.org/scholar-relay/assets/automation-card.png">
+  <meta property="og:url" content="https://ahn-lab.org/scholar-relay/">
+  <link rel="canonical" href="https://ahn-lab.org/scholar-relay/">
+  <link rel="alternate" hreflang="x-default" href="https://ahn-lab.org/scholar-relay/?lang=en">
+  <link rel="alternate" hreflang="en" href="https://ahn-lab.org/scholar-relay/?lang=en">
+  <link rel="alternate" hreflang="ko" href="https://ahn-lab.org/scholar-relay/?lang=ko">
+  <link rel="alternate" hreflang="ja" href="https://ahn-lab.org/scholar-relay/?lang=ja">
+  <link rel="alternate" hreflang="es" href="https://ahn-lab.org/scholar-relay/?lang=es">
+  <link rel="alternate" hreflang="fr" href="https://ahn-lab.org/scholar-relay/?lang=fr">
+  <link rel="alternate" hreflang="de" href="https://ahn-lab.org/scholar-relay/?lang=de">
+  <link rel="alternate" hreflang="pt-br" href="https://ahn-lab.org/scholar-relay/?lang=pt-BR">
+  <link rel="alternate" hreflang="zh-Hans" href="https://ahn-lab.org/scholar-relay/?lang=zh-CN">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="responsive.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Scholar Relay home"><img src="assets/icon48.png" alt=""><span>Scholar Relay</span></a>
+    <nav><a href="#workflow" data-i18n="how">How it works</a><a href="#features" data-i18n="features">Features</a></nav>
+    <label class="language"><span class="sr-only">Language</span><select id="language-select" aria-label="Language">
+      <option value="en">English</option><option value="ko">한국어</option><option value="ja">日本語</option>
+      <option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option>
+      <option value="pt-BR">Português</option><option value="zh-CN">简体中文</option>
+    </select></label>
+  </header>
+
+  <main id="top">
+    <section class="hero shell">
+      <div class="hero-copy">
+        <p class="eyebrow" data-i18n="eyebrow">Gemini Notebook workflow automation</p>
+        <h1 data-i18n="headline">Automate your paper-to-study workflow</h1>
+        <p class="lead" data-i18n="lead">Save your preferred setup once. Apply it to PDFs, arXiv papers, and webpages, then let Scholar Relay create each notebook and request the study materials you selected.</p>
+        <div class="actions"><a class="button primary" href="https://chromewebstore.google.com/detail/epopghhfmpokhbalmnfcopmplffphdbb" data-i18n="install">Add to Chrome</a><a class="button secondary" href="#workflow" data-i18n="see">See the automation</a></div>
+        <ul class="trust"><li data-i18n="trust1">Uses your signed-in browser session</li><li data-i18n="trust2">No developer server, ads, or tracking</li><li data-i18n="trust3">English fallback for unsupported locales</li></ul>
+      </div>
+      <div class="automation-demo" aria-label="A preset automatically applied to three queued papers">
+        <div class="preset"><div><span class="kicker" data-i18n="preset">SAVED PRESET</span><strong data-i18n="studyPreset">Study review</strong></div><div class="chips"><span>🎧 Audio</span><span>📊 Slides</span><span>❓ Quiz</span><span>🃏 Cards</span></div></div>
+        <div class="apply-line"><span data-i18n="apply">APPLY AUTOMATICALLY</span><b>↓</b></div>
+        <div class="paper-list"><article><span>01</span><div><strong>Clinical trial.pdf</strong><small data-i18n="ready">Notebook ready · 4 materials</small></div><i class="done">✓</i></article><article><span>02</span><div><strong>arXiv: agent systems</strong><small data-i18n="generating">Generating slides and quiz</small></div><i class="pulse">●</i></article><article><span>03</span><div><strong>Journal article webpage</strong><small data-i18n="queued">Saved in queue</small></div><i>3</i></article></div>
+      </div>
+    </section>
+
+    <section class="share-section shell" id="workflow">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="shareEyebrow">Share the workflow</p><h2 data-i18n="shareTitle">One preset. Multiple papers. Study materials generated automatically.</h2></div><button class="share-button" id="share-button"><span>↗</span> <span data-i18n="share">Share</span></button></div>
+      <figure class="share-card"><img src="assets/automation-card.svg" alt="A Scholar Relay preset applied to multiple papers and producing audio, slides, quizzes, and flashcards" data-i18n-alt="cardAlt"><figcaption data-i18n="cardCaption">A compact view of the repeatable workflow Scholar Relay automates.</figcaption></figure>
+      <p class="share-status" id="share-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="steps shell" id="features">
+      <article><b>01</b><h3 data-i18n="step1Title">Choose once</h3><p data-i18n="step1">Select artifact types, formats, language, style, and optional instructions.</p></article>
+      <article><b>02</b><h3 data-i18n="step2Title">Queue papers</h3><p data-i18n="step2">Add PDFs, arXiv papers, and webpages. Each item gets its own notebook.</p></article>
+      <article><b>03</b><h3 data-i18n="step3Title">Let automation work</h3><p data-i18n="step3">Scholar Relay imports each source and requests your saved set of study materials.</p></article>
+    </section>
+
+    <section class="feature-grid shell">
+      <article class="wide"><p class="eyebrow" data-i18n="presetEyebrow">PRESET-LIKE SETTINGS</p><h2 data-i18n="presetTitle">Stop rebuilding the same study setup</h2><p data-i18n="presetBody">Your settings remain ready for the next paper. Keep a consistent workflow while changing individual prompts whenever a paper needs special attention.</p><div class="mini-grid"><span>Audio overview</span><span>Slide deck</span><span>Study guide</span><span>Quiz</span><span>Flashcards</span><span>Infographic</span></div></article>
+      <article><h3 data-i18n="queueTitle">A durable paper queue</h3><p data-i18n="queueBody">Save up to 20 papers, close the popup after saving, and let eligible notebooks generate together.</p></article>
+      <article><h3 data-i18n="recoveryTitle">Recovery without clutter</h3><p data-i18n="recoveryBody">Continue a blocked PDF in the same notebook. Failed or stopped jobs can offer guarded notebook cleanup after inspection.</p></article>
+      <article><h3 data-i18n="safeTitle">Careful around uncertain results</h3><p data-i18n="safeBody">Scholar Relay checks remote state instead of blindly repeating accepted creation or generation requests.</p></article>
+    </section>
+
+    <section class="final-cta shell"><div><p class="eyebrow" data-i18n="finalEyebrow">BUILD A REPEATABLE STUDY SYSTEM</p><h2 data-i18n="finalTitle">Spend less time setting up each paper</h2></div><a class="button primary" href="https://chromewebstore.google.com/detail/epopghhfmpokhbalmnfcopmplffphdbb" data-i18n="install">Add to Chrome</a></section>
+  </main>
+  <footer class="shell"><span>Scholar Relay</span><div><a href="https://github.com/mahlernim/scholar-relay">GitHub</a><a href="https://github.com/mahlernim/scholar-relay/blob/main/PRIVACY.md">Privacy</a><a href="https://github.com/mahlernim/scholar-relay/issues">Support</a></div><p data-i18n="disclosure">Independent extension. Not affiliated with or endorsed by Google.</p></footer>
+  <script src="app.js"></script>
+</body>
+</html>

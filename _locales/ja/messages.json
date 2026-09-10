@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "ScholarRelay - Gemini Notebook に PDF をインポート"
+    "message": "Scholar Relay - Gemini Notebook（NotebookLM）の自動化"
   },
   "extensionDescription": {
     "message": "PDF、arXiv 論文、ウェブページを Gemini Notebook（NotebookLM）にインポートし、音声解説や学習資料を生成します。"
@@ -964,5 +964,25 @@
   "ui_56d74e8d": {
     "message": "PDF をダウンロードできませんでした。PDF を選択して、このノートブックで続行してください。",
     "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
+  },
+  "ui_9dab64e9": {
+    "message": "未使用のノートブックを削除",
+    "description": "Delete unused notebook"
+  },
+  "ui_97612a43": {
+    "message": "Gemini Notebook からノートブックを削除しました。",
+    "description": "Notebook deleted from Gemini Notebook."
+  },
+  "ui_52c919ec": {
+    "message": "このノートブックにはソースが$1件、失敗した成果物が$2件あります。",
+    "description": "This notebook has $1 source(s) and $2 failed artifact(s)."
+  },
+  "ui_2c26929": {
+    "message": "このノートブックを Gemini Notebook から削除しますか？元に戻せません。",
+    "description": "Delete this notebook from Gemini Notebook? This cannot be undone."
+  },
+  "ui_efd1bd2d": {
+    "message": "論文が検出されませんでした。それでもノートブックを作成し、選択した自動化を開始しますか？",
+    "description": "No paper was detected. Create a notebook and start the selected automation anyway?"
   }
 }

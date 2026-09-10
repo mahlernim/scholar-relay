@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "ScholarRelay - Importar PDFs para Gemini Notebook"
+    "message": "Scholar Relay - Automação do Gemini Notebook (NotebookLM)"
   },
   "extensionDescription": {
     "message": "Importe PDFs, artigos arXiv e páginas para o Gemini Notebook (NotebookLM). Crie Resumos em Áudio e materiais de estudo."
@@ -964,5 +964,25 @@
   "ui_56d74e8d": {
     "message": "Não foi possível baixar o PDF. Selecione um PDF para continuar neste notebook.",
     "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
+  },
+  "ui_9dab64e9": {
+    "message": "Excluir notebook não utilizado",
+    "description": "Delete unused notebook"
+  },
+  "ui_97612a43": {
+    "message": "Notebook excluído do Gemini Notebook.",
+    "description": "Notebook deleted from Gemini Notebook."
+  },
+  "ui_52c919ec": {
+    "message": "Este notebook tem $1 fonte(s) e $2 resultado(s) com falha.",
+    "description": "This notebook has $1 source(s) and $2 failed artifact(s)."
+  },
+  "ui_2c26929": {
+    "message": "Excluir este notebook do Gemini Notebook? Esta ação não pode ser desfeita.",
+    "description": "Delete this notebook from Gemini Notebook? This cannot be undone."
+  },
+  "ui_efd1bd2d": {
+    "message": "Nenhum artigo foi detectado. Criar um notebook e iniciar a automação selecionada mesmo assim?",
+    "description": "No paper was detected. Create a notebook and start the selected automation anyway?"
   }
 }

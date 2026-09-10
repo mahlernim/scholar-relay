@@ -1,0 +1,33 @@
+body { overflow-x: hidden; }
+
+.hero > *,
+.section-heading > *,
+.paper-list div {
+  min-width: 0;
+}
+
+h1,
+h2,
+h3,
+p,
+strong,
+small {
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 761px) {
+  .hero { padding-bottom: 28px; }
+  .share-section { padding-top: 24px; }
+}
+
+@media (max-width: 760px) {
+  .shell,
+  .topbar { width: calc(100% - 24px) !important; max-width: calc(100% - 24px); }
+  .hero-copy { width: 100%; }
+  .hero h1 { font-size: 35px; line-height: 1.04; word-break: break-all; }
+  .lead { word-break: break-all; }
+  .automation-demo { width: 100%; max-width: 100%; overflow: hidden; padding: 14px; }
+  .paper-list article { grid-template-columns: 28px minmax(0, 1fr) 20px; }
+  .section-heading { flex-direction: column; gap: 12px; }
+  .share-button { align-self: flex-start; }
+}

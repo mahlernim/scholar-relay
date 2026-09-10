@@ -15,6 +15,7 @@ $runtimeFiles = @(
     '_locales/fr/messages.json',
     '_locales/de/messages.json',
     '_locales/pt_BR/messages.json',
+    '_locales/zh_CN/messages.json',
     'i18n.js',
     'background.js',
     'content.js',

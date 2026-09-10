@@ -19,6 +19,10 @@
     "workflow": ["Eine Warteschlange für Artikel", "Artikel einreihen. Weitermachen.", "Speichere den nächsten Artikel, während Gemini Notebook generiert. Sieh, wann du das Popup schließen kannst.", "PDF und arXiv", "Sammlungen", "Klarer Status"],
     "settings": ["Kompakte Einstellungen", "Wähle, was Gemini Notebook erstellt", "Oberflächen- und Artefaktsprache sind unabhängig. Erstelle das passende Lernmaterial.", "Sammlung und Artikeltitel", "Audio-Zusammenfassungen und Lernhilfen", "Benachrichtigungen, Ton und automatisches Öffnen"]
   },
+  "zh_CN": {
+    "workflow": ["论文自动化队列", "添加论文，继续学习", "Gemini Notebook 生成资料时保存下一篇论文。清楚了解何时可以关闭弹窗并继续。", "PDF 和 arXiv 检测", "集合", "清晰的进度"],
+    "settings": ["紧凑的预设设置", "选择 Gemini Notebook 生成的资料", "界面语言与资料语言独立设置。保存一次并重复用于多篇论文。", "集合与论文标题", "音频概览和多种学习工具", "通知、完成提示音和自动打开"]
+  },
   "pt_BR": {
     "workflow": ["Uma fila para seus artigos", "Adicione artigos. Continue criando.", "Salve o próximo artigo enquanto o Gemini Notebook gera. Saiba quando pode fechar a janela e seguir.", "PDF e arXiv", "Coleções", "Status claro"],
     "settings": ["Controles compactos", "Escolha o que o Gemini Notebook gera", "O idioma da interface e o dos artefatos são independentes. Crie os materiais de estudo de que precisa.", "Coleção e título do artigo", "Resumos em Áudio e ferramentas de estudo", "Notificações, som e abertura automática"]

@@ -1,10 +1,11 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { messageKey } from '../i18n.js';
 
-export const locales = ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR'];
+export const locales = ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN'];
 const root = new URL('../', import.meta.url);
 const rows = JSON.parse(await readFile(new URL('docs/localization/messages.json', root), 'utf8'));
 const metadata = JSON.parse(await readFile(new URL('docs/localization/metadata.json', root), 'utf8'));
+const chinese = JSON.parse(await readFile(new URL('docs/localization/zh_CN.json', root), 'utf8'));
 const seen = new Set();
 for (const [source, translations] of Object.entries(rows)) {
     const key = messageKey(source);
@@ -17,6 +18,9 @@ for (const [source, translations] of Object.entries(rows)) {
     if (translations.some(value => placeholders(value) !== placeholders(source))) {
         throw new Error(`Placeholder mismatch for ${source}`);
     }
+    if (typeof chinese[source] !== 'string' || !chinese[source].trim() || placeholders(chinese[source]) !== placeholders(source)) {
+        throw new Error(`Incomplete zh_CN translation for ${source}`);
+    }
 }
 for (const [index, locale] of locales.entries()) {
     const [name, description] = metadata[locale];
@@ -27,7 +31,7 @@ for (const [index, locale] of locales.entries()) {
     };
     for (const [source, translations] of Object.entries(rows)) {
         messages[messageKey(source)] = {
-            message: index === 0 ? source : translations[index - 1],
+            message: locale === 'en' ? source : locale === 'zh_CN' ? chinese[source] : translations[index - 1],
             description: source,
         };
     }

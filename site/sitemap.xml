@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://ahn-lab.org/scholar-relay/?lang=en</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://ahn-lab.org/scholar-relay/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://ahn-lab.org/scholar-relay/?lang=ko"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ahn-lab.org/scholar-relay/?lang=ja"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://ahn-lab.org/scholar-relay/?lang=es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://ahn-lab.org/scholar-relay/?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://ahn-lab.org/scholar-relay/?lang=de"/>
+    <xhtml:link rel="alternate" hreflang="pt-br" href="https://ahn-lab.org/scholar-relay/?lang=pt-BR"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://ahn-lab.org/scholar-relay/?lang=zh-CN"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ahn-lab.org/scholar-relay/?lang=en"/>
+  </url>
+</urlset>
