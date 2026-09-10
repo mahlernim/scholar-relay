@@ -1,0 +1,9 @@
+{
+  "en": ["Scholar Relay - Gemini Notebook (NotebookLM) Automation", "PDFs, arXiv papers, and webpages become Gemini Notebook (NotebookLM) notebooks with audio overviews, slides, and study materials."],
+  "ko": ["Scholar Relay - Gemini Notebook(NotebookLM) 자동화", "PDF, arXiv 논문, 웹페이지를 대기열에 추가해 Gemini Notebook(NotebookLM) 노트북과 AI 오디오 오버뷰, 슬라이드, 학습 자료를 생성합니다."],
+  "ja": ["Scholar Relay - Gemini Notebook（NotebookLM）の自動化", "PDF、arXiv 論文、Web ページをキューに追加し、Gemini Notebook（NotebookLM）のノートブック、音声解説、スライド、学習資料を生成します。"],
+  "es": ["Scholar Relay - Automatización de Gemini Notebook (NotebookLM)", "PDF, artículos arXiv y páginas se convierten en cuadernos de Gemini Notebook (NotebookLM) con audio y material de estudio."],
+  "fr": ["Scholar Relay - Automatisation de Gemini Notebook (NotebookLM)", "Des PDF, articles arXiv et pages deviennent des notebooks Gemini Notebook (NotebookLM) avec résumés audio et supports d’étude."],
+  "de": ["Scholar Relay - Automatisierung für Gemini Notebook (NotebookLM)", "PDFs, arXiv-Artikel und Webseiten werden in Gemini Notebook (NotebookLM) zu Notizbüchern mit Audio und Lernmaterial."],
+  "pt_BR": ["Scholar Relay - Automação do Gemini Notebook (NotebookLM)", "PDFs, artigos arXiv e páginas são convertidos em notebooks do Gemini Notebook (NotebookLM) com áudio e materiais de estudo."]
+}
