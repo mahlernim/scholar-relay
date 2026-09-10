@@ -1,6 +1,7 @@
+import { pdfWaitReason } from './source-import.js';
 import { jobHandoff, isUnfinishedJob, jobElapsedText, jobReadyCount, hasJobActivity } from './job-queue.js';
 import { DEFAULT_SETTINGS as DEFAULTS } from './settings.js';
-import { t, localizeStaticDocument, progressDetail, errorSummary, artifactLabel, artifactStatusLabel } from './i18n.js';
+import { t, localizeStaticDocument, progressDetail, errorSummary, generationLimitSummary, pdfWaitSummary, artifactLabel, artifactStatusLabel } from './i18n.js';
 import { inspectPaperPage } from './content.js';
 import { choosePdfTitle, choosePdfFileTitle } from './pdf-metadata.js';
 import { directDetectionMatchesTab } from './detection-policy.js';
@@ -27,6 +28,9 @@ let lastProgressSignature = null;
 let queueSnapshot = { jobs: [], paused: false };
 
 function handoffMessage(job) {
+    if (job.status === 'running' && job.step === 'wait_pdf_access') return pdfWaitSummary(job);
+    const limit = generationLimitSummary(job.tasks);
+    if (limit) return limit;
     if (job.status === 'queued' && queueSnapshot.serviceBlock) return t('Waiting for connection. Your paper is saved.');
     if (job.status === 'completed' && !job.tasks?.length) return t('Source imported. No artifacts requested.');
     return {
@@ -44,7 +48,8 @@ function queuePhase(job) {
     if (job.status === 'queued' || job.step === 'queued_pdf') return t('Queued');
     if (job.status === 'completed') return t('Ready');
     if (job.status === 'stopped') return t('Stopped');
-    if (job.status === 'error' || job.step === 'wait_pdf_access') return t('Needs checking');
+    if (job.step === 'wait_pdf_access' && job.status === 'running') return t('Action needed');
+    if (job.status === 'error') return t('Needs checking');
     return job.step === 'wait_artifacts' ? t('Generating') : t('Preparing');
 }
 
@@ -53,7 +58,7 @@ function queueStatusHtml(job) {
     const activity = hasJobActivity(job) ? ' is-active' : '';
     const phase = queuePhase(job);
     const countText = count ? t('$1/$2 ready', [count.ready, count.total]) : '';
-    const clockLabel = job.status === 'queued' ? t('Time queued') : t('Elapsed time');
+    const clockLabel = job.step === 'wait_pdf_access' && job.status === 'running' ? t('Waiting for you') : job.status === 'queued' ? t('Time queued') : t('Elapsed time');
     // Clock content is deliberately excluded from the HTML comparison below.
     return '<div class="job-phase"><span class="job-activity' + activity + '" aria-hidden="true"></span>' +
         '<span class="job-phase-label" title="' + escapeHtml(phase) + '">' + escapeHtml(phase) + '</span>' +
@@ -66,7 +71,9 @@ function updateElapsedTimes() {
     const now = Date.now();
     for (const element of queueEl.querySelectorAll('[data-elapsed]')) {
         const job = jobs.get(element.dataset.elapsed);
-        const text = job ? jobElapsedText(job, now) : '';
+        const elapsed = job ? jobElapsedText(job, now) : '';
+        const text = job?.status === 'running' && job.step === 'wait_pdf_access'
+            ? (elapsed ? t('Waiting $1', [elapsed]) : t('Waiting for you')) : elapsed;
         if (element.textContent !== text) element.textContent = text;
     }
 }
@@ -85,7 +92,11 @@ async function refreshQueue() {
             queueStatusHtml(job) +
             '<p class="job-hint">' + escapeHtml(handoffMessage(job)) + '</p>' +
             '<div class="job-actions">' + (job.notebookUrl ? '<a href="' + escapeHtml(job.notebookUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(t('Open Notebook')) + '</a>' : '') +
-            (canStop ? '<button data-stop="' + escapeHtml(job.runId) + '">' + escapeHtml(job.status === 'queued' || job.step === 'queued_pdf' ? t('Remove from queue') : t('Stop this job')) + '</button>' : '') + '</div></article>';
+            (job.status === 'running' && job.step === 'wait_pdf_access' ?
+                '<button data-show="' + escapeHtml(job.runId) + '">' + escapeHtml(t('Details')) + '</button>' +
+                '<button data-pdf-file="' + escapeHtml(job.runId) + '">' + escapeHtml(t('Upload PDF & Continue')) + '</button>' +
+                (pdfWaitReason(job) === 'permission' ? '<button data-pdf-permission="' + escapeHtml(job.runId) + '">' + escapeHtml(t('Allow Download & Continue')) + '</button>' : '') : '') +
+            (canStop ? '<button data-stop="' + escapeHtml(job.runId) + '">' + escapeHtml(job.status === 'queued' || job.step === 'queued_pdf' ? t('Remove from queue') : job.step === 'wait_pdf_access' ? t('Dismiss job') : t('Stop this job')) + '</button>' : '') + '</div></article>';
     };
     const html = '<div class="queue-heading"><strong>' + escapeHtml(t('Paper queue')) + ' · ' + active.length + '</strong>' +
         '<button id="btn-pause-queue">' + escapeHtml(queue.paused ? t('Resume queue') : t('Pause queue')) + '</button></div>' +
@@ -109,6 +120,8 @@ async function refreshQueue() {
             } catch (error) { showError(error.message); }
             finally { queueEl.querySelector('#btn-retry-connection')?.removeAttribute('disabled'); }
         });
+        queueEl.querySelectorAll('[data-pdf-file]').forEach(button => button.addEventListener('click', () => selectFallbackPdf(button.dataset.pdfFile)));
+        queueEl.querySelectorAll('[data-pdf-permission]').forEach(button => button.addEventListener('click', () => allowFallbackDownload(queueSnapshot.jobs.find(job => job.runId === button.dataset.pdfPermission))));
         queueEl.querySelectorAll('[data-show]').forEach(button => button.addEventListener('click', async () => {
             selectedRunId = button.dataset.show;
             renderProgress(queueSnapshot.jobs.find(job => job.runId === selectedRunId));
@@ -588,8 +601,7 @@ function renderNoPdf() {
     document.getElementById('btn-upload-manual').addEventListener('click', () => promptForPdfUpload(null));
 }
 
-function errorHtml(detail) {
-    const summary = errorSummary(detail);
+function errorHtml(detail, summary = errorSummary(detail)) {
     return `<div class="pipeline-error-box" role="alert">${escapeHtml(summary)}</div>
       ${detail !== summary ? `<details class="workflow-details"><summary>${escapeHtml(t("Details"))}</summary><div class="step-detail">${escapeHtml(detail)}</div></details>` : ''}`;
 }
@@ -663,17 +675,26 @@ function renderProgress(state) {
       </div>`;
     }
     if (state.status === 'error') {
-        bottomHtml += errorHtml(state.error || state.stepDetail || 'The workflow stopped.');
+        bottomHtml += errorHtml(state.error || state.stepDetail || 'The workflow stopped.', generationLimitSummary(state.tasks) || errorSummary(state.error || state.stepDetail));
+    }
+    if (state.status !== 'error' && generationLimitSummary(state.tasks)) {
+        bottomHtml += `<div class="pipeline-error-box" role="status">${escapeHtml(generationLimitSummary(state.tasks))}</div>`;
+    }
+    if (['error', 'stopped'].includes(state.status) && state.cleanupAvailable && state.notebookId && !state.notebookDeletedAt) {
+        bottomHtml += `<button class="btn-secondary" id="btn-delete-notebook">${escapeHtml(t('Delete unused notebook'))}</button>`;
+    }
+    if (state.notebookDeletedAt) {
+        bottomHtml += `<p class="handoff-note" role="status">${escapeHtml(t('Notebook deleted from Gemini Notebook.'))}</p>`;
     }
     if ((state.tasks || []).length && (state.status === 'completed' || state.tasks.some(task => task.error))) {
         bottomHtml += `<details class="workflow-details"><summary>${escapeHtml(t('Artifact details'))}</summary>${state.tasks.map(task =>
             `<div class="step-detail">${escapeHtml(artifactLabel(task.type))} · ${escapeHtml(artifactStatusLabel(task.status))}${task.error ? `<div>${escapeHtml(task.error)}</div>` : ''}</div>`
         ).join('')}</details>`;
     }
-    bottomHtml += `<p class="handoff-note" role="status">${escapeHtml(handoffMessage(state))}</p>`;
+    if (!generationLimitSummary(state.tasks)) bottomHtml += `<p class="handoff-note" role="status">${escapeHtml(handoffMessage(state))}</p>`;
     if (state.status === 'running' && state.step === 'wait_pdf_access') {
-        bottomHtml += `<button class="btn-generate" id="btn-resume-pdf">${escapeHtml(t("Allow Download & Continue"))}</button>
-          <button class="btn-secondary" id="btn-fallback-file">${escapeHtml(t("Upload PDF Instead"))}</button>
+        bottomHtml += `${pdfWaitReason(state) === 'permission' ? `<button class="btn-generate" id="btn-resume-pdf">${escapeHtml(t("Allow Download & Continue"))}</button>` : ''}
+          <button class="btn-secondary" id="btn-fallback-file">${escapeHtml(t("Upload PDF & Continue"))}</button>
           ${state.stepDetail ? `<details class="workflow-details"><summary>${escapeHtml(t("Download details"))}</summary><div class="step-detail">${escapeHtml(state.stepDetail)}</div></details>` : ''}`;
     }
     if (state.status === 'running' && ['wait_source', 'wait_artifacts', 'wait_pdf_access', 'download_pdf', 'queued_pdf'].includes(state.step)) {
@@ -704,30 +725,53 @@ function renderProgress(state) {
         await detectAndRender();
     });
     document.getElementById('btn-abort')?.addEventListener('click', () => abortPipeline(state.runId));
-    document.getElementById('btn-resume-pdf')?.addEventListener('click', async () => {
+    document.getElementById('btn-resume-pdf')?.addEventListener('click', () => allowFallbackDownload(state));
+    document.getElementById('btn-fallback-file')?.addEventListener('click', () => selectFallbackPdf(state.runId));
+    document.getElementById('btn-delete-notebook')?.addEventListener('click', () => confirmNotebookCleanup(state.runId));
+}
+
+async function confirmNotebookCleanup(runId) {
+    const button = document.getElementById('btn-delete-notebook');
+    if (button) button.disabled = true;
+    try {
+        const check = await chrome.runtime.sendMessage({ type: 'CHECK_NOTEBOOK_CLEANUP', runId });
+        if (!check?.ok) throw new Error(check?.message || 'Could not inspect this notebook.');
+        const detail = t('This notebook has $1 source(s) and $2 failed artifact(s).', [check.sourceCount, check.failedArtifactCount]);
+        if (!confirm(`${detail}\n\n${t('Delete this notebook from Gemini Notebook? This cannot be undone.')}`)) return;
+        const response = await chrome.runtime.sendMessage({ type: 'DELETE_JOB_NOTEBOOK', runId, snapshot: check.snapshot });
+        if (!response?.ok) throw new Error(response?.message || 'Could not confirm notebook deletion.');
+        await refreshQueue();
+    } catch (error) {
+        showError(error.message);
+    } finally {
+        if (button?.isConnected) button.disabled = false;
+    }
+}
+
+async function allowFallbackDownload(state) {
+    try {
+        const pattern = httpOriginPattern(state.originalPdfUrl);
+        if (!pattern || !await chrome.permissions.request({ origins: [pattern] })) return;
+        await resumeFallbackFromPopup(state.runId);
+    } catch (error) { showError(error.message); }
+}
+
+function selectFallbackPdf(runId) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,application/pdf';
+    input.addEventListener('change', async () => {
         try {
-            const pattern = httpOriginPattern(state.originalPdfUrl);
-            if (!pattern || !await chrome.permissions.request({ origins: [pattern] })) return;
-            await resumeFallbackFromPopup(state.runId);
+            const file = input.files?.[0];
+            if (!file) return;
+            assertPdfUploadSize(file.size);
+            if (!hasPdfSignature(await file.slice(0, 1024).arrayBuffer())) throw new Error("This file isn't a valid PDF. Choose another file.");
+            await resumeFallbackFromPopup(runId, {
+                fileName: file.name, fileDataBase64: await readFileAsBase64(file),
+            });
         } catch (error) { showError(error.message); }
     });
-    document.getElementById('btn-fallback-file')?.addEventListener('click', () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.pdf,application/pdf';
-        input.addEventListener('change', async () => {
-            try {
-                const file = input.files?.[0];
-                if (!file) return;
-                assertPdfUploadSize(file.size);
-                if (!hasPdfSignature(await file.slice(0, 1024).arrayBuffer())) throw new Error("This file isn't a valid PDF. Choose another file.");
-                await resumeFallbackFromPopup(state.runId, {
-                    fileName: file.name, fileDataBase64: await readFileAsBase64(file),
-                });
-            } catch (error) { showError(error.message); }
-        });
-        input.click();
-    });
+    input.click();
 }
 
 async function resumeFallbackFromPopup(runId, file = {}) {
@@ -768,6 +812,7 @@ async function startPipelineFromCurrentPageUrl() {
     if (btn) { btn.disabled = true; btn.textContent = t("Starting..."); }
 
     try {
+        if (!confirm(t('No paper was detected. Create a notebook and start the selected automation anyway?'))) return;
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         const currentUrl = tab?.url || '';
         if (!/^https?:\/\//i.test(currentUrl)) {

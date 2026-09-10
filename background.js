@@ -24,7 +24,7 @@ import { withRequestDeadline } from './request-deadline.js';
 import { DEFAULT_SETTINGS } from './settings.js';
 import { createJobQueue, canStartNextJob, isUnfinishedJob, MAX_QUEUED_JOBS, MAX_QUEUED_PDF_BYTES } from './job-queue.js';
 import { createQueuedPdfStore } from './queued-pdfs.js';
-import { t, errorSummary } from './i18n.js';
+import { t, errorSummary, generationLimitSummary, pdfWaitSummary } from './i18n.js';
 import {
     fetchTokens,
     getNotebookUrl,
@@ -598,8 +598,8 @@ async function notifyJobAttention(state, error) {
         await rememberNotificationTarget(id, jobDetailsUrl(state.runId));
         const title = (state.sourceTitle || state.notebookTitle || t('Source')).slice(0, 120);
         await chrome.notifications.create(id, {
-            type: 'basic', iconUrl: 'icons/icon128.png', title: t('ScholarRelay Error'),
-            message: `${title} · ${errorSummary(error)}`, priority: 2,
+            type: 'basic', iconUrl: 'icons/icon128.png', title: state.step === 'wait_pdf_access' ? t('Action needed') : t('ScholarRelay Error'),
+            message: `${title} · ${state.step === 'wait_pdf_access' ? pdfWaitSummary(state) : (generationLimitSummary(state.tasks) || errorSummary(error))}`, priority: 2,
         });
     } catch (error) { console.warn('[Notification] Could not show job attention:', error); }
 }
@@ -641,24 +641,14 @@ async function resumeServiceBlock(blockId) {
     return { ok: true };
 }
 
-async function failPipeline(runId, errorInput, notebookId = null, canDeleteBlankNotebook = false) {
+async function failPipeline(runId, errorInput, notebookId = null) {
     const state = await requireActiveRun(runId);
     const diagnostic = failureDiagnostic(errorInput, state.step);
-    let cleanupMessage = '';
-    if (notebookId && canDeleteBlankNotebook) {
-        try {
-            await deleteNotebook(notebookId);
-            cleanupMessage = ' Blank notebook was deleted automatically.';
-        } catch (cleanupErr) {
-            cleanupMessage = ' Failed to delete blank notebook automatically.';
-            console.warn('[Pipeline] Failed to delete blank notebook:', cleanupErr?.message);
-        }
-    }
-
-    const finalError = `${diagnostic.message}${cleanupMessage}`.trim();
+    const finalError = diagnostic.message;
     const failedState = await transitionRun(runId, {
         status: 'error', step: 'error', failedStep: diagnostic.failedStep, failure: diagnostic,
         stepDetail: finalError, error: finalError, completedAt: new Date().toISOString(),
+        cleanupAvailable: !!(notebookId || state.notebookId),
     });
     if (!failedState) return;
     await notifyJobAttention(failedState, { ...diagnostic, message: finalError });
@@ -1113,12 +1103,20 @@ chrome.alarms.onAlarm.addListener(handlePollAlarm);
 
 async function reconcilePipelineRuntime() {
     const settings = await getSettings();
+    const attention = [];
     await pipelineState.transact(queue => {
         for (const job of queue.jobs) {
             job.settings ||= { ...settings };
             const action = runtimeRecoveryAction(job, false);
             if (action === 'wait_pdf_access') {
-                Object.assign(job, { step: 'wait_pdf_access', stepDetail: 'PDF download was paused. Open the popup to resume or select a PDF.' });
+                if (job.step !== 'wait_pdf_access') {
+                    Object.assign(job, { step: 'wait_pdf_access', attentionSince: new Date().toISOString(),
+                        pdfWaitReason: 'download', stepDetail: 'PDF download was paused. Open the popup to resume or select a PDF.' });
+                }
+                if (!job.attentionNotified) {
+                    job.attentionNotified = true;
+                    attention.push(job.runId);
+                }
             } else if (action === 'interrupt' && job.step !== 'queued_pdf') {
                 Object.assign(job, interruptedPipelineUpdate(job));
             }
@@ -1130,6 +1128,10 @@ async function reconcilePipelineRuntime() {
     await pdfStore.prune(queue.jobs.filter(job => isUnfinishedJob(job)).map(job => job.payloadId).filter(Boolean));
     await chrome.storage.local.remove('pipelineState');
     await syncQueueRuntime();
+    for (const runId of attention) {
+        const state = await getState(runId);
+        if (state.status === 'running' && state.step === 'wait_pdf_access') await notifyJobAttention(state, state.stepDetail);
+    }
 }
 
 const fallbackPdf = createPdfFallback({
@@ -1139,6 +1141,7 @@ const fallbackPdf = createPdfFallback({
     upload: (notebookId, file) => addFileSource(notebookId, file.filename, file.fileData, file.mimeType),
     poll: () => chrome.alarms.create(ALARM_NAME, { periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES }),
     fail: failPipeline,
+    notify: state => notifyJobAttention(state, state.stepDetail),
 });
 
 async function resumePdfFallback(message) {
@@ -1303,7 +1306,7 @@ async function runPipeline(runId, pdfUrl, pageUrl, uploadFile = null, sourceType
         }
         if (!notebookId && !sourceMutationStarted && await holdForSession(runId, err)) return;
         console.error('[Pipeline] Setup error:', err);
-        await failPipeline(runId, err, notebookId, !!notebookId && !sourceMutationStarted);
+        await failPipeline(runId, err, notebookId);
     }
 }
 
@@ -1398,13 +1401,72 @@ async function stopPipelineRequest(requestedRunId) {
     const result = await pipelineState.transact(queue => {
         const job = queue.jobs.find(item => item.runId === requestedRunId);
         if (!job || !(job.status === 'queued' || job.step === 'queued_pdf' || canStopPipeline(job, requestedRunId))) return null;
-        Object.assign(job, { status: 'stopped', completedAt: new Date().toISOString() });
+        Object.assign(job, { status: 'stopped', completedAt: new Date().toISOString(), cleanupAvailable: !!job.notebookId });
         return { state: job };
     });
     if (!result.applied) return { ok: false, code: 'PIPELINE_NOT_STOPPABLE', message: 'This job has already advanced. Refresh the queue.' };
     await releaseJobPdf(requestedRunId);
     kickQueue();
     return { ok: true, state: result.state };
+}
+
+function cleanupSnapshot(sources, artifacts) {
+    return JSON.stringify({
+        sources: sources.map(source => [source.id, source.status]).sort((a, b) => a[0].localeCompare(b[0])),
+        artifacts: [...artifacts.values()].map(artifact => [artifact.taskId, artifact.status]).sort((a, b) => a[0].localeCompare(b[0])),
+    });
+}
+
+async function inspectNotebookCleanup(runId) {
+    await ensureBootReconciled();
+    const queue = await getQueue();
+    const job = queue.jobs.find(item => item.runId === runId);
+    if (!job || !['error', 'stopped'].includes(job.status) || !job.notebookId || job.notebookDeletedAt) {
+        throw new Error('This job does not have a removable ScholarRelay notebook.');
+    }
+    if (queue.jobs.some(item => item.runId !== runId && item.notebookId === job.notebookId && !item.notebookDeletedAt)) {
+        throw new Error('Another saved job references this notebook. Open it and review it manually.');
+    }
+    const [sources, artifacts] = await Promise.all([listSources(job.notebookId), listArtifactStatuses(job.notebookId)]);
+    const statuses = [...artifacts.values()].map(artifact => artifact.status);
+    if (statuses.some(status => ['completed', 'in_progress', 'pending', 'pending_review', 'unknown'].includes(status))) {
+        throw new Error('This notebook has completed or possibly active work. Open it and review it manually.');
+    }
+    return {
+        ok: true,
+        runId,
+        notebookId: job.notebookId,
+        notebookTitle: job.notebookTitle || job.sourceTitle || '',
+        sourceCount: sources.length,
+        failedArtifactCount: statuses.filter(status => status === 'failed').length,
+        snapshot: cleanupSnapshot(sources, artifacts),
+    };
+}
+
+async function deleteJobNotebook(message) {
+    const inspected = await inspectNotebookCleanup(message.runId);
+    if (!message.snapshot || message.snapshot !== inspected.snapshot) {
+        throw new Error('The notebook changed after confirmation. Review it before deleting.');
+    }
+    try {
+        await deleteNotebook(inspected.notebookId);
+    } catch (error) {
+        await pipelineState.transact(queue => {
+            const job = queue.jobs.find(item => item.runId === message.runId && item.notebookId === inspected.notebookId);
+            if (!job) return null;
+            job.cleanupStatus = error?.code === 'TRANSIENT_MUTATION_UNCERTAIN' ? 'unknown' : 'failed';
+            job.cleanupError = error?.message || 'Notebook deletion could not be confirmed.';
+            return {};
+        });
+        throw error;
+    }
+    await pipelineState.transact(queue => {
+        const job = queue.jobs.find(item => item.runId === message.runId && item.notebookId === inspected.notebookId);
+        if (!job) return null;
+        Object.assign(job, { notebookDeletedAt: new Date().toISOString(), cleanupStatus: 'deleted', notebookUrl: null });
+        return {};
+    });
+    return { ok: true };
 }
 
 async function clearFinishedJobs() {
@@ -1491,6 +1553,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'ABORT_PIPELINE') {
         stopPipelineRequest(message.runId).then(sendResponse)
             .catch(error => sendResponse({ ok: false, message: error?.message || 'Could not stop monitoring' }));
+        return true;
+    }
+
+    if (message.type === 'CHECK_NOTEBOOK_CLEANUP') {
+        inspectNotebookCleanup(message.runId).then(sendResponse)
+            .catch(error => sendResponse({ ok: false, code: error?.code, message: error?.message || 'Could not inspect this notebook.' }));
+        return true;
+    }
+
+    if (message.type === 'DELETE_JOB_NOTEBOOK') {
+        deleteJobNotebook(message).then(sendResponse)
+            .catch(error => sendResponse({ ok: false, code: error?.code, message: error?.message || 'Could not confirm notebook deletion.' }));
         return true;
     }
 

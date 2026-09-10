@@ -455,3 +455,28 @@ The separately reported sign-in detection failure has not been confirmed fixed b
 ### v1.4.3 expedited release
 
 PRs #58, #59 and #60 merged in dependency order after their exact-head checks passed. Version 1.4.3 replaces the pending 1.4.2 submission with session discovery classification, fully shared token refreshes, durable connection holds, actionable error notifications and compact progress. The existing remote-mutation uncertainty safeguards remain unchanged. The original signed-in incident is not claimed to be reproduced or fully resolved.
+
+
+### PDF-wait recovery candidate
+
+Issue #63 makes PDF-download waits explicit on queue cards with the download reason, time waiting, same-notebook PDF selection, and permission recovery only for missing extension access. Waiting jobs retain their source diagnostics across restarts and claim a best-effort notification once. Legacy waits without a timestamp say Waiting for you. Existing scheduling continues other eligible jobs without automatic retry, expiry, or notebook deletion.
+
+PDF 다운로드 대기 카드에 원인, 대기 시간, 기존 노트북에서 계속할 PDF 업로드 버튼을 표시합니다. 확장 프로그램 권한이 부족한 경우에만 권한 허용 버튼을 표시합니다. 재시작해도 오류 정보를 유지하고 알림은 한 번만 시도합니다. 대기 시작 시각이 없는 기존 작업은 사용자 조치 대기로 표시하며 다른 논문은 계속 처리합니다. 다음 릴리스 후보이며 배포된 동작은 변경되지 않았습니다.
+
+### Generation-limit feedback candidate
+
+Issue #62 preserves per-artifact RATE_LIMITED diagnostics in a localized queue-card and job-view warning. Successful artifacts remain visible. Uncertain mutations and unrelated failures do not become quota claims. No reset time, daily allowance, global queue hold, or automatic generation retry is inferred.
+
+생성 제한이 발생한 아티팩트를 대기열 카드와 작업 화면에 표시하고 완료된 결과를 유지합니다. 결과가 불확실한 요청이나 다른 오류를 할당량 소진으로 표시하지 않으며 초기화 시각이나 자동 재시도를 추가하지 않습니다. 다음 릴리스 후보이며 배포된 동작은 변경되지 않았습니다.
+
+### v1.4.4 automation and cleanup candidate
+
+Issues #62, #63, #67, and #68 are combined in the v1.4.4 candidate. In addition to the focused generation-limit and PDF-wait feedback, starting from a page without a detected paper now asks for confirmation before creating a notebook. Failed and stopped jobs can offer an explicit unused-notebook cleanup action. Cleanup first reads current sources and artifact states, refuses completed or possibly active work and shared notebook references, then requires an unchanged second inventory before one delete request. An uncertain delete is recorded and never replayed automatically.
+
+Simplified Chinese joins the seven existing extension and store locales. The manifest, package, locale catalogs, metadata drafts, listing copy, screenshots, and packaging checks stay aligned at version 1.4.4. Chinese copy is machine-assisted and receives a direct UI terminology review before store submission.
+
+The new static landing page at `https://ahn-lab.org/scholar-relay/` leads with repeatable automation. It shows one saved preset applied to multiple papers, uses a compact responsive layout, selects among eight languages from the browser locale with English fallback, and includes a shareable visual workflow card. The website stays outside the extension ZIP.
+
+English: Confirm intentional no-paper starts, show precise generation and PDF-wait guidance, and let users remove an unused job notebook only after a guarded inspection. Add Simplified Chinese and an automation-focused multilingual landing page.
+
+한국어: 논문이 감지되지 않은 페이지에서는 자동화를 시작하기 전에 확인합니다. 생성 제한과 PDF 대기 원인을 명확히 표시하고, 실패하거나 중단된 작업의 불필요한 노트북은 안전 점검 후에만 삭제할 수 있습니다. 중국어 간체와 자동화를 강조한 다국어 랜딩 페이지를 추가합니다.

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ahn-lab.org/scholar-relay/sitemap.xml

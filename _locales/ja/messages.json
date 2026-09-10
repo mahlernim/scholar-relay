@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "ScholarRelay - Gemini Notebook に PDF をインポート"
+    "message": "Scholar Relay - Gemini Notebook（NotebookLM）の自動化"
   },
   "extensionDescription": {
     "message": "PDF、arXiv 論文、ウェブページを Gemini Notebook（NotebookLM）にインポートし、音声解説や学習資料を生成します。"
@@ -928,5 +928,61 @@
   "ui_faff56b8": {
     "message": "経過時間",
     "description": "Elapsed time"
+  },
+  "ui_c6bbc618": {
+    "message": "$1 の生成が制限されています。後で既存のノートブックで再試行してください。",
+    "description": "Generation is limited for $1. Try again later in the existing notebook."
+  },
+  "ui_72bb088c": {
+    "message": "操作が必要",
+    "description": "Action needed"
+  },
+  "ui_4a78a7bf": {
+    "message": "$1 待機中",
+    "description": "Waiting $1"
+  },
+  "ui_e8233afc": {
+    "message": "操作を待っています",
+    "description": "Waiting for you"
+  },
+  "ui_f7066e40": {
+    "message": "ジョブを終了",
+    "description": "Dismiss job"
+  },
+  "ui_45c40cb9": {
+    "message": "PDF をアップロードして続行",
+    "description": "Upload PDF & Continue"
+  },
+  "ui_38f2e1ae": {
+    "message": "ダウンロードの許可が必要です。アクセスを許可するか PDF を選択して、このノートブックで続行してください。",
+    "description": "Download permission is needed. Allow access or select a PDF to continue in this notebook."
+  },
+  "ui_e431d4b": {
+    "message": "出版社が PDF のダウンロードをブロックしました。ダウンロード済みの PDF を選択して、このノートブックで続行してください。",
+    "description": "The publisher blocked the PDF download. Select a downloaded PDF to continue in this notebook."
+  },
+  "ui_56d74e8d": {
+    "message": "PDF をダウンロードできませんでした。PDF を選択して、このノートブックで続行してください。",
+    "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
+  },
+  "ui_9dab64e9": {
+    "message": "未使用のノートブックを削除",
+    "description": "Delete unused notebook"
+  },
+  "ui_97612a43": {
+    "message": "Gemini Notebook からノートブックを削除しました。",
+    "description": "Notebook deleted from Gemini Notebook."
+  },
+  "ui_52c919ec": {
+    "message": "このノートブックにはソースが$1件、失敗した成果物が$2件あります。",
+    "description": "This notebook has $1 source(s) and $2 failed artifact(s)."
+  },
+  "ui_2c26929": {
+    "message": "このノートブックを Gemini Notebook から削除しますか？元に戻せません。",
+    "description": "Delete this notebook from Gemini Notebook? This cannot be undone."
+  },
+  "ui_efd1bd2d": {
+    "message": "論文が検出されませんでした。それでもノートブックを作成し、選択した自動化を開始しますか？",
+    "description": "No paper was detected. Create a notebook and start the selected automation anyway?"
   }
 }

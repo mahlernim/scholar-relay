@@ -33,12 +33,13 @@ test('store manifest uses minimum permissions and a production-safe alarm baseli
 });
 
 test('ScholarRelay branding and package identity stay aligned', async () => {
-  const [manifestText, packageText, englishLocaleText, koreanLocaleText, popupText, popupScriptText, backgroundText, readmeText, privacyText, packageScript] =
+  const [manifestText, packageText, englishLocaleText, koreanLocaleText, chineseLocaleText, popupText, popupScriptText, backgroundText, readmeText, privacyText, packageScript] =
     await Promise.all([
       readFile(new URL('../manifest.json', import.meta.url), 'utf8'),
       readFile(new URL('../package.json', import.meta.url), 'utf8'),
       readFile(new URL('../_locales/en/messages.json', import.meta.url), 'utf8'),
       readFile(new URL('../_locales/ko/messages.json', import.meta.url), 'utf8'),
+      readFile(new URL('../_locales/zh_CN/messages.json', import.meta.url), 'utf8'),
       readFile(new URL('../popup.html', import.meta.url), 'utf8'),
       readFile(new URL('../popup.js', import.meta.url), 'utf8'),
       readFile(new URL('../background.js', import.meta.url), 'utf8'),
@@ -51,16 +52,18 @@ test('ScholarRelay branding and package identity stay aligned', async () => {
   const packageJson = JSON.parse(packageText);
   const englishLocale = JSON.parse(englishLocaleText);
   const koreanLocale = JSON.parse(koreanLocaleText);
+  const chineseLocale = JSON.parse(chineseLocaleText);
   assert.equal(packageJson.name, 'scholar-relay');
   assert.equal(packageJson.version, manifest.version);
   assert.equal(manifest.short_name, 'ScholarRelay');
-  for (const locale of [englishLocale, koreanLocale]) {
-    assert.ok(locale.extensionName.message.startsWith(manifest.short_name));
+  for (const locale of [englishLocale, koreanLocale, chineseLocale]) {
+    assert.ok(locale.extensionName.message.startsWith('Scholar Relay'));
     assert.ok(locale.extensionName.message.length <= 75);
     assert.ok(locale.extensionDescription.message.length <= 132);
   }
   assert.match(englishLocale.extensionDescription.message, /Gemini Notebook/);
   assert.match(koreanLocale.extensionDescription.message, /Gemini Notebook/);
+  assert.match(chineseLocale.extensionDescription.message, /Gemini Notebook/);
   assert.doesNotMatch(`${popupText}\n${backgroundText}`, /Chrome PDF to NotebookLM/);
   assert.match(popupText, /Open in Gemini Notebook|Gemini Notebook names/);
   assert.match(popupScriptText, /lastProgressSignature/);
@@ -77,6 +80,7 @@ test('ScholarRelay branding and package identity stay aligned', async () => {
   assert.match(packageScript, /pdf-file-policy\.js/);
   assert.match(packageScript, /_locales\/en\/messages\.json/);
   assert.match(packageScript, /_locales\/ko\/messages\.json/);
+  assert.match(packageScript, /_locales\/zh_CN\/messages\.json/);
 });
 
 test('runtime recovery recreates only missing polling alarms', () => {

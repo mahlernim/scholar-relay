@@ -69,7 +69,7 @@ async function worker({ failInitialQueueRead = false, initialQueue = null, initi
   vm.runInContext(source, context);
   await vm.runInContext('bootReconciliationPromise', context);
   await new Promise(resolve => setImmediate(resolve));
-  const functions = vm.runInContext('({startPipelineRequest, stopPipelineRequest, tickArtifactPoll, tickSourcePoll, resumePdfFallback, reconcilePipelineRuntime, getQueue, decodeQueuedPdf, shouldRetainJobPdf, ensureBootReconciled, failPipeline, holdForSession, safeNotificationTarget})', context);
+  const functions = vm.runInContext('({startPipelineRequest, stopPipelineRequest, tickArtifactPoll, tickSourcePoll, resumePdfFallback, reconcilePipelineRuntime, getQueue, decodeQueuedPdf, shouldRetainJobPdf, ensureBootReconciled, failPipeline, holdForSession, safeNotificationTarget, inspectNotebookCleanup, deleteJobNotebook})', context);
   return { data, logs, notifications, opened, notificationEvents, hooks, context, listener, messageListener, files, ...functions };
 }
 
@@ -106,6 +106,78 @@ function running(tasks = []) {
   return { status: 'running', runId: 'old', step: 'wait_artifacts', notebookId: 'notebook',
     stepStartedAt: new Date().toISOString(), tasks };
 }
+
+test('all-failed generation retains quota diagnostics and notifies with the affected artifact', async () => {
+  const w = await worker();
+  w.data.userSettings.notificationEnabled = true;
+  w.context.listArtifactStatuses = async () => new Map();
+  w.data.pipelineState = running([{ type: 'audio', status: 'failed', code: 'RATE_LIMITED', error: 'RATE_LIMITED: API limit' }]);
+  await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  assert.match(w.notifications[0].message, /Generation is limited.*Audio Overview/);
+  assert.equal(w.data.pipelineState.tasks[0].code, 'RATE_LIMITED');
+});
+
+test('failed setup offers explicit cleanup without deleting the notebook automatically', async () => {
+  const w = await worker();
+  let deletions = 0;
+  w.context.deleteNotebook = async () => { deletions++; };
+  w.data.pipelineState = { ...running(), step: 'add_source', notebookId: 'notebook-owned' };
+  await w.failPipeline('old', 'Source failed', 'notebook-owned');
+  assert.equal(deletions, 0);
+  assert.equal(w.data.pipelineState.cleanupAvailable, true);
+  assert.equal(w.data.pipelineState.notebookId, 'notebook-owned');
+});
+
+test('cleanup inspection refuses notebooks with useful or possibly active artifacts', async () => {
+  const w = await worker();
+  w.data.pipelineState = { ...running(), status: 'error', step: 'error', notebookId: 'notebook-owned', cleanupAvailable: true };
+  w.context.listSources = async () => [{ id: 'source-1', status: 3 }];
+  w.context.listArtifactStatuses = async () => new Map([['artifact-1', { taskId: 'artifact-1', status: 'completed' }]]);
+  await assert.rejects(w.inspectNotebookCleanup('old'), /completed or possibly active work/);
+});
+
+test('confirmed cleanup rechecks the notebook and deletes only the matching owned job', async () => {
+  const w = await worker();
+  let deletions = 0;
+  w.data.pipelineState = { ...running(), status: 'error', step: 'error', notebookId: 'notebook-owned', notebookUrl: 'https://notebook.google.com/notebook/notebook-owned', cleanupAvailable: true };
+  w.context.listSources = async () => [{ id: 'source-1', status: 4 }];
+  w.context.listArtifactStatuses = async () => new Map([['artifact-1', { taskId: 'artifact-1', status: 'failed' }]]);
+  w.context.deleteNotebook = async id => { assert.equal(id, 'notebook-owned'); deletions++; return { ok: true }; };
+  const check = await w.inspectNotebookCleanup('old');
+  const result = await w.deleteJobNotebook({ runId: 'old', snapshot: check.snapshot });
+  assert.equal(result.ok, true);
+  assert.equal(deletions, 1);
+  assert.equal(w.data.pipelineState.cleanupStatus, 'deleted');
+  assert.equal(w.data.pipelineState.notebookUrl, null);
+});
+
+test('cleanup never deletes after notebook contents change or an outcome becomes uncertain', async () => {
+  const w = await worker();
+  w.data.pipelineState = { ...running(), status: 'stopped', step: 'wait_artifacts', notebookId: 'notebook-owned', cleanupAvailable: true };
+  w.context.listSources = async () => [];
+  w.context.listArtifactStatuses = async () => new Map();
+  const check = await w.inspectNotebookCleanup('old');
+  w.context.listSources = async () => [{ id: 'new-source', status: 3 }];
+  await assert.rejects(w.deleteJobNotebook({ runId: 'old', snapshot: check.snapshot }), /changed after confirmation/);
+  w.context.listSources = async () => [];
+  w.context.deleteNotebook = async () => { throw Object.assign(new Error('Unknown outcome'), { code: 'TRANSIENT_MUTATION_UNCERTAIN' }); };
+  await assert.rejects(w.deleteJobNotebook({ runId: 'old', snapshot: check.snapshot }), /Unknown outcome/);
+  assert.equal(w.data.pipelineState.cleanupStatus, 'unknown');
+  assert.equal(w.data.pipelineState.notebookUrl, undefined);
+});
+
+test('boot preserves PDF wait diagnostics and sends only one recovery notification', async () => {
+  const job = { ...running(), step: 'wait_pdf_access', pdfWaitReason: 'publisher',
+    stepDetail: 'HTTP 403 while downloading source PDF', attentionSince: '2026-09-08T00:00:00Z',
+    settings: { notificationEnabled: true } };
+  const w = await worker({ initialQueue: { version: 1, paused: true, jobs: [job] } });
+  assert.match(w.notifications[0].message, /publisher blocked/);
+  await w.reconcilePipelineRuntime();
+  assert.equal(w.notifications.length, 1);
+  assert.equal(w.data.jobQueue.jobs[0].stepDetail, job.stepDetail);
+  assert.equal(w.data.jobQueue.jobs[0].attentionSince, job.attentionSince);
+  assert.equal(w.data.jobQueue.jobs[0].notebookId, job.notebookId);
+});
 
 test('backend rejects no-artifact starts without creating or claiming a notebook', async () => {
   const w = await worker();

@@ -17,12 +17,22 @@ export function canFallback(state) {
 }
 
 // Claim each transition before external work. No PDF bytes are persisted in state.
-export function createPdfFallback({ getState, transition, download, upload, poll, fail }) {
+export function pdfWaitReason(state) {
+  if (state.pdfWaitReason) return state.pdfWaitReason;
+  const detail = state.stepDetail || '';
+  if (/SITE_ACCESS_REQUIRED/.test(detail)) return 'permission';
+  if (/HTTP (401|403)\b/.test(detail)) return 'publisher';
+  return 'download';
+}
+
+export function createPdfFallback({ getState, transition, download, upload, poll, fail, notify = async () => {} }) {
   return async function fallback(runId, { resume = false, file = null } = {}) {
     const state = await getState(runId);
     const steps = resume ? ['wait_pdf_access'] : ['add_source', 'wait_source'];
     const claimed = await transition(runId, {
       step: 'download_pdf',
+      attentionSince: null,
+      pdfWaitReason: null,
       fallbackAttempted: true,
       failedUrlSourceId: state.sourceId || null,
       stepDetail: file ? 'Preparing the selected PDF...' : 'URL import failed. Downloading the PDF for this notebook...',
@@ -54,10 +64,20 @@ export function createPdfFallback({ getState, transition, download, upload, poll
       const current = await getState(runId);
       if (current.runId !== runId || current.status !== 'running') return false;
       if (current.step === 'download_pdf') {
-        await transition(runId, {
+        const waiting = await transition(runId, {
           step: 'wait_pdf_access',
-          stepDetail: `${error.message} Open the popup to grant access or select the PDF.`,
+          pdfWaitReason: pdfWaitReason({ stepDetail: error.message }),
+          attentionSince: current.attentionSince || new Date().toISOString(),
+          attentionNotified: true,
+          stepDetail: error.message,
         }, { expectedSteps: ['download_pdf'] });
+        // Persist the notification claim first. Restarts and retries must not spam.
+        if (waiting && !current.attentionNotified) {
+          try {
+            const latest = await getState(runId);
+            if (latest.status === 'running' && latest.step === 'wait_pdf_access') await notify(latest);
+          } catch (_) { /* Notification is best effort. */ }
+        }
       } else {
         await fail(runId, `${error.message} The upload was not repeated. Check the existing notebook.`, state.notebookId);
       }

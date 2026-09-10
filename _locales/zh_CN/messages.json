@@ -1,0 +1,988 @@
+{
+  "extensionName": {
+    "message": "Scholar Relay - Gemini Notebook (NotebookLM) 自动化"
+  },
+  "extensionDescription": {
+    "message": "将 PDF、arXiv 论文和网页导入 Gemini Notebook (NotebookLM)，自动生成音频概览和学习资料。"
+  },
+  "ui_6440add9": {
+    "message": "笔记本$1已准备好使用一个学习资料。单击以打开。",
+    "description": "Notebook $1 is ready with one artifact. Click to open."
+  },
+  "ui_bca3294": {
+    "message": "就绪",
+    "description": "Ready"
+  },
+  "ui_5579c3d4": {
+    "message": "失败",
+    "description": "Failed"
+  },
+  "ui_71fcc075": {
+    "message": "展成",
+    "description": "Generating"
+  },
+  "ui_c9450e48": {
+    "message": "稍等片刻",
+    "description": "Waiting"
+  },
+  "ui_ce74e943": {
+    "message": "纹章",
+    "description": "Artifact"
+  },
+  "ui_85cc8e29": {
+    "message": "运行时间： $1 min.",
+    "description": "Elapsed time: $1 min."
+  },
+  "ui_5495106b": {
+    "message": "在开始之前，请在“设置”中至少选择一个学习资料。",
+    "description": "Choose at least one artifact in Settings before starting."
+  },
+  "ui_af966070": {
+    "message": "工作流程已处于活动状态。在开始另一个之前检查其进度。",
+    "description": "A workflow is already active. Check its progress before starting another."
+  },
+  "ui_74a7ea81": {
+    "message": "在Chrome扩展设置中启用允许访问文件网址，或选择上传本地PDF。",
+    "description": "Enable Allow access to file URLs in Chrome extension settings, or choose Upload Local PDF."
+  },
+  "ui_a788ccba": {
+    "message": "直接PDF",
+    "description": "Direct PDF"
+  },
+  "ui_8212a19a": {
+    "message": "PDF 文档",
+    "description": "PDF document"
+  },
+  "ui_86fe33ed": {
+    "message": "Publisher PDF",
+    "description": "Publisher PDF"
+  },
+  "ui_fd7e7e2b": {
+    "message": "文章PDF",
+    "description": "Article PDF"
+  },
+  "ui_9a142465": {
+    "message": "嵌入式PDF查看器",
+    "description": "Embedded PDF viewer"
+  },
+  "ui_be4342c0": {
+    "message": "arXiv摘要页面",
+    "description": "arXiv abstract page"
+  },
+  "ui_1ae2ab63": {
+    "message": "arXiv PDF",
+    "description": "arXiv PDF"
+  },
+  "ui_5a02480d": {
+    "message": "arXiv PDF链接",
+    "description": "arXiv PDF link"
+  },
+  "ui_fbb8c667": {
+    "message": "页面上的PDF链接",
+    "description": "PDF link on page"
+  },
+  "ui_747f5a5f": {
+    "message": "直接PDF网址",
+    "description": "Direct PDF URL"
+  },
+  "ui_e4668cae": {
+    "message": "本地文件",
+    "description": "Local file"
+  },
+  "ui_102eb56b": {
+    "message": "将论文发送到Gemini Notebook",
+    "description": "Send papers to Gemini Notebook"
+  },
+  "ui_4b058728": {
+    "message": "设置",
+    "description": "Settings"
+  },
+  "ui_b62eeb9e": {
+    "message": "⚙️ 设置",
+    "description": "⚙️ Settings"
+  },
+  "ui_546c8007": {
+    "message": "⚠️ 选择至少一个学习资料",
+    "description": "⚠️ Choose at least one artifact"
+  },
+  "ui_fd3f8fe8": {
+    "message": "📓 笔记本设置",
+    "description": "📓 Notebook Settings"
+  },
+  "ui_e0ab2da5": {
+    "message": "将新笔记本添加到",
+    "description": "Add new notebooks to"
+  },
+  "ui_7ed65126": {
+    "message": "没有收藏",
+    "description": "No collection"
+  },
+  "ui_5cdf8229": {
+    "message": "刷新收藏",
+    "description": "Refresh collections"
+  },
+  "ui_655bdb8c": {
+    "message": "集合从您登录的Gemini Notebook帐户加载。",
+    "description": "Collections load from your signed-in Gemini Notebook account."
+  },
+  "ui_2775c98c": {
+    "message": "为笔记本使用论文标题",
+    "description": "Use paper title for notebook"
+  },
+  "ui_23c94c30": {
+    "message": "如果关闭或未找到标题，则Gemini Notebook为其命名。",
+    "description": "If off or no title is found, Gemini Notebook names it."
+  },
+  "ui_e46cfd94": {
+    "message": "🎨 学习资料设置",
+    "description": "🎨 Artifact Settings"
+  },
+  "ui_68dc958f": {
+    "message": "学习资料语言",
+    "description": "Artifact language"
+  },
+  "ui_1b9ae0bb": {
+    "message": "中文",
+    "description": "English"
+  },
+  "ui_ad70bf21": {
+    "message": "朝鲜语",
+    "description": "Korean"
+  },
+  "ui_940c2e0a": {
+    "message": "日语",
+    "description": "Japanese"
+  },
+  "ui_b819825b": {
+    "message": "西班牙语",
+    "description": "Spanish"
+  },
+  "ui_7cbd6ca5": {
+    "message": "嘿，法国人！",
+    "description": "French"
+  },
+  "ui_11100833": {
+    "message": "德国",
+    "description": "German"
+  },
+  "ui_e6d67d5c": {
+    "message": "葡萄牙语",
+    "description": "Portuguese"
+  },
+  "ui_5ecc8eb6": {
+    "message": "适用于音频、视频、报告、信息图表、幻灯片和数据表。",
+    "description": "Applies to audio, video, reports, infographics, slide decks, and data tables."
+  },
+  "ui_b7a1a59b": {
+    "message": "界面遵循Chrome的语言。学习资料语言是独立的。",
+    "description": "The interface follows Chrome's language. Artifact language is independent."
+  },
+  "ui_63435037": {
+    "message": "🎧 音频概述",
+    "description": "🎧 Audio Overview"
+  },
+  "ui_5e4b9b33": {
+    "message": "-视频概览",
+    "description": "🎬 Video Overview"
+  },
+  "ui_1c876167": {
+    "message": "报告",
+    "description": "📄 Report"
+  },
+  "ui_a742b583": {
+    "message": "测验",
+    "description": "❓ Quiz"
+  },
+  "ui_13be9b37": {
+    "message": "抽认卡",
+    "description": "🃏 Flashcards"
+  },
+  "ui_853abe6f": {
+    "message": "图片信息",
+    "description": "🖼 Infographic"
+  },
+  "ui_871b8541": {
+    "message": "📊 幻灯片",
+    "description": "📊 Slide Deck"
+  },
+  "ui_768c9843": {
+    "message": "思维导图",
+    "description": "🧠 Mind Map"
+  },
+  "ui_c1a0dcce": {
+    "message": "数据表",
+    "description": "📋 Data Table"
+  },
+  "ui_ffb0ff72": {
+    "message": "格式",
+    "description": "Format"
+  },
+  "ui_fff5af1f": {
+    "message": "深度阅读",
+    "description": "Deep Dive"
+  },
+  "ui_b3c47c3f": {
+    "message": "概述",
+    "description": "Brief"
+  },
+  "ui_78edea29": {
+    "message": "批判",
+    "description": "Critique"
+  },
+  "ui_61a5d5c0": {
+    "message": "争论",
+    "description": "Debate"
+  },
+  "ui_cc5e1935": {
+    "message": "有效   长度",
+    "description": "Length"
+  },
+  "ui_5fdddd75": {
+    "message": "Short",
+    "description": "Short"
+  },
+  "ui_19dc307e": {
+    "message": "默认",
+    "description": "Default"
+  },
+  "ui_45939473": {
+    "message": "长、教授",
+    "description": "Long"
+  },
+  "ui_cda1cf1f": {
+    "message": "自定义遮罩指令",
+    "description": "Custom instructions"
+  },
+  "ui_c75093e": {
+    "message": "例如，专注于方法论，并简单地总结关键发现。",
+    "description": "e.g. Focus on methodology and summarize key findings simply."
+  },
+  "ui_1c96f10b": {
+    "message": "解释者",
+    "description": "Explainer"
+  },
+  "ui_d3110b7c": {
+    "message": "Visual Style",
+    "description": "Visual style"
+  },
+  "ui_76422ffa": {
+    "message": "自动选择",
+    "description": "Auto Select"
+  },
+  "ui_9525b78e": {
+    "message": "自定义",
+    "description": "Custom"
+  },
+  "ui_7b47b1f3": {
+    "message": "古朴典雅",
+    "description": "Classic"
+  },
+  "ui_29db3ade": {
+    "message": "白板",
+    "description": "Whiteboard"
+  },
+  "ui_642fd4b": {
+    "message": "日本可愛文化",
+    "description": "Kawaii"
+  },
+  "ui_3e234f0f": {
+    "message": "动漫",
+    "description": "Anime"
+  },
+  "ui_9f0aff47": {
+    "message": "水彩画",
+    "description": "Watercolor"
+  },
+  "ui_1a272890": {
+    "message": "复古印花",
+    "description": "Retro Print"
+  },
+  "ui_838b5730": {
+    "message": "历史遗产",
+    "description": "Heritage"
+  },
+  "ui_4b4de48f": {
+    "message": "造纸工艺",
+    "description": "Paper Craft"
+  },
+  "ui_ecf7487f": {
+    "message": "例如，使用强调视觉效果的纪录片风格。",
+    "description": "e.g. Use a documentary style with emphasis on visuals."
+  },
+  "ui_45bb4d7b": {
+    "message": "自定义视觉样式提示",
+    "description": "Custom visual style prompt"
+  },
+  "ui_f1d64ff0": {
+    "message": "当视觉样式为“自定义”时使用。",
+    "description": "Used when Visual style is Custom."
+  },
+  "ui_4d9b6fff": {
+    "message": "简报文档",
+    "description": "Briefing Doc"
+  },
+  "ui_82cda65a": {
+    "message": "学习指南",
+    "description": "Study Guide"
+  },
+  "ui_540782c5": {
+    "message": "博客文章",
+    "description": "Blog Post"
+  },
+  "ui_48d33564": {
+    "message": "指南",
+    "description": "Instructions"
+  },
+  "ui_28e8828a": {
+    "message": "（内置格式追加）",
+    "description": "(appended for built-in formats)"
+  },
+  "ui_89963e82": {
+    "message": "（自定义格式需要）",
+    "description": "(required for Custom format)"
+  },
+  "ui_23b244d3": {
+    "message": "例如，为非专科医生撰写临床总结。",
+    "description": "e.g. Write a clinical summary for non-specialist physicians."
+  },
+  "ui_2bf732f8": {
+    "message": "数量",
+    "description": "Quantity"
+  },
+  "ui_8bca10b2": {
+    "message": "稀少",
+    "description": "Fewer"
+  },
+  "ui_16ab68": {
+    "message": "标准",
+    "description": "Standard"
+  },
+  "ui_4f34d900": {
+    "message": "更多",
+    "description": "More"
+  },
+  "ui_8520a210": {
+    "message": "难度",
+    "description": "Difficulty"
+  },
+  "ui_6c33113b": {
+    "message": "简单",
+    "description": "Easy"
+  },
+  "ui_9be5f96": {
+    "message": "中粗线",
+    "description": "Medium"
+  },
+  "ui_64efa7fc": {
+    "message": "困难",
+    "description": "Hard"
+  },
+  "ui_23c5022f": {
+    "message": "例如，专注于医学生的临床推理。",
+    "description": "e.g. Focus on clinical reasoning for medical students."
+  },
+  "ui_a5dcb66a": {
+    "message": "例如，强调关键术语和定义。",
+    "description": "e.g. Emphasize key terms and definitions."
+  },
+  "ui_c551d9c1": {
+    "message": "方向",
+    "description": "Orientation"
+  },
+  "ui_2bfbe892": {
+    "message": "横向",
+    "description": "Landscape"
+  },
+  "ui_29092ffa": {
+    "message": "纵向",
+    "description": "Portrait"
+  },
+  "ui_fac98c66": {
+    "message": "正方形",
+    "description": "Square"
+  },
+  "ui_344473b4": {
+    "message": "详细信息",
+    "description": "Detail"
+  },
+  "ui_ae1f484f": {
+    "message": "孔西斯",
+    "description": "Concise"
+  },
+  "ui_60e7b825": {
+    "message": "详细",
+    "description": "Detailed"
+  },
+  "ui_27129566": {
+    "message": "布局预设",
+    "description": "Layout preset"
+  },
+  "ui_126befb6": {
+    "message": "推荐加点",
+    "description": "Auto"
+  },
+  "ui_4d7b957e": {
+    "message": "编撰",
+    "description": "Editorial"
+  },
+  "ui_3953c530": {
+    "message": "最小",
+    "description": "Minimal"
+  },
+  "ui_6f955d7e": {
+    "message": "数据密集",
+    "description": "Data Dense"
+  },
+  "ui_c7131496": {
+    "message": "顽皮",
+    "description": "Playful"
+  },
+  "ui_772d3068": {
+    "message": "技术",
+    "description": "Technical"
+  },
+  "ui_30d783f6": {
+    "message": "假期时间表",
+    "description": "Timeline"
+  },
+  "ui_ed6bcd64": {
+    "message": "比较",
+    "description": "Comparison"
+  },
+  "ui_78f9b63c": {
+    "message": "Poster",
+    "description": "Poster"
+  },
+  "ui_4c4c7c4b": {
+    "message": "草图注释",
+    "description": "Sketch Note"
+  },
+  "ui_f838ade2": {
+    "message": "专业",
+    "description": "Professional"
+  },
+  "ui_2f33ced9": {
+    "message": "便当网格",
+    "description": "Bento Grid"
+  },
+  "ui_d0a9d3e2": {
+    "message": "教学",
+    "description": "Instructional"
+  },
+  "ui_d0670c2b": {
+    "message": "砖",
+    "description": "Bricks"
+  },
+  "ui_ca5154a8": {
+    "message": "粘土模式（渲染白模）",
+    "description": "Clay"
+  },
+  "ui_e2a4f948": {
+    "message": "科学记数",
+    "description": "Scientific"
+  },
+  "ui_872f8bff": {
+    "message": "例如，使用带有大图标的水平时间轴布局。",
+    "description": "e.g. Use a horizontal timeline layout with large icons."
+  },
+  "ui_2b961f3b": {
+    "message": "主持",
+    "description": "Presenter"
+  },
+  "ui_d5672d4e": {
+    "message": "例如，设计15分钟的会议演示文稿。",
+    "description": "e.g. Design for a 15-minute conference presentation."
+  },
+  "ui_ebce5073": {
+    "message": "例如，将所有数值结果提取到比较表中。",
+    "description": "e.g. Extract all numerical results into a comparison table."
+  },
+  "ui_beebc079": {
+    "message": "经验",
+    "description": "✨ Experience"
+  },
+  "ui_4aa812c3": {
+    "message": "桌面通知",
+    "description": "Desktop notifications"
+  },
+  "ui_d13e25a7": {
+    "message": "完成时钟",
+    "description": "Completion chime"
+  },
+  "ui_5ef31b9a": {
+    "message": "完成后自动打开笔记本",
+    "description": "Auto-open notebook when done"
+  },
+  "ui_f1435584": {
+    "message": "保存设置",
+    "description": "✓ Save Settings"
+  },
+  "ui_f835ea8d": {
+    "message": "正在扫描PDF页面...",
+    "description": "Scanning page for PDFs..."
+  },
+  "ui_837a3d6": {
+    "message": "设置",
+    "description": "Setup"
+  },
+  "ui_f3ddb69": {
+    "message": "添加源",
+    "description": "Add Source"
+  },
+  "ui_f0bfd7ef": {
+    "message": "处理源",
+    "description": "Processing Source"
+  },
+  "ui_1a359bf5": {
+    "message": "生成学习资料",
+    "description": "Generate Artifacts"
+  },
+  "ui_628ea1a2": {
+    "message": "已完成",
+    "description": "Complete"
+  },
+  "ui_74b6158": {
+    "message": "此前已选集合",
+    "description": "Previously selected collection"
+  },
+  "ui_caa12099": {
+    "message": "之前选择的集合（不可用）",
+    "description": "Previously selected collection (unavailable)"
+  },
+  "ui_9cd3026e": {
+    "message": "之前选择的集合（无法刷新）",
+    "description": "Previously selected collection (could not refresh)"
+  },
+  "ui_9fde4674": {
+    "message": "正在加载收藏集…",
+    "description": "Loading collections..."
+  },
+  "ui_ad9295c6": {
+    "message": "可用系列： $1。",
+    "description": "Collections available: $1."
+  },
+  "ui_71b89b88": {
+    "message": "未找到集合。请先在Gemini Notebook中创建一个。",
+    "description": "No collections found. Create one in Gemini Notebook first."
+  },
+  "ui_3417b8bd": {
+    "message": "无法加载集合。打开Gemini Notebook并查看您的登录信息。",
+    "description": "Could not load collections. Open Gemini Notebook and check your sign-in."
+  },
+  "ui_46a25e8a": {
+    "message": "检测到本地PDF",
+    "description": "Detected Local PDF"
+  },
+  "ui_96195221": {
+    "message": "检测到PDF",
+    "description": "Detected PDF"
+  },
+  "ui_f142f1c5": {
+    "message": "上传并生成",
+    "description": "Upload & Generate"
+  },
+  "ui_b3573353": {
+    "message": "选择其他PDF",
+    "description": "Choose Different PDF"
+  },
+  "ui_3fac81f6": {
+    "message": "🎧 生成学习资料",
+    "description": "🎧 Generate Artifacts"
+  },
+  "ui_c277b27a": {
+    "message": "在此页面上未检测到PDF。",
+    "description": "No PDF detected on this page."
+  },
+  "ui_f9bbdfd0": {
+    "message": "您仍然可以尝试直接导入此页面网址。",
+    "description": "You can still try importing this page URL directly."
+  },
+  "ui_f544e784": {
+    "message": "导入页面并生成",
+    "description": "Import Page & Generate"
+  },
+  "ui_c108fead": {
+    "message": "上传本地PDF",
+    "description": "Upload Local PDF"
+  },
+  "ui_9388d923": {
+    "message": "此文件不是有效的PDF。选择其他文件。",
+    "description": "This file isn't a valid PDF. Choose another file."
+  },
+  "ui_b06fbcc0": {
+    "message": "无法确认结果。重新开始之前，请检查Gemini Notebook。",
+    "description": "The result could not be confirmed. Check Gemini Notebook before starting again."
+  },
+  "ui_97c517c8": {
+    "message": "此PDF超出上传限制。直接上传到Gemini Notebook。",
+    "description": "This PDF exceeds the upload limit. Upload it directly in Gemini Notebook."
+  },
+  "ui_3f0f4b44": {
+    "message": "登录Gemini Notebook ，然后重新打开此弹出窗口。",
+    "description": "Sign in to Gemini Notebook, then reopen this popup."
+  },
+  "ui_e5c255ed": {
+    "message": "Gemini Notebook已达到上限。在开始更多工作之前等待。",
+    "description": "Gemini Notebook has reached a limit. Wait before starting more work."
+  },
+  "ui_1c310fdf": {
+    "message": "此工作流程需要注意。请先查看详细信息，然后再继续操作。",
+    "description": "This workflow needs attention. Check the details before continuing."
+  },
+  "ui_ec24245": {
+    "message": "家具详情",
+    "description": "Details"
+  },
+  "ui_811b0256": {
+    "message": "笔记本标题",
+    "description": "Notebook title"
+  },
+  "ui_d9259b7d": {
+    "message": "已添加到$1",
+    "description": "Added to $1"
+  },
+  "ui_9cebccf3": {
+    "message": "集合分配失败。",
+    "description": "Collection assignment failed."
+  },
+  "ui_7fad8491": {
+    "message": "集合",
+    "description": "collection"
+  },
+  "ui_c4a69ed0": {
+    "message": "在Gemini Notebook中打开",
+    "description": "Open in Gemini Notebook"
+  },
+  "ui_285dfd14": {
+    "message": "源已导入。未请求学习资料。",
+    "description": "Source imported. No artifacts requested."
+  },
+  "ui_e65751d2": {
+    "message": "$1/$2学习资料就绪（ $3失败）。",
+    "description": "$1/$2 artifacts ready ($3 failed)."
+  },
+  "ui_f59ae8c5": {
+    "message": "学习资料准备就绪： $1 ！",
+    "description": "Artifacts ready: $1!"
+  },
+  "ui_1aadce96": {
+    "message": "允许下载或选择PDF以在此笔记本中继续。",
+    "description": "Allow the download or choose a PDF to continue in this notebook."
+  },
+  "ui_f5943c95": {
+    "message": "您可以关闭此弹出窗口。工作继续。",
+    "description": "You can close this popup. Work continues."
+  },
+  "ui_26242fbd": {
+    "message": "允许下载并继续",
+    "description": "Allow Download & Continue"
+  },
+  "ui_dd6a9d74": {
+    "message": "改为上传PDF",
+    "description": "Upload PDF Instead"
+  },
+  "ui_9d9a1d5b": {
+    "message": "下载详情",
+    "description": "Download details"
+  },
+  "ui_92de1569": {
+    "message": "停止监测",
+    "description": "Stop Monitoring"
+  },
+  "ui_59ba73c4": {
+    "message": "停止此工作流程。已在Gemini Notebook中启动的工作可能会继续。",
+    "description": "Stops this workflow. Work already started in Gemini Notebook may continue."
+  },
+  "ui_a455e487": {
+    "message": "重新开始",
+    "description": "Start Over"
+  },
+  "ui_61e2a3f8": {
+    "message": "来源",
+    "description": "Source"
+  },
+  "ui_d87cff14": {
+    "message": "源更换",
+    "description": "Source replacement"
+  },
+  "ui_18b524fa": {
+    "message": "上传回退使用此笔记本。将保留失败的URL源。学习资料使用替换PDF。",
+    "description": "Upload fallback uses this notebook. The failed URL source is kept. Artifacts use the replacement PDF."
+  },
+  "ui_79f5dd9e": {
+    "message": "工单详情：",
+    "description": "Workflow details"
+  },
+  "ui_6cac833d": {
+    "message": "开始……",
+    "description": "Starting..."
+  },
+  "ui_25185cf8": {
+    "message": "开始...",
+    "description": "⏳ Starting..."
+  },
+  "ui_dfcc9e32": {
+    "message": "正在上传...",
+    "description": "Uploading..."
+  },
+  "ui_1fb8851e": {
+    "message": "正在读取当前PDF...",
+    "description": "Reading current PDF..."
+  },
+  "ui_435bb9d2": {
+    "message": "正在连接到Gemini Notebook...",
+    "description": "Connecting to Gemini Notebook..."
+  },
+  "ui_8022dbaf": {
+    "message": "正在创建笔记本...",
+    "description": "Creating notebook..."
+  },
+  "ui_357652bd": {
+    "message": "添加来源",
+    "description": "Adding source..."
+  },
+  "ui_d2697109": {
+    "message": "正在下载 PDF",
+    "description": "Downloading PDF..."
+  },
+  "ui_36e593a8": {
+    "message": "正在上传PDF...",
+    "description": "Uploading PDF..."
+  },
+  "ui_a5712967": {
+    "message": "正在等待源处理。大约每30秒检查一次。",
+    "description": "Waiting for source processing. Checking about every 30 seconds."
+  },
+  "ui_a31472dd": {
+    "message": "正在请求学习资料...",
+    "description": "Requesting artifacts..."
+  },
+  "ui_864fcfa3": {
+    "message": "工作流程完成",
+    "description": "Workflow complete."
+  },
+  "ui_5549811c": {
+    "message": "工作正在进行中...",
+    "description": "Work in progress..."
+  },
+  "ui_70571b43": {
+    "message": "$2的$1学习资料就绪。",
+    "description": "$1 of $2 artifacts ready."
+  },
+  "ui_cf65f42b": {
+    "message": "Gemini Notebook就绪！",
+    "description": "Gemini Notebook Ready!"
+  },
+  "ui_ed59a0d6": {
+    "message": "打开笔记本",
+    "description": "Open Notebook"
+  },
+  "ui_265915f3": {
+    "message": "解散",
+    "description": "Dismiss"
+  },
+  "ui_10c52774": {
+    "message": "ScholarRelay错误",
+    "description": "ScholarRelay Error"
+  },
+  "ui_5a963259": {
+    "message": "笔记本$1已准备就绪。源已导入，没有学习资料。单击以打开。",
+    "description": "Notebook $1 is ready. Source imported without artifacts. Click to open."
+  },
+  "ui_1290e46e": {
+    "message": "笔记本$1已准备好使用$2学习资料。单击以打开。",
+    "description": "Notebook $1 is ready with $2 artifacts. Click to open."
+  },
+  "ui_67fd3b38": {
+    "message": "笔记本$1已部分就绪。$2/$3学习资料就绪， $4失败。单击以打开。",
+    "description": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open."
+  },
+  "ui_6fa973d2": {
+    "message": "需要检查",
+    "description": "Needs checking"
+  },
+  "ui_dccf5581": {
+    "message": "学习资料详情",
+    "description": "Artifact details"
+  },
+  "ui_e46778ea": {
+    "message": "论文队列",
+    "description": "Paper queue"
+  },
+  "ui_9e437c74": {
+    "message": "已在队列中",
+    "description": "Queued"
+  },
+  "ui_98bfff6f": {
+    "message": "准备中",
+    "description": "Preparing"
+  },
+  "ui_863f19ee": {
+    "message": "停止",
+    "description": "Stopped"
+  },
+  "ui_cf1d1846": {
+    "message": "添加到队列",
+    "description": "Add to queue"
+  },
+  "ui_1512a308": {
+    "message": "将PDF保存到队列",
+    "description": "Save PDF to queue"
+  },
+  "ui_d5809db3": {
+    "message": "添加到队列",
+    "description": "Add page to queue"
+  },
+  "ui_c66a1109": {
+    "message": "添加另一篇论文",
+    "description": "Add another paper"
+  },
+  "ui_fc5bf3cc": {
+    "message": "从队列中删除",
+    "description": "Remove from queue"
+  },
+  "ui_6810ced4": {
+    "message": "停止此作业",
+    "description": "Stop this job"
+  },
+  "ui_acc12e9e": {
+    "message": "暂停队列",
+    "description": "Pause queue"
+  },
+  "ui_ab9aefe9": {
+    "message": "继续排队",
+    "description": "Resume queue"
+  },
+  "ui_13e397ca": {
+    "message": "最新工作",
+    "description": "Recent jobs"
+  },
+  "ui_7b37dc98": {
+    "message": "清除已完成的作业",
+    "description": "Clear finished jobs"
+  },
+  "ui_caf6d280": {
+    "message": "队列已暂停。作业已开始继续。",
+    "description": "Queue paused. Jobs already started continue."
+  },
+  "ui_c7972f4e": {
+    "message": "一次准备一篇论文。最多可以同时生成三个笔记本。",
+    "description": "Prepare one paper at a time. Up to three notebooks can generate together."
+  },
+  "ui_c744f96c": {
+    "message": "已保存。您可以关闭此弹出窗口。保持Chrome浏览器运行，以启动排队文件。",
+    "description": "Saved. You can close this popup. Keep Chrome running to start queued papers."
+  },
+  "ui_a6133a54": {
+    "message": "已接受请求。即使您关闭Chrome ， Gemini Notebook也将继续生成。您可以添加另一张纸。",
+    "description": "Requests accepted. Gemini Notebook will keep generating even if you close Chrome. You can add another paper."
+  },
+  "ui_8481df34": {
+    "message": "您可以关闭此弹出窗口。在接受学习资料请求之前，保持Chrome运行。",
+    "description": "You can close this popup. Keep Chrome running until the artifact requests are accepted."
+  },
+  "ui_440cb2bf": {
+    "message": "这篇论文需要引起注意。其他排队论文可以继续。",
+    "description": "This paper needs attention. Other queued papers can continue."
+  },
+  "ui_e5cfc00b": {
+    "message": "某些请求可能仍在Gemini Notebook中运行。检查此笔记本以获取结果。",
+    "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
+  },
+  "ui_314695f8": {
+    "message": "学习资料已准备就绪。您可以转到另一张纸。",
+    "description": "Artifacts are ready. You can move on to another paper."
+  },
+  "ui_232cd7e": {
+    "message": "正在保存PDF。保持此弹出窗口打开...",
+    "description": "Saving PDF. Keep this popup open..."
+  },
+  "ui_7ff14708": {
+    "message": "Gemini Notebook暂时无法访问。请稍后再尝试连接。",
+    "description": "Gemini Notebook is temporarily unreachable. Try connecting again later."
+  },
+  "ui_77e33d8c": {
+    "message": "无法识别Gemini Notebook会话。打开Gemini Notebook并查看详细信息。",
+    "description": "Could not recognize the Gemini Notebook session. Open Gemini Notebook and check the details."
+  },
+  "ui_959074fd": {
+    "message": "正在等待连接。您的论文已保存。",
+    "description": "Waiting for connection. Your paper is saved."
+  },
+  "ui_dc5fc1be": {
+    "message": "需要连接",
+    "description": "Connection needed"
+  },
+  "ui_19f575ce": {
+    "message": "尝试连接",
+    "description": "Try connection"
+  },
+  "ui_244aa556": {
+    "message": "$1/$2就绪",
+    "description": "$1/$2 ready"
+  },
+  "ui_b78d0565": {
+    "message": "排队时间",
+    "description": "Time queued"
+  },
+  "ui_faff56b8": {
+    "message": "已用时间",
+    "description": "Elapsed time"
+  },
+  "ui_c6bbc618": {
+    "message": "$1的生成受到限制。请稍后在现有笔记本中重试。",
+    "description": "Generation is limited for $1. Try again later in the existing notebook."
+  },
+  "ui_72bb088c": {
+    "message": "需要采取的行动 ",
+    "description": "Action needed"
+  },
+  "ui_4a78a7bf": {
+    "message": "等待$1",
+    "description": "Waiting $1"
+  },
+  "ui_e8233afc": {
+    "message": "等你",
+    "description": "Waiting for you"
+  },
+  "ui_f7066e40": {
+    "message": "关闭任务",
+    "description": "Dismiss job"
+  },
+  "ui_45c40cb9": {
+    "message": "上传PDF并继续",
+    "description": "Upload PDF & Continue"
+  },
+  "ui_38f2e1ae": {
+    "message": "需要下载权限。允许访问或选择一个PDF以在此笔记本中继续。",
+    "description": "Download permission is needed. Allow access or select a PDF to continue in this notebook."
+  },
+  "ui_e431d4b": {
+    "message": "发布者阻止了PDF下载。选择下载的PDF以在此笔记本中继续。",
+    "description": "The publisher blocked the PDF download. Select a downloaded PDF to continue in this notebook."
+  },
+  "ui_56d74e8d": {
+    "message": "无法下载PDF。选择一个PDF以在此笔记本中继续。",
+    "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
+  },
+  "ui_9dab64e9": {
+    "message": "删除未使用的笔记本",
+    "description": "Delete unused notebook"
+  },
+  "ui_97612a43": {
+    "message": "笔记本已从Gemini Notebook中删除。",
+    "description": "Notebook deleted from Gemini Notebook."
+  },
+  "ui_52c919ec": {
+    "message": "此笔记本有$1源和$2失败的学习资料。",
+    "description": "This notebook has $1 source(s) and $2 failed artifact(s)."
+  },
+  "ui_2c26929": {
+    "message": "从Gemini Notebook中删除此笔记本？此操作无法撤消。",
+    "description": "Delete this notebook from Gemini Notebook? This cannot be undone."
+  },
+  "ui_efd1bd2d": {
+    "message": "未检测到论文。是否仍要创建笔记本并启动所选的自动化？",
+    "description": "No paper was detected. Create a notebook and start the selected automation anyway?"
+  }
+}

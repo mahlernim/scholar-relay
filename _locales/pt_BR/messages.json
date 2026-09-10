@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "ScholarRelay - Importar PDFs para Gemini Notebook"
+    "message": "Scholar Relay - Automação do Gemini Notebook (NotebookLM)"
   },
   "extensionDescription": {
     "message": "Importe PDFs, artigos arXiv e páginas para o Gemini Notebook (NotebookLM). Crie Resumos em Áudio e materiais de estudo."
@@ -928,5 +928,61 @@
   "ui_faff56b8": {
     "message": "Tempo decorrido",
     "description": "Elapsed time"
+  },
+  "ui_c6bbc618": {
+    "message": "A geração de $1 está limitada. Tente novamente mais tarde no notebook existente.",
+    "description": "Generation is limited for $1. Try again later in the existing notebook."
+  },
+  "ui_72bb088c": {
+    "message": "Ação necessária",
+    "description": "Action needed"
+  },
+  "ui_4a78a7bf": {
+    "message": "Aguardando $1",
+    "description": "Waiting $1"
+  },
+  "ui_e8233afc": {
+    "message": "Aguardando sua ação",
+    "description": "Waiting for you"
+  },
+  "ui_f7066e40": {
+    "message": "Dispensar tarefa",
+    "description": "Dismiss job"
+  },
+  "ui_45c40cb9": {
+    "message": "Enviar PDF e continuar",
+    "description": "Upload PDF & Continue"
+  },
+  "ui_38f2e1ae": {
+    "message": "É necessária permissão para baixar. Permita o acesso ou selecione um PDF para continuar neste notebook.",
+    "description": "Download permission is needed. Allow access or select a PDF to continue in this notebook."
+  },
+  "ui_e431d4b": {
+    "message": "A editora bloqueou o download do PDF. Selecione um PDF baixado para continuar neste notebook.",
+    "description": "The publisher blocked the PDF download. Select a downloaded PDF to continue in this notebook."
+  },
+  "ui_56d74e8d": {
+    "message": "Não foi possível baixar o PDF. Selecione um PDF para continuar neste notebook.",
+    "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
+  },
+  "ui_9dab64e9": {
+    "message": "Excluir notebook não utilizado",
+    "description": "Delete unused notebook"
+  },
+  "ui_97612a43": {
+    "message": "Notebook excluído do Gemini Notebook.",
+    "description": "Notebook deleted from Gemini Notebook."
+  },
+  "ui_52c919ec": {
+    "message": "Este notebook tem $1 fonte(s) e $2 resultado(s) com falha.",
+    "description": "This notebook has $1 source(s) and $2 failed artifact(s)."
+  },
+  "ui_2c26929": {
+    "message": "Excluir este notebook do Gemini Notebook? Esta ação não pode ser desfeita.",
+    "description": "Delete this notebook from Gemini Notebook? This cannot be undone."
+  },
+  "ui_efd1bd2d": {
+    "message": "Nenhum artigo foi detectado. Criar um notebook e iniciar a automação selecionada mesmo assim?",
+    "description": "No paper was detected. Create a notebook and start the selected automation anyway?"
   }
 }

@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "ScholarRelay - Gemini Notebook PDF 가져오기"
+    "message": "Scholar Relay - Gemini Notebook(NotebookLM) 자동화"
   },
   "extensionDescription": {
     "message": "PDF, arXiv 논문, 웹페이지를 Gemini Notebook(NotebookLM)으로 가져오고 AI 오디오 오버뷰와 학습 자료를 생성합니다."
@@ -928,5 +928,61 @@
   "ui_faff56b8": {
     "message": "경과 시간",
     "description": "Elapsed time"
+  },
+  "ui_c6bbc618": {
+    "message": "$1 생성이 제한되었습니다. 나중에 기존 노트북에서 다시 시도하세요.",
+    "description": "Generation is limited for $1. Try again later in the existing notebook."
+  },
+  "ui_72bb088c": {
+    "message": "조치 필요",
+    "description": "Action needed"
+  },
+  "ui_4a78a7bf": {
+    "message": "대기 $1",
+    "description": "Waiting $1"
+  },
+  "ui_e8233afc": {
+    "message": "사용자 조치 대기",
+    "description": "Waiting for you"
+  },
+  "ui_f7066e40": {
+    "message": "작업 종료",
+    "description": "Dismiss job"
+  },
+  "ui_45c40cb9": {
+    "message": "PDF 업로드하고 계속",
+    "description": "Upload PDF & Continue"
+  },
+  "ui_38f2e1ae": {
+    "message": "다운로드 권한이 필요합니다. 접근을 허용하거나 PDF를 선택하면 기존 노트북에서 계속 진행합니다.",
+    "description": "Download permission is needed. Allow access or select a PDF to continue in this notebook."
+  },
+  "ui_e431d4b": {
+    "message": "출판사에서 PDF 다운로드를 차단했습니다. 직접 다운로드한 PDF를 선택하면 기존 노트북에서 계속 진행합니다.",
+    "description": "The publisher blocked the PDF download. Select a downloaded PDF to continue in this notebook."
+  },
+  "ui_56d74e8d": {
+    "message": "PDF를 다운로드하지 못했습니다. PDF를 선택하면 기존 노트북에서 계속 진행합니다.",
+    "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
+  },
+  "ui_9dab64e9": {
+    "message": "사용하지 않는 노트북 삭제",
+    "description": "Delete unused notebook"
+  },
+  "ui_97612a43": {
+    "message": "Gemini Notebook에서 노트북을 삭제했습니다.",
+    "description": "Notebook deleted from Gemini Notebook."
+  },
+  "ui_52c919ec": {
+    "message": "이 노트북에는 소스 $1개와 실패한 결과물 $2개가 있습니다.",
+    "description": "This notebook has $1 source(s) and $2 failed artifact(s)."
+  },
+  "ui_2c26929": {
+    "message": "Gemini Notebook에서 이 노트북을 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.",
+    "description": "Delete this notebook from Gemini Notebook? This cannot be undone."
+  },
+  "ui_efd1bd2d": {
+    "message": "논문이 감지되지 않았습니다. 그래도 노트북을 만들고 선택한 자동화를 시작하시겠습니까?",
+    "description": "No paper was detected. Create a notebook and start the selected automation anyway?"
   }
 }
