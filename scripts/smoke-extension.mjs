@@ -266,7 +266,7 @@ try {
   const workerPath = join(extensionRoot, 'background.js');
   await writeFile(workerPath, (await readFile(workerPath,'utf8')) + '\nchrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message.type!=="SMOKE_TICK")return;handlePollAlarm({name:ALARM_NAME}).then(()=>reply({ok:true}));return true;});\n');
   const popupPath = join(extensionRoot, 'popup.js');
-  await writeFile(popupPath, `${await readFile(popupPath, 'utf8')}\nglobalThis.__smoke = { startPipelineFile, async setFixtureState(state, extra = {}) { await chrome.storage.local.set({ jobQueue: {version:1,paused:false,jobs:state.status==='idle'?[]:[{runId:'fixture',...state}]}, ...extra }); } };\n`);
+  await writeFile(popupPath, `${await readFile(popupPath, 'utf8')}\nglobalThis.__smoke = { startPipelineFile, refreshQueue, renderProgress, async setFixtureState(state, extra = {}) { await chrome.storage.local.set({ jobQueue: {version:1,paused:false,jobs:state.status==='idle'?[]:[{runId:'fixture',...state}]}, ...extra }); } };\n`);
 
   const chromePath = await resolveChrome();
   chrome = spawn(chromePath, [
@@ -341,7 +341,7 @@ try {
     await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'running',runId:'ui-state',step:${JSON.stringify(step)},stepDetail:'SITE_ACCESS_REQUIRED: Permission diagnostic',pdfUrl:'paper.pdf',originalPdfUrl:'${origin}/paper.pdf',notebookUrl:'${origin}/notebook/smoke',failedUrlSourceId:'failed-source',tasks:[]})`);
     await reload(popup);
   await evaluate(popup, `document.querySelector('[data-show]')?.click()`);
-    view = await evaluate(popup, `({text:document.getElementById('content').innerText,resume:!!document.getElementById('btn-resume-pdf'),file:!!document.getElementById('btn-fallback-file'),stop:!!document.getElementById('btn-abort'),width:document.documentElement.scrollWidth})`);
+    view = await evaluate(popup, `({text:document.getElementById('content').innerText,resume:!!document.getElementById('btn-resume-pdf'),file:!!document.getElementById('btn-fallback-file'),stop:!!document.querySelector('#content [data-cancel]'),width:document.documentElement.scrollWidth})`);
     assert(view.stop && view.width<=360, 'Running popup lacks stop control or clips horizontally');
     assert(!view.text.includes('failed-source'), 'Internal source ID leaked into primary wording');
     assert(step==='wait_pdf_access' ? view.resume && view.file && view.text.includes('Download permission is needed') : view.text.includes('Keep Chrome running'), `Permission wait incorrectly presents background progress: ${JSON.stringify(view)}`);
@@ -357,9 +357,17 @@ try {
   assert(existing.step==='auth', 'Queue insertion changed the first job');
 
   await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'running',runId:'stoppable-run',step:'wait_source',stepDetail:'Waiting',pdfUrl:'wait.pdf',tasks:[]})`);
-  const staleStop = await evaluate(popup, `chrome.runtime.sendMessage({type:'ABORT_PIPELINE',runId:'old-run'})`);
+  await evaluate(popup, `__smoke.refreshQueue()`);
+  await evaluate(popup, `document.querySelector('[data-cancel="stoppable-run"]').click()`);
+  await delay(150);
+  const cancelChoices = await evaluate(popup, `({keep:!!document.querySelector('[data-cancel-keep]'),remove:!!document.querySelector('[data-cancel-delete]'),back:!!document.querySelector('[data-cancel-back]'),width:document.documentElement.scrollWidth})`);
+  assert(cancelChoices.keep && cancelChoices.remove && cancelChoices.back && cancelChoices.width <= 360, 'Inline cancellation choices are incomplete or overflow');
+  await evaluate(popup, `document.querySelector('[data-cancel-back]').click()`);
+  await delay(100);
+  assert(await evaluate(popup, `!!document.querySelector('[data-cancel="stoppable-run"]')`), 'Back did not restore Cancel');
+  const staleStop = await evaluate(popup, `chrome.runtime.sendMessage({type:'ABORT_PIPELINE',intent:'keep',runId:'old-run'})`);
   assert(staleStop?.ok === false, 'A stale popup stopped a replacement run');
-  const acceptedStop = await evaluate(popup, `chrome.runtime.sendMessage({type:'ABORT_PIPELINE',runId:'stoppable-run'})`);
+  const acceptedStop = await evaluate(popup, `chrome.runtime.sendMessage({type:'ABORT_PIPELINE',intent:'keep',runId:'stoppable-run'})`);
   assert(acceptedStop?.ok === true, 'The matching polling run could not be stopped');
   storedState = await evaluate(popup, `chrome.runtime.sendMessage({type:'GET_STATE'})`);
   assert(storedState.status === 'stopped' && storedState.runId === 'stoppable-run', 'Stopped job lost its history');
@@ -379,7 +387,7 @@ try {
   assert(imports.pdfDownloads === downloadsBefore && imports.uploads === 0, 'URL-first import downloaded or uploaded a PDF');
 
   // Two real popup requests through the shipped worker and wire client.
-  await evaluate(popup, `chrome.runtime.sendMessage({type:'ABORT_PIPELINE',runId:${JSON.stringify(storedState.runId)}})`);
+  await evaluate(popup, `chrome.runtime.sendMessage({type:'ABORT_PIPELINE',intent:'keep',runId:${JSON.stringify(storedState.runId)}})`);
   await evaluate(popup, `chrome.runtime.sendMessage({type:'RESET_STATE'})`);
   queueMode=true;
   const jobSettings={generateAudio:true,generateInfographic:false,chimeEnabled:false,notificationEnabled:false};
@@ -507,7 +515,7 @@ try {
   }
   assert(storedState.step === 'wait_source', `Large upload failed: ${storedState.error || storedState.step}`);
   assert(imports.uploadedBytes === size && imports.uploadedHash === expectedHash, 'Large uploaded bytes differ from the selected PDF');
-  await evaluate(popup, `chrome.runtime.sendMessage({type:'ABORT_PIPELINE',runId:${JSON.stringify(storedState.runId)}})`);
+  await evaluate(popup, `chrome.runtime.sendMessage({type:'ABORT_PIPELINE',intent:'keep',runId:${JSON.stringify(storedState.runId)}})`);
   const rejected = await evaluate(popup, `(async()=>{
     const bytes=new Uint8Array(${size + 1}).fill(32);bytes.set(new TextEncoder().encode('%PDF-1.7\\n'));
     const b64=await new Promise(resolve=>{const r=new FileReader();r.onload=()=>resolve(r.result.split(',')[1]);r.readAsDataURL(new Blob([bytes]));});

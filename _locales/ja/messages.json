@@ -984,5 +984,41 @@
   "ui_efd1bd2d": {
     "message": "論文が検出されませんでした。それでもノートブックを作成し、選択した自動化を開始しますか？",
     "description": "No paper was detected. Create a notebook and start the selected automation anyway?"
+  },
+  "ui_35afca3b": {
+    "message": "キャンセル",
+    "description": "Cancel"
+  },
+  "ui_c2954bc2": {
+    "message": "戻る",
+    "description": "Back"
+  },
+  "ui_4408e966": {
+    "message": "停止してノートブックを残す",
+    "description": "Stop and keep notebook"
+  },
+  "ui_66613304": {
+    "message": "停止してノートブックを削除",
+    "description": "Stop and delete notebook"
+  },
+  "ui_9b369a0f": {
+    "message": "ノートブックを削除",
+    "description": "Delete notebook"
+  },
+  "ui_e100f46d": {
+    "message": "停止中...",
+    "description": "Stopping..."
+  },
+  "ui_32be65e1": {
+    "message": "削除中...",
+    "description": "Deleting..."
+  },
+  "ui_134d554a": {
+    "message": "削除結果を確認してください",
+    "description": "Deletion needs checking"
+  },
+  "ui_d3d1dd4b": {
+    "message": "このノートブックのすべてのソースと結果も削除します。",
+    "description": "Deletes this notebook and all its sources and results."
   }
 }

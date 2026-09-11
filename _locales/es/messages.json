@@ -984,5 +984,41 @@
   "ui_efd1bd2d": {
     "message": "No se detectó ningún artículo. ¿Crear un cuaderno e iniciar la automatización seleccionada de todos modos?",
     "description": "No paper was detected. Create a notebook and start the selected automation anyway?"
+  },
+  "ui_35afca3b": {
+    "message": "Cancelar",
+    "description": "Cancel"
+  },
+  "ui_c2954bc2": {
+    "message": "Atrás",
+    "description": "Back"
+  },
+  "ui_4408e966": {
+    "message": "Detener y conservar cuaderno",
+    "description": "Stop and keep notebook"
+  },
+  "ui_66613304": {
+    "message": "Detener y eliminar cuaderno",
+    "description": "Stop and delete notebook"
+  },
+  "ui_9b369a0f": {
+    "message": "Eliminar cuaderno",
+    "description": "Delete notebook"
+  },
+  "ui_e100f46d": {
+    "message": "Deteniendo...",
+    "description": "Stopping..."
+  },
+  "ui_32be65e1": {
+    "message": "Eliminando...",
+    "description": "Deleting..."
+  },
+  "ui_134d554a": {
+    "message": "Comprueba la eliminación",
+    "description": "Deletion needs checking"
+  },
+  "ui_d3d1dd4b": {
+    "message": "También elimina todas las fuentes y resultados del cuaderno.",
+    "description": "Deletes this notebook and all its sources and results."
   }
 }

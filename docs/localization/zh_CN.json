@@ -243,5 +243,14 @@
   "Notebook deleted from Gemini Notebook.": "笔记本已从Gemini Notebook中删除。",
   "This notebook has $1 source(s) and $2 failed artifact(s).": "此笔记本有$1源和$2失败的学习资料。",
   "Delete this notebook from Gemini Notebook? This cannot be undone.": "从Gemini Notebook中删除此笔记本？此操作无法撤消。",
-  "No paper was detected. Create a notebook and start the selected automation anyway?": "未检测到论文。是否仍要创建笔记本并启动所选的自动化？"
+  "No paper was detected. Create a notebook and start the selected automation anyway?": "未检测到论文。是否仍要创建笔记本并启动所选的自动化？",
+  "Cancel": "取消",
+  "Back": "返回",
+  "Stop and keep notebook": "停止并保留笔记本",
+  "Stop and delete notebook": "停止并删除笔记本",
+  "Delete notebook": "删除笔记本",
+  "Stopping...": "正在停止...",
+  "Deleting...": "正在删除...",
+  "Deletion needs checking": "需要确认删除结果",
+  "Deletes this notebook and all its sources and results.": "也会删除此笔记本中的所有来源和结果。"
 }

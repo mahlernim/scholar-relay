@@ -3,7 +3,7 @@ export const MAX_GENERATING_JOBS = 3;
 export const MAX_HISTORY_JOBS = 50;
 export const MAX_QUEUED_PDF_BYTES = 100 * 1024 * 1024;
 
-export const isUnfinishedJob = job => ['queued', 'running'].includes(job.status);
+export const isUnfinishedJob = job => ['queued', 'running', 'stopping'].includes(job.status);
 export const isPreparingJob = job => job.status === 'running' &&
     !['wait_artifacts', 'wait_pdf_access', 'queued_pdf'].includes(job.step);
 
@@ -54,7 +54,7 @@ export function createJobQueue({ read, write }) {
             const result = await operation(queue);
             if (!result) return { applied: false };
             const finished = queue.jobs.filter(job => !isUnfinishedJob(job));
-            const obsolete = new Set(finished.slice(0, Math.max(0, finished.length - MAX_HISTORY_JOBS)));
+            const obsolete = new Set(finished.filter(job => !['unknown', 'deleting'].includes(job.cleanupStatus)).slice(0, Math.max(0, finished.length - MAX_HISTORY_JOBS)));
             queue.jobs = queue.jobs.filter(job => !obsolete.has(job));
             await write(queue);
             let effectError = null;

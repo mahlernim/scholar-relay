@@ -984,5 +984,41 @@
   "ui_efd1bd2d": {
     "message": "Es wurde kein Artikel erkannt. Trotzdem ein Notebook erstellen und die ausgewählte Automatisierung starten?",
     "description": "No paper was detected. Create a notebook and start the selected automation anyway?"
+  },
+  "ui_35afca3b": {
+    "message": "Abbrechen",
+    "description": "Cancel"
+  },
+  "ui_c2954bc2": {
+    "message": "Zurück",
+    "description": "Back"
+  },
+  "ui_4408e966": {
+    "message": "Stoppen und Notebook behalten",
+    "description": "Stop and keep notebook"
+  },
+  "ui_66613304": {
+    "message": "Stoppen und Notebook löschen",
+    "description": "Stop and delete notebook"
+  },
+  "ui_9b369a0f": {
+    "message": "Notebook löschen",
+    "description": "Delete notebook"
+  },
+  "ui_e100f46d": {
+    "message": "Wird gestoppt...",
+    "description": "Stopping..."
+  },
+  "ui_32be65e1": {
+    "message": "Wird gelöscht...",
+    "description": "Deleting..."
+  },
+  "ui_134d554a": {
+    "message": "Löschung prüfen",
+    "description": "Deletion needs checking"
+  },
+  "ui_d3d1dd4b": {
+    "message": "Löscht auch alle Quellen und Ergebnisse dieses Notebooks.",
+    "description": "Deletes this notebook and all its sources and results."
   }
 }

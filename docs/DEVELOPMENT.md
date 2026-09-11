@@ -494,3 +494,9 @@ The follow-up localization pass removes every visible English fallback from Kore
 Issues #72 and #74 restore standby when a no-paper confirmation is declined and enable notebook opening by default when no preference exists. Existing saved completion preferences remain authoritative. All eight locales label the control Open notebook when ready. Completion timing and independent notification, chime and opening controls are unchanged.
 
 한국어: 논문이 없는 페이지의 시작 확인을 취소하면 대기 상태를 유지합니다. 저장된 설정이 없으면 완료 후 노트북 열기를 기본으로 활성화하며 기존 사용자의 개별 설정은 그대로 유지합니다.
+
+### v1.5.0 cancellation foundation
+
+Issue #73 adds persisted keep-or-delete cancellation intent, including during accepted creation, upload and generation requests. A late creation result retains its notebook identity before further steps are stopped. Cleanup waits for local in-flight operations, is scoped to the selected notebook, and records uncertain deletion without replay. Failed-job explicit deletion can remove partial results after inline confirmation. Successful jobs keep their result link. Queued cancellation removes the job and its saved PDF, while a start race requests the processing choice.
+
+한국어: 처리 중에도 노트북 유지 또는 삭제를 선택하여 중단할 수 있습니다. 진행 중인 요청의 결과를 확인한 뒤 다음 단계를 막으며, 삭제 결과가 불확실하면 자동으로 재시도하지 않습니다. 실패한 작업은 일부 완료 결과도 삭제됨을 확인한 후 정리할 수 있습니다.

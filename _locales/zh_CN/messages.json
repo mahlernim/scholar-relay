@@ -984,5 +984,41 @@
   "ui_efd1bd2d": {
     "message": "未检测到论文。是否仍要创建笔记本并启动所选的自动化？",
     "description": "No paper was detected. Create a notebook and start the selected automation anyway?"
+  },
+  "ui_35afca3b": {
+    "message": "取消",
+    "description": "Cancel"
+  },
+  "ui_c2954bc2": {
+    "message": "返回",
+    "description": "Back"
+  },
+  "ui_4408e966": {
+    "message": "停止并保留笔记本",
+    "description": "Stop and keep notebook"
+  },
+  "ui_66613304": {
+    "message": "停止并删除笔记本",
+    "description": "Stop and delete notebook"
+  },
+  "ui_9b369a0f": {
+    "message": "删除笔记本",
+    "description": "Delete notebook"
+  },
+  "ui_e100f46d": {
+    "message": "正在停止...",
+    "description": "Stopping..."
+  },
+  "ui_32be65e1": {
+    "message": "正在删除...",
+    "description": "Deleting..."
+  },
+  "ui_134d554a": {
+    "message": "需要确认删除结果",
+    "description": "Deletion needs checking"
+  },
+  "ui_d3d1dd4b": {
+    "message": "也会删除此笔记本中的所有来源和结果。",
+    "description": "Deletes this notebook and all its sources and results."
   }
 }
