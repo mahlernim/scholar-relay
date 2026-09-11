@@ -1,6 +1,6 @@
 {
   "extensionName": {
-    "message": "Scholar Relay - Automazione Gemini Notebook (NotebookLM)"
+    "message": "Scholar Relay - Automazione di Gemini Notebook (NotebookLM)"
   },
   "extensionDescription": {
     "message": "Importa PDF, articoli arXiv e pagine web in Gemini Notebook (NotebookLM). Genera panoramiche audio e materiali di studio."
@@ -30,7 +30,7 @@
     "description": "Artifact"
   },
   "ui_85cc8e29": {
-    "message": "Tempo trascorso $1 min.",
+    "message": "Tempo trascorso: $1 min.",
     "description": "Elapsed time: $1 min."
   },
   "ui_5495106b": {
@@ -558,7 +558,7 @@
     "description": "Loading collections..."
   },
   "ui_ad9295c6": {
-    "message": "Raccolte disponibili $1.",
+    "message": "Raccolte disponibili: $1.",
     "description": "Collections available: $1."
   },
   "ui_71b89b88": {
@@ -654,7 +654,7 @@
     "description": "Open in Gemini Notebook"
   },
   "ui_285dfd14": {
-    "message": "Fonte importata. Nessun contenuto da generare richiesto.",
+    "message": "Fonte importata. Nessun contenuto richiesto.",
     "description": "Source imported. No artifacts requested."
   },
   "ui_e65751d2": {
@@ -662,7 +662,7 @@
     "description": "$1/$2 artifacts ready ($3 failed)."
   },
   "ui_f59ae8c5": {
-    "message": "Contenuti pronti $1!",
+    "message": "Contenuti pronti: $1!",
     "description": "Artifacts ready: $1!"
   },
   "ui_1aadce96": {
@@ -814,7 +814,7 @@
     "description": "Queued"
   },
   "ui_98bfff6f": {
-    "message": "Preparazione",
+    "message": "In preparazione",
     "description": "Preparing"
   },
   "ui_863f19ee": {
@@ -974,7 +974,7 @@
     "description": "Notebook deleted from Gemini Notebook."
   },
   "ui_52c919ec": {
-    "message": "Questo notebook contiene $1 fonti e $2 contenuti non riusciti.",
+    "message": "Fonti: $1. Contenuti non riusciti: $2.",
     "description": "This notebook has $1 source(s) and $2 failed artifact(s)."
   },
   "ui_2c26929": {
@@ -1102,7 +1102,7 @@
     "description": "Selected sources"
   },
   "ui_32d7a557": {
-    "message": "Esclusa",
+    "message": "Escluso",
     "description": "Skipped"
   },
   "ui_70a589eb": {
