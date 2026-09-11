@@ -480,3 +480,11 @@ The new static landing page at `https://ahn-lab.org/scholar-relay/` leads with r
 English: Confirm intentional no-paper starts, show precise generation and PDF-wait guidance, and let users remove an unused job notebook only after a guarded inspection. Add Simplified Chinese and an automation-focused multilingual landing page.
 
 한국어: 논문이 감지되지 않은 페이지에서는 자동화를 시작하기 전에 확인합니다. 생성 제한과 PDF 대기 원인을 명확히 표시하고, 실패하거나 중단된 작업의 불필요한 노트북은 안전 점검 후에만 삭제할 수 있습니다. 중국어 간체와 자동화를 강조한 다국어 랜딩 페이지를 추가합니다.
+
+### September 11 landing hero screenshots
+
+The landing hero now shows the real settings and queue popup captures side by side instead of a diagrammatic mock interface. Neither image obstructs the other. Short labels explain that saved artifact choices apply to every paper and that the queue keeps work moving. A separate note calls out that another paper can be saved while generation continues.
+
+The rest of the page now leads with what users receive. It names the available study-material formats, one notebook per paper, the 20-paper queue, three concurrent generators, progress visibility, and direct access to completed work. The redundant share-card caption was removed. The landing language also selects its matching screenshot set across all eight supported locales. The copies are byte-identical to the maintained product captures under `docs/screenshots/`. Desktop and 390 px mobile browser checks covered screenshot visibility, text wrapping, horizontal overflow, and console errors. This website-only change does not alter the extension package or submitted store artifact.
+
+The follow-up localization pass removes every visible English fallback from Korean, Japanese, Spanish, French, German, Brazilian Portuguese, and Simplified Chinese. Product terms follow the current official Gemini Notebook help labels for each language. Accessible labels, image descriptions, footer links, share status, and the page description are localized with the main copy. The English-only workflow image was replaced by a responsive HTML workflow that uses the same localized labels. Deterministic coverage checks require every visible key in all eight locales. Browser checks covered every locale plus Korean and German at 390 pixels. The extension package and submitted store artifact remain unchanged.

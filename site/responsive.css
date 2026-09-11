@@ -2,7 +2,7 @@ body { overflow-x: hidden; }
 
 .hero > *,
 .section-heading > *,
-.paper-list div {
+.product-showcase {
   min-width: 0;
 }
 
@@ -24,10 +24,9 @@ small {
   .shell,
   .topbar { width: calc(100% - 24px) !important; max-width: calc(100% - 24px); }
   .hero-copy { width: 100%; }
-  .hero h1 { font-size: 35px; line-height: 1.04; word-break: break-all; }
-  .lead { word-break: break-all; }
-  .automation-demo { width: 100%; max-width: 100%; overflow: hidden; padding: 14px; }
-  .paper-list article { grid-template-columns: 28px minmax(0, 1fr) 20px; }
+  .hero h1 { font-size: 35px; line-height: 1.04; word-break: normal; }
+  .lead { word-break: normal; }
+  .product-showcase { width: 100%; max-width: 100%; }
   .section-heading { flex-direction: column; gap: 12px; }
   .share-button { align-self: flex-start; }
 }
