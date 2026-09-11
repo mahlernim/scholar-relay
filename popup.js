@@ -641,7 +641,8 @@ async function renderPaperSelection(data) {
     el('paper-auto').onclick = async () => {
         const origin = new URL(data.pageUrl).origin + '/*';
         if (!await chrome.permissions.request({ origins: [origin] })) return;
-        await chrome.runtime.sendMessage({ type: 'ENABLE_PAPER_DETECTION', origin, tabId: tab.id });
+        const result = await chrome.runtime.sendMessage({ type: 'ENABLE_PAPER_DETECTION', origin, tabId: tab.id });
+        if (!result?.ok) { showError(result?.message || 'Site access is required.'); return; }
         el('paper-feedback').textContent = t('Automatic detection enabled for this site.');
     };
     const loadTitles = async (requestAccess = true) => {
@@ -721,11 +722,22 @@ function renderDetection(data) {
       <div class="pdf-url">${escapeHtml(truncated)}</div>
       <div class="pdf-source">${escapeHtml(t(sourceLabel))}</div>
     </div>
-    <button class="btn-generate" id="btn-start">${escapeHtml(t('Add to queue'))}</button>`;
+    <button class="btn-generate" id="btn-start">${escapeHtml(t('Add to queue'))}</button>
+    ${/^https?:\/\//i.test(data.pageUrl || '') ? `<div class="paper-tools"><button id="single-paper-auto">${escapeHtml(t('Detect automatically on this site'))}</button></div><div id="single-paper-feedback" role="status"></div>` : ''}`;
     document.getElementById('btn-start').addEventListener('click', () =>
         startPipeline(data.pdfUrl, data.pageUrl, 'pdf', data.sourceTitle, data.pdfEvidence || data.source)
             .catch(error => showError(error.message))
     );
+    document.getElementById('single-paper-auto')?.addEventListener('click', async () => {
+        try {
+            const origin = new URL(data.pageUrl).origin + '/*';
+            if (!await chrome.permissions.request({ origins: [origin] })) return;
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const result = await chrome.runtime.sendMessage({ type: 'ENABLE_PAPER_DETECTION', origin, tabId: tab.id });
+            if (!result?.ok) throw new Error(result?.message || 'Site access is required.');
+            document.getElementById('single-paper-feedback').textContent = t('Automatic detection enabled for this site.');
+        } catch (error) { showError(error.message); }
+    });
 }
 
 function renderNoPdf() {

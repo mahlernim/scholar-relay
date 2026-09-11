@@ -507,4 +507,8 @@ Issue #75 adds a compact paper selector with explicit Separate and One notebook 
 
 Optional site grants enable a per-tab blue candidate count independently of the progress badge. arXiv title enrichment uses bounded HTML reads, two concurrent requests, ten lookups per opening, and a local expiring cache. It never fetches PDFs for titles. The published permissions remain optional. Site-access refusal leaves manual scanning and URL import available.
 
+The blue count includes a single detected paper. Single-paper pages also offer the site detection control so users can enable the indicator before their next visit.
+
 한국어: 논문을 선택하여 개별 노트북이나 하나의 노트북으로 만들고, 현재 웹페이지도 선택하여 포함할 수 있습니다. 소스 준비 후 생성하며 처리 실패는 명시적으로 제외한 뒤 계속할 수 있습니다. 선택 권한으로 사이트별 자동 감지와 제한된 arXiv 제목 조회를 제공하고 진행 배지와 별도로 후보 수를 표시합니다.
+
+논문이 하나만 감지되어도 파란색 숫자 1을 표시합니다. 단일 논문 페이지에서도 사이트 자동 감지를 켤 수 있어 다음 방문부터 표시를 확인할 수 있습니다.

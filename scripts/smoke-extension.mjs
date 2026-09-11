@@ -291,6 +291,7 @@ try {
   await reload(popup);
   let view = await evaluate(popup, `({text:document.getElementById('content').innerText,hasStart:!!document.getElementById('btn-start')})`);
   assert(view.hasStart && view.text.includes('/paper.pdf'), 'Linked PDF was not detected in the article tab');
+  assert(await evaluate(popup, `!!document.getElementById('single-paper-auto')`), 'Single-paper page must offer automatic site detection');
   let cachedDetection = await evaluate(popup, `chrome.storage.local.get('detectedPdf').then(result=>result.detectedPdf)`);
   assert(cachedDetection?.tabId === tabA.id, 'Content detection was not bound to its sender tab');
   assert(cachedDetection?.tabUrl === `${origin}/article`, 'Content detection stored the wrong sender URL');
