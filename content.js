@@ -1,5 +1,5 @@
 // Self-contained so Chrome can inject this function into the active tab.
-export function inspectPaperPage(doc = null, pageUrl = null, publish = false) {
+export function inspectPaperPage(doc = null, pageUrl = null, publish = false, observe = false) {
     doc ||= document;
     pageUrl ||= location.href;
     const clean = value => {
@@ -79,7 +79,66 @@ export function inspectPaperPage(doc = null, pageUrl = null, publish = false) {
             if (pdfUrl) source = 'pdf_content_type';
         }
     }
-    const result = { isPdf: !!pdfUrl, pdfUrl, pageUrl, source, sourceTitle, pdfEvidence: source };
+    const paperCandidates = new Map();
+    const arxivIdentity = href => {
+        try {
+            const u = new URL(href);
+            if (!/^(?:www\.)?arxiv\.org$/.test(u.hostname)) return null;
+            return u.pathname.match(/^\/(?:abs|pdf|html)\/((?:\d{4}\.\d{4,5}|[a-z-]+(?:\.[A-Z]{2})?\/\d{7})(?:v\d+)?)(?:\.pdf)?$/i)?.[1] || null;
+        } catch { return null; }
+    };
+    let truncated = false;
+    const addCandidate = (href, label, evidence, featured = false, supplementary = false) => {
+        href = absolute(href);
+        if (!href) return;
+        const arxivId = arxivIdentity(href);
+        const key = arxivId ? 'arxiv:' + arxivId : href;
+        const existing = paperCandidates.get(key);
+        const title = clean(label);
+        if (existing) {
+            if (title && (!existing.hasTitle || title.length > existing.sourceTitle.length)) { existing.sourceTitle = title; existing.hasTitle = true; }
+            existing.featured ||= featured;
+            return;
+        }
+        if (paperCandidates.size >= 100) { truncated = true; return; }
+        let filename = new URL(href).pathname.split('/').pop();
+        try { filename = decodeURIComponent(filename); } catch {}
+        paperCandidates.set(key, { id: key, pdfUrl: arxivId ? 'https://arxiv.org/pdf/' + arxivId : href,
+            pageUrl: arxivId ? 'https://arxiv.org/abs/' + arxivId : pageUrl, sourceTitle: title || filename || new URL(href).hostname,
+            hasTitle: !!title, arxivId, pdfEvidence: arxivId ? 'arxiv_link' : evidence, featured, supplementary });
+    };
+    if (pdfUrl && source !== 'pdf_link') addCandidate(pdfUrl, sourceTitle, source, true);
+    if (!arxiv && !isPdfDocument && source !== 'direct_pdf_url') {
+        for (const href of values('citation_pdf_url')) addCandidate(href, sourceTitle, 'citation_pdf_url', true);
+        const links = doc.querySelectorAll('a[href], link[type="application/pdf"]');
+        truncated ||= links.length > 5000;
+        for (const el of Array.from(links).slice(0, 5000)) {
+            const href = absolute(el.getAttribute('href'));
+            if (!href) continue;
+            const label = (el.textContent || el.getAttribute('title') || el.getAttribute('aria-label') || '').trim();
+            const id = arxivIdentity(href);
+            if (!id && !/\.pdf(?:[?#]|$)|\/pdf(?:[/?#]|$)/i.test(href) && !/\bpdf\b/i.test(label) && el.getAttribute('type') !== 'application/pdf') continue;
+            const supplementary = /supplement|supporting|figures? only/i.test(href + ' ' + label);
+            addCandidate(href, label, 'pdf_link', !!id && /^paper$/i.test(label), supplementary);
+        }
+    }
+    const detectedCandidates = [...paperCandidates.values()];
+    if (!pdfUrl && detectedCandidates.length) { pdfUrl = detectedCandidates[0].pdfUrl; source = detectedCandidates[0].pdfEvidence; }
+    const result = { isPdf: !!pdfUrl, pdfUrl, pageUrl, source, sourceTitle, pdfEvidence: source, candidates: detectedCandidates, truncated };
     if (publish) chrome.runtime.sendMessage({ type: 'DETECT_PDF', data: result }).catch(() => {});
+    if (observe && typeof MutationObserver !== 'undefined' && !globalThis.__scholarRelayObserver) {
+        let timer;
+        const observer = new MutationObserver(() => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                const data = inspectPaperPage(document, location.href, false);
+                chrome.runtime.sendMessage({ type: 'DETECT_PDF', data, automatic: true }).then(response => {
+                    if (response?.observationAllowed === false) { observer.disconnect(); delete globalThis.__scholarRelayObserver; }
+                }).catch(() => observer.disconnect());
+            }, 500);
+        });
+        observer.observe(doc.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['href', 'content'] });
+        globalThis.__scholarRelayObserver = observer;
+    }
     return result;
 }

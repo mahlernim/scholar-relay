@@ -500,3 +500,15 @@ Issues #72 and #74 restore standby when a no-paper confirmation is declined and 
 Issue #73 adds persisted keep-or-delete cancellation intent, including during accepted creation, upload and generation requests. A late creation result retains its notebook identity before further steps are stopped. Cleanup waits for local in-flight operations, is scoped to the selected notebook, and records uncertain deletion without replay. Failed-job explicit deletion can remove partial results after inline confirmation. Successful jobs keep their result link. Queued cancellation removes the job and its saved PDF, while a start race requests the processing choice.
 
 한국어: 처리 중에도 노트북 유지 또는 삭제를 선택하여 중단할 수 있습니다. 진행 중인 요청의 결과를 확인한 뒤 다음 단계를 막으며, 삭제 결과가 불확실하면 자동으로 재시도하지 않습니다. 실패한 작업은 일부 완료 결과도 삭제됨을 확인한 후 정리할 수 있습니다.
+
+### v1.5.0 selective and combined notebooks
+
+Issue #75 adds a compact paper selector with explicit Separate and One notebook modes. Combined jobs persist their source list, import sources sequentially into the same notebook, and pass only ready source IDs to generation. Source processing failures wait for explicit exclusion, while uncertain mutations retain the existing stop-and-check policy. Continuation is scoped to the displayed source index. Saved request IDs protect partial batches and popup closure from duplicate enqueue.
+
+Optional site grants enable a per-tab blue candidate count independently of the progress badge. arXiv title enrichment uses bounded HTML reads, two concurrent requests, ten lookups per opening, and a local expiring cache. It never fetches PDFs for titles. The published permissions remain optional. Site-access refusal leaves manual scanning and URL import available.
+
+The blue count includes a single detected paper. Single-paper pages also offer the site detection control so users can enable the indicator before their next visit.
+
+한국어: 논문을 선택하여 개별 노트북이나 하나의 노트북으로 만들고, 현재 웹페이지도 선택하여 포함할 수 있습니다. 소스 준비 후 생성하며 처리 실패는 명시적으로 제외한 뒤 계속할 수 있습니다. 선택 권한으로 사이트별 자동 감지와 제한된 arXiv 제목 조회를 제공하고 진행 배지와 별도로 후보 수를 표시합니다.
+
+논문이 하나만 감지되어도 파란색 숫자 1을 표시합니다. 단일 논문 페이지에서도 사이트 자동 감지를 켤 수 있어 다음 방문부터 표시를 확인할 수 있습니다.

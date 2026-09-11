@@ -6,6 +6,14 @@ ScholarRelay (Scholar Relay) imports PDFs, arXiv research papers, and webpages i
 
 > ScholarRelay is an independent open-source extension and is not affiliated with, authorized by, or endorsed by Google. It uses your existing signed-in Gemini Notebook browser session and never asks for your Google password or verification code.
 
+## v1.5.0 candidate
+
+Select linked papers individually. Create separate notebooks or combine up to 20 sources in one notebook, optionally including the current webpage as context. The combined notebook waits for source readiness before generation. If a source cannot be processed, inspect the failure or explicitly skip it before continuing. Uncertain remote mutations are never replayed automatically.
+
+The compact selector remembers its notebook mode. Optional per-site detection shows a blue candidate count independently of progress. With arXiv access, bounded HTML metadata lookups improve titles without downloading PDFs. Website access is optional and can be revoked in Chrome.
+
+연결된 논문을 개별 선택하여 각각의 노트북으로 만들거나, 현재 웹페이지를 포함한 최대 20개 소스를 하나의 노트북으로 합칠 수 있습니다. 소스 준비가 끝난 뒤 생성하며, 처리 실패 시 확인하거나 해당 소스를 명시적으로 제외한 뒤 계속합니다. 결과가 불확실한 요청은 자동 재시도하지 않습니다. 사이트별 자동 감지와 arXiv 제목 조회는 선택 권한을 사용하며 진행 배지와 별도로 논문 후보 수를 표시합니다.
+
 ## Screenshots
 
 | Workflow | Settings |
@@ -83,7 +91,7 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 
 ### 권한 및 문제 해결
 
-- 현재 페이지와 다른 사이트에 있는 PDF를 직접 내려받아야 할 때만 해당 PDF 사이트에 대한 Chrome 권한을 요청합니다. URL 가져오기는 다운로드 권한 없이 먼저 시도하며, 업로드가 필요할 때만 권한을 요청합니다. 권한을 거부하면 파일을 직접 선택할 수 있습니다.
+- PDF 다운로드를 위해 현재 페이지와 다른 사이트에 있는 PDF를 직접 내려받아야 할 때 해당 PDF 사이트에 대한 Chrome 권한을 요청합니다. URL 가져오기는 다운로드 권한 없이 먼저 시도하며, 업로드가 필요할 때만 권한을 요청합니다. 권한을 거부하면 파일을 직접 선택할 수 있습니다.
 - 로컬 `file://` PDF를 읽으려면 확장 프로그램 세부정보에서 **파일 URL에 대한 액세스 허용**을 켜야 할 수 있습니다.
 - 실행되지 않으면 [Gemini Notebook](https://notebook.google.com)에 로그인되어 있는지 확인하고 다시 시도합니다.
 - 컬렉션이 보이지 않으면 Gemini Notebook에서 컬렉션을 만든 뒤 설정의 새로고침 버튼을 클릭합니다.
@@ -156,7 +164,7 @@ The queue holds up to 20 unfinished jobs. Local PDFs are saved temporarily on yo
 
 ### Permissions and troubleshooting
 
-- Chrome asks for access to a specific PDF website only when the PDF is hosted on a different site and must be downloaded directly. URL import is tried first without download access. If upload fallback needs permission, you can grant it or select the PDF manually.
+- For PDF downloads, Chrome asks for access to a specific PDF website when the PDF is hosted on a different site and must be downloaded directly. URL import is tried first without download access. If upload fallback needs permission, you can grant it or select the PDF manually.
 - To read local `file://` PDFs, enable **Allow access to file URLs** in the extension's details.
 - If a run does not start, confirm that you are signed in at [Gemini Notebook](https://notebook.google.com) and retry.
 - If a collection is missing, create it in Gemini Notebook and use the refresh button in Settings.

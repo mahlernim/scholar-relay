@@ -1,6 +1,6 @@
 # Privacy Policy for ScholarRelay
 
-Last updated: September 5, 2026
+Last updated: September 11, 2026
 
 ScholarRelay is an independent browser extension that helps a user add a PDF or webpage to the user's own Gemini Notebook account (formerly NotebookLM) and request artifacts. It is not affiliated with, authorized by, or endorsed by Google.
 
@@ -31,6 +31,12 @@ Data is transmitted to:
 The developer does not operate a server for this extension and does not receive extension data. The extension contains no analytics, advertising, tracking, or telemetry. Data is not sold, licensed, used for advertising, or made available for human review by the developer.
 
 Google and source websites process data under their own terms and privacy policies. Users should upload only material they have the right to use.
+
+## Optional paper discovery
+
+When enabled for a specific site, the extension scans links on that site locally and updates its toolbar candidate count. It does not import detected documents automatically. With optional arXiv permission, opening the selector can request up to ten paper metadata pages with two concurrent bounded reads. These requests omit credentials and do not download PDFs. The arXiv host receives these requests. No developer server receives browsing data.
+
+Selection drafts remain in session storage. Notebook mode and enabled origins are stored locally. The title cache retains up to 100 records for 24 hours of reuse. Expired records are removed on subsequent lookups. Combined jobs retain the selected source list and per-source status. Records with uncertain deletion outcomes remain available for checking even when ordinary history is cleared.
 
 ## Local storage and retention
 

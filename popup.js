@@ -196,7 +196,7 @@ async function refreshQueue() {
 
 async function enqueueRequest(message) {
     const settings = listenersWired ? await saveSettings() : ((await chrome.storage.local.get('userSettings')).userSettings || {});
-    const requestId = crypto.randomUUID();
+    const requestId = message.requestId || crypto.randomUUID();
     let response;
     try { response = await chrome.runtime.sendMessage({ ...message, requestId, settings }); }
     catch (error) {
@@ -589,7 +589,106 @@ async function detectAndRender() {
 // Rendering
 // =========================================================================
 
+let paperView = null;
+async function renderPaperSelection(data) {
+    selectedRunId = null;
+    lastProgressSignature = null;
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const key = 'paper-selection:' + tab.id + ':' + data.pageUrl;
+    const saved = (await chrome.storage.session.get(key))[key];
+    const preferences = await chrome.storage.local.get('notebookMode');
+    const primary = data.candidates.filter(item => item.featured && !item.supplementary);
+    const selected = new Set(saved?.selected || (primary.length === 1 ? [primary[0].id] : []));
+    const view = { key, data, selected, mode: preferences.notebookMode || 'separate', title: saved?.title || data.sourceTitle || '', context: saved?.context || false, requests: saved?.requests || {} };
+    paperView = view;
+    const e = escapeHtml;
+    contentEl.innerHTML = '<div class="paper-heading"><strong>' + e(t('Papers on this page')) + '</strong><span id="paper-count"></span></div>' +
+        '<div class="paper-tools"><button id="paper-all">' + e(t('Select all')) + '</button><button id="paper-clear">' + e(t('Clear')) + '</button></div>' +
+        '<div class="paper-list">' + data.candidates.map(item => '<div class="paper-row"><input type="checkbox" id="candidate-' + e(item.id) + '" data-candidate="' + e(item.id) + '"><label for="candidate-' + e(item.id) + '">' +
+            (item.featured && primary.length === 1 ? '<small>' + e(t('Featured paper')) + '</small>' : '') +
+            '<span data-paper-title="' + e(item.id) + '">' + e(item.sourceTitle) + '</span><small>' + e(item.supplementary ? t('Supplement') : item.arxivId || new URL(item.pdfUrl).hostname) + '</small></label>' +
+            '<a target="_blank" rel="noopener" aria-label="' + e(t('Open paper')) + '" href="' + e(item.pageUrl === data.pageUrl ? item.pdfUrl : item.pageUrl) + '">↗</a></div>').join('') + '</div>' +
+        '<div class="paper-mode"><span>' + e(t('Create notebooks')) + '</span><div role="radiogroup" aria-label="' + e(t('Create notebooks')) + '">' +
+        ['separate', 'one'].map(mode => '<label><input type="radio" name="paper-mode" value="' + mode + '"><span>' + e(t(mode === 'one' ? 'One notebook' : 'Separate')) + '</span></label>').join('') + '</div></div>' +
+        '<div id="paper-combined"><label for="paper-title">' + e(t('Notebook title')) + '</label><input id="paper-title" maxlength="300"><label><input type="checkbox" id="paper-context">' + e(t('Include this webpage as context')) + '</label></div>' +
+        '<p class="s-help" id="paper-summary"></p><button class="btn-generate" id="paper-add"></button><p id="paper-feedback" role="status"></p>' +
+        '<div class="paper-tools"><button id="paper-webpage">' + e(t('Use this webpage')) + '</button><button id="paper-auto">' + e(t('Detect automatically on this site')) + '</button><button id="paper-titles">' + e(t('Find paper titles')) + '</button></div>';
+    contentEl.dataset.renderMode = 'papers';
+    const el = id => document.getElementById(id);
+    el('paper-title').value = view.title;
+    el('paper-context').checked = view.context;
+    const save = () => chrome.storage.session.set({ [key]: { selected: [...selected], title: view.title, context: view.context, requests: view.requests } });
+    const update = () => {
+        const one = view.mode === 'one';
+        el('paper-combined').hidden = !one;
+        el('paper-webpage').hidden = one;
+        contentEl.querySelectorAll('[data-candidate]').forEach(box => box.checked = selected.has(box.dataset.candidate));
+        contentEl.querySelectorAll('[name="paper-mode"]').forEach(radio => radio.checked = radio.value === view.mode);
+        const count = selected.size + (one && view.context ? 1 : 0);
+        el('paper-count').textContent = selected.size + ' / ' + data.candidates.length + (data.truncated ? '+' : '');
+        el('paper-summary').textContent = one ? t('$1 sources in one notebook', [count]) : t('$1 separate notebooks', [selected.size]);
+        el('paper-add').textContent = one ? t('Create notebook with $1 sources', [count]) : t('Add $1 papers to queue', [selected.size]);
+        el('paper-add').disabled = !!view.busy || !count || count > 20 || (one && !view.title.trim());
+        save().catch(console.warn);
+    };
+    contentEl.querySelectorAll('[data-candidate]').forEach(box => box.onchange = () => { box.checked ? selected.add(box.dataset.candidate) : selected.delete(box.dataset.candidate); update(); });
+    contentEl.querySelectorAll('[name="paper-mode"]').forEach(radio => radio.onchange = () => { view.mode = radio.value; chrome.storage.local.set({ notebookMode: view.mode }); update(); });
+    el('paper-all').onclick = () => { data.candidates.forEach(item => selected.add(item.id)); update(); };
+    el('paper-clear').onclick = () => { selected.clear(); update(); };
+    el('paper-title').oninput = () => { view.title = el('paper-title').value; update(); };
+    el('paper-context').onchange = () => { view.context = el('paper-context').checked; update(); };
+    el('paper-webpage').onclick = () => startPipeline(data.pageUrl, data.pageUrl, 'webpage', data.sourceTitle);
+    el('paper-auto').onclick = async () => {
+        const origin = new URL(data.pageUrl).origin + '/*';
+        if (!await chrome.permissions.request({ origins: [origin] })) return;
+        const result = await chrome.runtime.sendMessage({ type: 'ENABLE_PAPER_DETECTION', origin, tabId: tab.id });
+        if (!result?.ok) { showError(result?.message || 'Site access is required.'); return; }
+        el('paper-feedback').textContent = t('Automatic detection enabled for this site.');
+    };
+    const loadTitles = async (requestAccess = true) => {
+        if (requestAccess && !await chrome.permissions.request({ origins: ['https://arxiv.org/*'] })) return;
+        if (!requestAccess && !await chrome.permissions.contains({ origins: ['https://arxiv.org/*'] })) return;
+        el('paper-titles').disabled = true;
+        const results = await chrome.runtime.sendMessage({ type: 'PAPER_TITLES', ids: data.candidates.filter(item => item.arxivId).slice(0, 10).map(item => item.arxivId) });
+        if (paperView !== view) return;
+        for (const item of data.candidates) if (results?.titles?.[item.arxivId]) {
+            item.sourceTitle = results.titles[item.arxivId];
+            const title = [...contentEl.querySelectorAll('[data-paper-title]')].find(node => node.dataset.paperTitle === item.id);
+            if (title) title.textContent = item.sourceTitle;
+        }
+        el('paper-titles').disabled = false;
+    };
+    el('paper-titles').onclick = () => loadTitles().catch(() => {});
+    loadTitles(false).catch(() => {});
+    el('paper-add').onclick = async () => {
+        if (view.busy) return;
+        view.busy = true;
+        el('paper-add').disabled = true;
+        const sources = data.candidates.filter(item => selected.has(item.id)).map(item => ({ ...item, sourceType: 'pdf' }));
+        if (view.mode === 'one' && view.context) sources.push({ pdfUrl: data.pageUrl, pageUrl: data.pageUrl, sourceTitle: data.sourceTitle, sourceType: 'webpage' });
+        let accepted = 0;
+        try {
+            const messages = view.mode === 'one' ? [{ ...sources[0], sources, notebookTitle: view.title, sourceTitle: view.title }] : sources;
+            for (const message of messages) {
+                const requestKey = JSON.stringify([view.mode, message.sources?.map(item => item.pdfUrl) || message.pdfUrl]);
+                view.requests[requestKey] ||= crypto.randomUUID();
+                await save();
+                const response = await enqueueRequest({ type: 'START_PIPELINE', ...message, requestId: view.requests[requestKey] });
+                if (!response?.ok) throw new Error(response?.message || 'Could not save job.');
+                accepted++;
+                if (view.mode === 'separate') { selected.delete(message.id); await save(); }
+            }
+            selected.clear(); view.context = false; el('paper-context').checked = false; update();
+            el('paper-feedback').textContent = t('$1 jobs saved in queue', [accepted]);
+            await refreshQueue();
+        } catch (error) { el('paper-feedback').textContent = t('$1 jobs saved in queue', [accepted]) + '. ' + error.message; }
+        finally { view.busy = false; if (paperView === view) update(); }
+    };
+    update();
+}
+
 function renderDetection(data) {
+    if (data.candidates?.length > 1) { renderPaperSelection(data); return; }
     lastProgressSignature = null;
     delete contentEl.dataset.renderMode;
     const truncated = data.pdfUrl.length > 80 ? data.pdfUrl.substring(0, 77) + '...' : data.pdfUrl;
@@ -623,11 +722,22 @@ function renderDetection(data) {
       <div class="pdf-url">${escapeHtml(truncated)}</div>
       <div class="pdf-source">${escapeHtml(t(sourceLabel))}</div>
     </div>
-    <button class="btn-generate" id="btn-start">${escapeHtml(t('Add to queue'))}</button>`;
+    <button class="btn-generate" id="btn-start">${escapeHtml(t('Add to queue'))}</button>
+    ${/^https?:\/\//i.test(data.pageUrl || '') ? `<div class="paper-tools"><button id="single-paper-auto">${escapeHtml(t('Detect automatically on this site'))}</button></div><div id="single-paper-feedback" role="status"></div>` : ''}`;
     document.getElementById('btn-start').addEventListener('click', () =>
         startPipeline(data.pdfUrl, data.pageUrl, 'pdf', data.sourceTitle, data.pdfEvidence || data.source)
             .catch(error => showError(error.message))
     );
+    document.getElementById('single-paper-auto')?.addEventListener('click', async () => {
+        try {
+            const origin = new URL(data.pageUrl).origin + '/*';
+            if (!await chrome.permissions.request({ origins: [origin] })) return;
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const result = await chrome.runtime.sendMessage({ type: 'ENABLE_PAPER_DETECTION', origin, tabId: tab.id });
+            if (!result?.ok) throw new Error(result?.message || 'Site access is required.');
+            document.getElementById('single-paper-feedback').textContent = t('Automatic detection enabled for this site.');
+        } catch (error) { showError(error.message); }
+    });
 }
 
 function renderNoPdf() {
@@ -737,6 +847,10 @@ function renderProgress(state) {
           <button class="btn-secondary" id="btn-fallback-file">${escapeHtml(t("Upload PDF & Continue"))}</button>
           ${state.stepDetail ? `<details class="workflow-details"><summary>${escapeHtml(t("Download details"))}</summary><div class="step-detail">${escapeHtml(state.stepDetail)}</div></details>` : ''}`;
     }
+    if (state.sources) {
+        bottomHtml += '<details class="workflow-details"><summary>' + escapeHtml(t('Selected sources')) + '</summary>' + state.sources.map(item => '<div class="step-detail">' + escapeHtml(item.sourceTitle || item.pdfUrl) + ' · ' + escapeHtml(t(item.status === 'ready' ? 'Ready' : item.status === 'skipped' ? 'Skipped' : 'Waiting')) + '</div>').join('') + '</details>';
+        if (['wait_source_choice', 'wait_pdf_access'].includes(state.step)) bottomHtml += '<button class="btn-secondary" id="skip-source">' + escapeHtml(t('Skip this source and continue')) + '</button>';
+    }
     bottomHtml += '<div class="job-actions">' + cancellationActions(state) + '</div>';
     bottomHtml += `<button class="btn-secondary" id="btn-reset">${escapeHtml(t('Add another paper'))}</button>`;
 
@@ -751,6 +865,12 @@ function renderProgress(state) {
     ${['completed', 'queued', 'stopped'].includes(state.status)
         ? `${bottomHtml}<details class="workflow-details"><summary>${escapeHtml(t("Workflow details"))}</summary><div class="pipeline">${stepsHtml}</div></details>`
         : `<div class="pipeline">${stepsHtml}</div>${bottomHtml}`}`;
+    document.getElementById('skip-source')?.addEventListener('click', async event => {
+        event.currentTarget.disabled = true;
+        const result = await chrome.runtime.sendMessage({ type: 'CONTINUE_COMBINED_SOURCES', runId: state.runId, sourceIndex: state.sourceIndex });
+        if (!result?.ok) showError(result?.message);
+        await refreshQueue();
+    });
     wireCancellation(contentEl);
     contentEl.dataset.renderMode = 'progress';
     lastProgressSignature = renderSignature;

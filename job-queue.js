@@ -5,7 +5,7 @@ export const MAX_QUEUED_PDF_BYTES = 100 * 1024 * 1024;
 
 export const isUnfinishedJob = job => ['queued', 'running', 'stopping'].includes(job.status);
 export const isPreparingJob = job => job.status === 'running' &&
-    !['wait_artifacts', 'wait_pdf_access', 'queued_pdf'].includes(job.step);
+    !['wait_artifacts', 'wait_pdf_access', 'wait_source_choice', 'queued_pdf'].includes(job.step);
 
 export function canStartNextJob(queue) {
     return !queue.paused && !queue.serviceBlock && !queue.jobs.some(isPreparingJob) &&

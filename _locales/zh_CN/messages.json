@@ -1020,5 +1020,97 @@
   "ui_d3d1dd4b": {
     "message": "也会删除此笔记本中的所有来源和结果。",
     "description": "Deletes this notebook and all its sources and results."
+  },
+  "ui_b28f5ccc": {
+    "message": "此页面的论文",
+    "description": "Papers on this page"
+  },
+  "ui_6af21072": {
+    "message": "全选",
+    "description": "Select all"
+  },
+  "ui_4a57fc2": {
+    "message": "清除",
+    "description": "Clear"
+  },
+  "ui_e8a27655": {
+    "message": "主要论文",
+    "description": "Featured paper"
+  },
+  "ui_da557f42": {
+    "message": "补充材料",
+    "description": "Supplement"
+  },
+  "ui_40b804c7": {
+    "message": "打开论文",
+    "description": "Open paper"
+  },
+  "ui_67283063": {
+    "message": "创建笔记本",
+    "description": "Create notebooks"
+  },
+  "ui_10e895e8": {
+    "message": "一个笔记本",
+    "description": "One notebook"
+  },
+  "ui_ab7db738": {
+    "message": "分别创建",
+    "description": "Separate"
+  },
+  "ui_340761b3": {
+    "message": "包含此网页作为背景",
+    "description": "Include this webpage as context"
+  },
+  "ui_894e2575": {
+    "message": "使用此网页",
+    "description": "Use this webpage"
+  },
+  "ui_373b446b": {
+    "message": "在此网站自动检测",
+    "description": "Detect automatically on this site"
+  },
+  "ui_200e067f": {
+    "message": "获取论文标题",
+    "description": "Find paper titles"
+  },
+  "ui_2df60e04": {
+    "message": "一个笔记本中有 $1 个来源",
+    "description": "$1 sources in one notebook"
+  },
+  "ui_e6e47f19": {
+    "message": "$1 个独立笔记本",
+    "description": "$1 separate notebooks"
+  },
+  "ui_55c2ab3b": {
+    "message": "用 $1 个来源创建笔记本",
+    "description": "Create notebook with $1 sources"
+  },
+  "ui_ee66925c": {
+    "message": "将 $1 篇论文加入队列",
+    "description": "Add $1 papers to queue"
+  },
+  "ui_e24fe294": {
+    "message": "已启用此网站的自动检测。",
+    "description": "Automatic detection enabled for this site."
+  },
+  "ui_721b8d43": {
+    "message": "已保存 $1 个队列任务",
+    "description": "$1 jobs saved in queue"
+  },
+  "ui_d483e2ce": {
+    "message": "所选来源",
+    "description": "Selected sources"
+  },
+  "ui_32d7a557": {
+    "message": "已跳过",
+    "description": "Skipped"
+  },
+  "ui_70a589eb": {
+    "message": "跳过此来源并继续",
+    "description": "Skip this source and continue"
+  },
+  "ui_76aff97c": {
+    "message": "此页面有 $1 个论文候选项",
+    "description": "$1 paper candidates on this page"
   }
 }

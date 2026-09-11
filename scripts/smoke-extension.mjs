@@ -211,7 +211,7 @@ const server = createServer(async (request, response) => {
     const method = requestUrl.searchParams.get('rpcids');
     let result = [[null, []]];
     if (method === 'CCqFvf') { imports.notebookTitles.push(params[0]); const id='smoke-notebook-'+imports.notebookTitles.length; notebooks.set(id,{title:params[0],sources:[]}); result = [params[0], null, id]; }
-    if (method === 'izAoDd') { const url=params[0][0][2][0]; imports.urls.push(url); const id='source-'+params[1]; notebooks.get(params[1])?.sources.push([[id],url,[null,null,null,null,null,null,null,[url]],[null,2]]); result = [[id]]; }
+    if (method === 'izAoDd') { const url=params[0][0][2][0]; imports.urls.push(url); const id='source-'+params[1]+'-'+imports.urls.length; notebooks.get(params[1])?.sources.push([[id],url,[null,null,null,null,null,null,null,[url]],[null,2]]); result = [[id]]; }
     if (method === 'o4cbdc') { imports.uploads++; result = [['smoke-file-source-id']]; }
     if (queueMode && method==='rLM1Ne') { const notebook=notebooks.get(params[0]); result=[[notebook?.title || 'Paper', notebook?.sources || [], params[0]]]; }
     if (queueMode && method==='R7cb6c') { const item={notebookId:params[1],taskId:'artifact-'+params[1],type:params[2][2],language:params[2][6]?.[1]?.[4]}; generations.push(item); result=[[item.taskId,null,item.type,null,1]]; }
@@ -266,7 +266,7 @@ try {
   const workerPath = join(extensionRoot, 'background.js');
   await writeFile(workerPath, (await readFile(workerPath,'utf8')) + '\nchrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message.type!=="SMOKE_TICK")return;handlePollAlarm({name:ALARM_NAME}).then(()=>reply({ok:true}));return true;});\n');
   const popupPath = join(extensionRoot, 'popup.js');
-  await writeFile(popupPath, `${await readFile(popupPath, 'utf8')}\nglobalThis.__smoke = { startPipelineFile, refreshQueue, renderProgress, async setFixtureState(state, extra = {}) { await chrome.storage.local.set({ jobQueue: {version:1,paused:false,jobs:state.status==='idle'?[]:[{runId:'fixture',...state}]}, ...extra }); } };\n`);
+  await writeFile(popupPath, `${await readFile(popupPath, 'utf8')}\nglobalThis.__smoke = { startPipelineFile, refreshQueue, renderProgress, renderPaperSelection, async setFixtureState(state, extra = {}) { await chrome.storage.local.set({ jobQueue: {version:1,paused:false,jobs:state.status==='idle'?[]:[{runId:'fixture',...state}]}, ...extra }); } };\n`);
 
   const chromePath = await resolveChrome();
   chrome = spawn(chromePath, [
@@ -291,6 +291,7 @@ try {
   await reload(popup);
   let view = await evaluate(popup, `({text:document.getElementById('content').innerText,hasStart:!!document.getElementById('btn-start')})`);
   assert(view.hasStart && view.text.includes('/paper.pdf'), 'Linked PDF was not detected in the article tab');
+  assert(await evaluate(popup, `!!document.getElementById('single-paper-auto')`), 'Single-paper page must offer automatic site detection');
   let cachedDetection = await evaluate(popup, `chrome.storage.local.get('detectedPdf').then(result=>result.detectedPdf)`);
   assert(cachedDetection?.tabId === tabA.id, 'Content detection was not bound to its sender tab');
   assert(cachedDetection?.tabUrl === `${origin}/article`, 'Content detection stored the wrong sender URL');
@@ -395,7 +396,7 @@ try {
   const queueState=()=>evaluate(popup, `chrome.runtime.sendMessage({type:'GET_QUEUE'})`);
   const waitForJob=async (id,step)=>{
     for(let i=0;i<100;i++) { const job=(await queueState()).jobs.find(job=>job.runId===id); if(job?.step===step)return job; if(job?.status==='error')throw new Error(job.error); await delay(50); }
-    throw new Error('Queued job did not reach '+step);
+    throw new Error('Queued job did not reach '+step+': '+JSON.stringify((await queueState()).jobs.find(job=>job.runId===id)));
   };
   await waitForJob(first.runId,'wait_source');
   const second=await evaluate(popup, `chrome.runtime.sendMessage({type:'START_PIPELINE',pdfUrl:'${origin}/queue-b.pdf',sourceTitle:'Queued paper B',settings:${JSON.stringify({...jobSettings,language:'en'})}})`);
@@ -417,6 +418,29 @@ try {
   console.log('Two queued papers completed with separate notebook IDs and saved languages.');
 
   await popup.call('Emulation.setDeviceMetricsOverride', { width: 360, height: 600, deviceScaleFactor: 1, mobile: false });
+  await evaluate(popup, `__smoke.setFixtureState({status:'idle'}, {userSettings:${JSON.stringify(jobSettings)}})`);
+  queueMode=true; generationComplete=false;
+  const fixture={pageUrl:origin+'/blog',sourceTitle:'ToolGrad and related papers',candidates:[
+    {id:'toolgrad',pdfUrl:origin+'/toolgrad.pdf',pageUrl:origin+'/blog',sourceTitle:'ToolGrad: Efficient Tool-use Dataset Generation with Textual Gradients',featured:true},
+    {id:'textgrad',pdfUrl:origin+'/textgrad.pdf',pageUrl:origin+'/blog',sourceTitle:'TextGrad: Automatic Differentiation via Text'},
+    {id:'unchecked',pdfUrl:origin+'/unchecked.pdf',pageUrl:origin+'/blog',sourceTitle:'Do not import this paper'}]};
+  await evaluate(popup, `__smoke.renderPaperSelection(${JSON.stringify(fixture)})`);
+  await evaluate(popup, `document.querySelector('[data-candidate="textgrad"]').click();document.querySelector('[name="paper-mode"][value="one"]').click();document.getElementById('paper-context').click()`);
+  const selectionLayout=await evaluate(popup, `({width:document.documentElement.scrollWidth,button:document.getElementById('paper-add').textContent,title:!document.getElementById('paper-combined').hidden})`);
+  assert(selectionLayout.width<=360 && selectionLayout.title && selectionLayout.button.includes('3'), 'Combined-source selection layout failed');
+  const beforeCombined=imports.notebookTitles.length;
+  await evaluate(popup, `document.getElementById('paper-add').click()`);
+  let combined;
+  for(let i=0;i<100;i++){combined=(await queueState()).jobs.find(j=>j.sources);if(combined)break;await delay(50)}
+  assert(combined,'Combined job was not saved');
+  await waitForJob(combined.runId,'wait_source');
+  for(let i=0;i<3;i++)await evaluate(popup, `chrome.runtime.sendMessage({type:'SMOKE_TICK'})`);
+  const readyCombined=await waitForJob(combined.runId,'wait_artifacts');
+  assert(imports.notebookTitles.length===beforeCombined+1 && readyCombined.sources.length===3 && readyCombined.sources.every(x=>x.status==='ready'), 'Combined job did not retain three ready sources in one notebook');
+  assert(!imports.urls.includes(origin+'/unchecked.pdf'),'An unchecked candidate was imported');
+  assert(new Set(readyCombined.sources.map(x=>x.sourceId)).size===3,'Combined sources lost their distinct IDs');
+  queueMode=false;
+  console.log('Combined popup smoke passed with two selected papers and webpage context in one notebook.');
   const completedState = { status: 'completed', step: 'done', pdfUrl: 'paper.pdf',
     notebookTitle: 'Harness-of-Harness: Multi-Day Autonomous Software Development with Continual Improvement',
     notebookUrl: `${origin}/notebook/smoke`, collectionAssignment: { status: 'completed', name: 'Research papers' },

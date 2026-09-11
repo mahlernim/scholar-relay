@@ -1020,5 +1020,97 @@
   "ui_d3d1dd4b": {
     "message": "このノートブックのすべてのソースと結果も削除します。",
     "description": "Deletes this notebook and all its sources and results."
+  },
+  "ui_b28f5ccc": {
+    "message": "このページの論文",
+    "description": "Papers on this page"
+  },
+  "ui_6af21072": {
+    "message": "すべて選択",
+    "description": "Select all"
+  },
+  "ui_4a57fc2": {
+    "message": "選択解除",
+    "description": "Clear"
+  },
+  "ui_e8a27655": {
+    "message": "主な論文",
+    "description": "Featured paper"
+  },
+  "ui_da557f42": {
+    "message": "補足資料",
+    "description": "Supplement"
+  },
+  "ui_40b804c7": {
+    "message": "論文を開く",
+    "description": "Open paper"
+  },
+  "ui_67283063": {
+    "message": "ノートブック作成",
+    "description": "Create notebooks"
+  },
+  "ui_10e895e8": {
+    "message": "1つにまとめる",
+    "description": "One notebook"
+  },
+  "ui_ab7db738": {
+    "message": "個別に作成",
+    "description": "Separate"
+  },
+  "ui_340761b3": {
+    "message": "このページも含める",
+    "description": "Include this webpage as context"
+  },
+  "ui_894e2575": {
+    "message": "このページを使用",
+    "description": "Use this webpage"
+  },
+  "ui_373b446b": {
+    "message": "このサイトで自動検出",
+    "description": "Detect automatically on this site"
+  },
+  "ui_200e067f": {
+    "message": "論文名を取得",
+    "description": "Find paper titles"
+  },
+  "ui_2df60e04": {
+    "message": "1つのノートブックに$1件のソース",
+    "description": "$1 sources in one notebook"
+  },
+  "ui_e6e47f19": {
+    "message": "$1個の個別ノートブック",
+    "description": "$1 separate notebooks"
+  },
+  "ui_55c2ab3b": {
+    "message": "$1件のソースで作成",
+    "description": "Create notebook with $1 sources"
+  },
+  "ui_ee66925c": {
+    "message": "$1件をキューに追加",
+    "description": "Add $1 papers to queue"
+  },
+  "ui_e24fe294": {
+    "message": "このサイトの自動検出を有効にしました。",
+    "description": "Automatic detection enabled for this site."
+  },
+  "ui_721b8d43": {
+    "message": "$1件をキューに保存しました",
+    "description": "$1 jobs saved in queue"
+  },
+  "ui_d483e2ce": {
+    "message": "選択したソース",
+    "description": "Selected sources"
+  },
+  "ui_32d7a557": {
+    "message": "除外済み",
+    "description": "Skipped"
+  },
+  "ui_70a589eb": {
+    "message": "このソースを除いて続行",
+    "description": "Skip this source and continue"
+  },
+  "ui_76aff97c": {
+    "message": "このページに$1件の論文候補",
+    "description": "$1 paper candidates on this page"
   }
 }
