@@ -509,9 +509,9 @@
     "message": "完成时钟",
     "description": "Completion chime"
   },
-  "ui_5ef31b9a": {
-    "message": "完成后自动打开笔记本",
-    "description": "Auto-open notebook when done"
+  "ui_204fd6fd": {
+    "message": "就绪后打开笔记本",
+    "description": "Open notebook when ready"
   },
   "ui_f1435584": {
     "message": "保存设置",

@@ -45,7 +45,7 @@ export const DEFAULT_SETTINGS = {
     // UX
     notificationEnabled: true,
     chimeEnabled: true,
-    autoOpenNotebook: false,
+    autoOpenNotebook: true,
     useSourceTitleForNotebook: true,
     collectionId: '',
 };

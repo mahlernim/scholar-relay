@@ -125,7 +125,7 @@
   "✨ Experience": ["✨ 사용 환경", "✨ 使い勝手", "✨ Preferencias", "✨ Préférences", "✨ Bedienung", "✨ Preferências"],
   "Desktop notifications": ["데스크톱 알림", "デスクトップ通知", "Notificaciones de escritorio", "Notifications de bureau", "Desktop-Benachrichtigungen", "Notificações na área de trabalho"],
   "Completion chime": ["완료 알림음", "完了音", "Sonido al terminar", "Son de fin", "Abschlusston", "Som de conclusão"],
-  "Auto-open notebook when done": ["완료되면 노트북 자동 열기", "完了時にノートブックを自動で開く", "Abrir el cuaderno al terminar", "Ouvrir le notebook une fois terminé", "Notebook nach Abschluss automatisch öffnen", "Abrir o notebook ao concluir"],
+  "Open notebook when ready": ["준비되면 노트북 열기", "準備ができたらノートブックを開く", "Abrir el cuaderno cuando esté listo", "Ouvrir le notebook quand il est prêt", "Notebook öffnen, sobald es bereit ist", "Abrir o notebook quando estiver pronto"],
   "✓ Save Settings": ["✓ 설정 저장", "✓ 設定を保存", "✓ Guardar configuración", "✓ Enregistrer les paramètres", "✓ Einstellungen speichern", "✓ Salvar configurações"],
   "Scanning page for PDFs...": ["페이지에서 PDF 확인 중...", "ページ内の PDF を確認中...", "Buscando PDF en la página...", "Recherche de PDF sur la page...", "Seite wird nach PDFs durchsucht...", "Procurando PDFs na página..."],
   "Setup": ["준비", "準備", "Preparación", "Préparation", "Vorbereitung", "Preparação"],

@@ -509,9 +509,9 @@
     "message": "Abschlusston",
     "description": "Completion chime"
   },
-  "ui_5ef31b9a": {
-    "message": "Notebook nach Abschluss automatisch öffnen",
-    "description": "Auto-open notebook when done"
+  "ui_204fd6fd": {
+    "message": "Notebook öffnen, sobald es bereit ist",
+    "description": "Open notebook when ready"
   },
   "ui_f1435584": {
     "message": "✓ Einstellungen speichern",

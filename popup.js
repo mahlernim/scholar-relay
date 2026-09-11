@@ -809,10 +809,10 @@ async function startPipeline(pdfUrl, pageUrl, sourceType = 'pdf', sourceTitle = 
 
 async function startPipelineFromCurrentPageUrl() {
     const btn = document.getElementById('btn-start-url');
-    if (btn) { btn.disabled = true; btn.textContent = t("Starting..."); }
 
     try {
         if (!confirm(t('No paper was detected. Create a notebook and start the selected automation anyway?'))) return;
+        if (btn) { btn.disabled = true; btn.textContent = t("Starting..."); }
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         const currentUrl = tab?.url || '';
         if (!/^https?:\/\//i.test(currentUrl)) {

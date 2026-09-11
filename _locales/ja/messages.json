@@ -509,9 +509,9 @@
     "message": "完了音",
     "description": "Completion chime"
   },
-  "ui_5ef31b9a": {
-    "message": "完了時にノートブックを自動で開く",
-    "description": "Auto-open notebook when done"
+  "ui_204fd6fd": {
+    "message": "準備ができたらノートブックを開く",
+    "description": "Open notebook when ready"
   },
   "ui_f1435584": {
     "message": "✓ 設定を保存",

@@ -509,9 +509,9 @@
     "message": "Som de conclusão",
     "description": "Completion chime"
   },
-  "ui_5ef31b9a": {
-    "message": "Abrir o notebook ao concluir",
-    "description": "Auto-open notebook when done"
+  "ui_204fd6fd": {
+    "message": "Abrir o notebook quando estiver pronto",
+    "description": "Open notebook when ready"
   },
   "ui_f1435584": {
     "message": "✓ Salvar configurações",
