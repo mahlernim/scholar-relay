@@ -1020,5 +1020,97 @@
   "ui_d3d1dd4b": {
     "message": "이 노트북의 모든 소스와 결과도 삭제됩니다.",
     "description": "Deletes this notebook and all its sources and results."
+  },
+  "ui_b28f5ccc": {
+    "message": "이 페이지의 논문",
+    "description": "Papers on this page"
+  },
+  "ui_6af21072": {
+    "message": "전체 선택",
+    "description": "Select all"
+  },
+  "ui_4a57fc2": {
+    "message": "선택 해제",
+    "description": "Clear"
+  },
+  "ui_e8a27655": {
+    "message": "주요 논문",
+    "description": "Featured paper"
+  },
+  "ui_da557f42": {
+    "message": "보충 자료",
+    "description": "Supplement"
+  },
+  "ui_40b804c7": {
+    "message": "논문 열기",
+    "description": "Open paper"
+  },
+  "ui_67283063": {
+    "message": "노트북 만들기",
+    "description": "Create notebooks"
+  },
+  "ui_10e895e8": {
+    "message": "하나의 노트북",
+    "description": "One notebook"
+  },
+  "ui_ab7db738": {
+    "message": "각각 만들기",
+    "description": "Separate"
+  },
+  "ui_340761b3": {
+    "message": "이 웹페이지도 포함",
+    "description": "Include this webpage as context"
+  },
+  "ui_894e2575": {
+    "message": "이 웹페이지 사용",
+    "description": "Use this webpage"
+  },
+  "ui_373b446b": {
+    "message": "이 사이트 자동 감지",
+    "description": "Detect automatically on this site"
+  },
+  "ui_200e067f": {
+    "message": "논문 제목 가져오기",
+    "description": "Find paper titles"
+  },
+  "ui_2df60e04": {
+    "message": "하나의 노트북에 소스 $1개",
+    "description": "$1 sources in one notebook"
+  },
+  "ui_e6e47f19": {
+    "message": "개별 노트북 $1개",
+    "description": "$1 separate notebooks"
+  },
+  "ui_55c2ab3b": {
+    "message": "소스 $1개로 노트북 만들기",
+    "description": "Create notebook with $1 sources"
+  },
+  "ui_ee66925c": {
+    "message": "논문 $1개 대기열에 추가",
+    "description": "Add $1 papers to queue"
+  },
+  "ui_e24fe294": {
+    "message": "이 사이트의 자동 감지를 켰습니다.",
+    "description": "Automatic detection enabled for this site."
+  },
+  "ui_721b8d43": {
+    "message": "작업 $1개를 대기열에 저장했습니다",
+    "description": "$1 jobs saved in queue"
+  },
+  "ui_d483e2ce": {
+    "message": "선택한 소스",
+    "description": "Selected sources"
+  },
+  "ui_32d7a557": {
+    "message": "제외됨",
+    "description": "Skipped"
+  },
+  "ui_70a589eb": {
+    "message": "이 소스를 제외하고 계속",
+    "description": "Skip this source and continue"
+  },
+  "ui_76aff97c": {
+    "message": "이 페이지의 논문 후보 $1개",
+    "description": "$1 paper candidates on this page"
   }
 }

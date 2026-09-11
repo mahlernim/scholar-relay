@@ -1,3 +1,4 @@
+import { inspectPaperPage } from './content.js';
 import { withRequestDeadline } from './request-deadline.js';
 /**
  * Background service worker for ScholarRelay.
@@ -708,6 +709,12 @@ async function failPipeline(runId, errorInput, notebookId = null) {
     const state = await requireActiveRun(runId);
     const diagnostic = failureDiagnostic(errorInput, state.step);
     const finalError = diagnostic.message;
+    if (state.sources && ['wait_source', 'download_pdf'].includes(state.step)) {
+        await transitionRun(runId, { step: 'wait_source_choice', error: finalError, stepDetail: finalError,
+            sources: state.sources.map((item, index) => index === state.sourceIndex ? { ...item, status: 'failed', error: finalError } : item) });
+        kickQueue();
+        return;
+    }
     const failedState = await transitionRun(runId, {
         status: 'error', step: 'error', failedStep: diagnostic.failedStep, failure: diagnostic,
         stepDetail: finalError, error: finalError, completedAt: new Date().toISOString(),
@@ -785,6 +792,14 @@ async function tickSourcePollOperation(state) {
         return;
     }
 
+    if (state.sources) {
+        const ready = await transitionRun(runId, current => ({ sources: current.sources.map((item, index) =>
+            index === current.sourceIndex ? { ...item, status: 'ready', sourceId: current.sourceId } : item) }), { expectedSteps: ['wait_source'] });
+        if (!ready) return;
+        if (await advanceCombinedSource(runId)) return;
+        state = await requireActiveRun(runId, ['wait_source']);
+    }
+
     // Source is READY -- fetch notebook title, then trigger artifact generation
     console.log('[Tick] Source ready, triggering artifact generation');
     const claimed = await transitionRun(runId, {
@@ -839,7 +854,7 @@ async function tickSourcePollOperation(state) {
             }
         }
 
-        const sourceIds = [state.sourceId];
+        const sourceIds = state.sources ? state.sources.filter(item => item.status === 'ready').map(item => item.sourceId) : [state.sourceId];
         const tasks = [];
 
         // Helper to run a generation function safely so one failure doesn't stop the pipeline
@@ -1193,6 +1208,7 @@ async function reconcilePipelineRuntime() {
     const queue = await getQueue();
     await pdfStore.prune(queue.jobs.filter(job => isUnfinishedJob(job)).map(job => job.payloadId).filter(Boolean));
     for (const job of queue.jobs.filter(item => item.status === 'stopping')) await finishCancellation(job.runId);
+    for (const job of queue.jobs.filter(item => item.status === 'stopped' && item.cancelIntent === 'delete' && item.notebookId && !item.cleanupStatus)) await deleteCancelledNotebook(job.runId).catch(() => {});
     await chrome.storage.local.remove('pipelineState');
     await syncQueueRuntime();
     for (const runId of attention) {
@@ -1297,7 +1313,7 @@ async function runPipelineOperation(runId, pdfUrl, pageUrl, uploadFile = null, s
 
         // Step 2: Create notebook
         const settings = await getJobSettings(runId);
-        const requestedNotebookTitle = settings.useSourceTitleForNotebook !== false ? detectedTitle : '';
+        const requestedNotebookTitle = (await getState(runId)).sources || settings.useSourceTitleForNotebook !== false ? detectedTitle : '';
         await requireActiveRun(runId, ['create_notebook']);
         const notebook = await createNotebook(requestedNotebookTitle);
         if (!notebook.id) throw new Error('Failed to create notebook -- no ID returned');
@@ -1414,10 +1430,67 @@ function assertQueuePdfBudget(queue, bytes) {
     if (storedBytes + bytes > MAX_QUEUED_PDF_BYTES) throw new Error('Queued PDFs exceed the 100 MiB storage limit. Remove a queued PDF or wait for an upload.');
 }
 
+function validateCombinedSources(value) {
+    if (value == null) return null;
+    if (!Array.isArray(value) || value.length < 1 || value.length > 20) throw new Error('Select between 1 and 20 sources.');
+    const seen = new Set();
+    return value.map(item => {
+        const url = new URL(item.pdfUrl);
+        if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Invalid source URL');
+        if (seen.has(url.href)) throw new Error('The same source was selected twice.');
+        seen.add(url.href);
+        return { pdfUrl: url.href, pageUrl: item.pageUrl || url.href, sourceType: item.sourceType === 'webpage' ? 'webpage' : 'pdf',
+            sourceTitle: normalizeSourceTitle(item.sourceTitle), pdfEvidence: item.pdfEvidence || null, status: 'queued' };
+    });
+}
+async function advanceCombinedSource(runId) {
+    const state = await requireActiveRun(runId);
+    const nextIndex = state.sources.findIndex(item => item.status === 'queued');
+    if (nextIndex < 0) return false;
+    const source = state.sources[nextIndex];
+    const claimed = await transitionRun(runId, { sourceIndex: nextIndex, pdfUrl: source.pdfUrl,
+        originalPdfUrl: source.pdfUrl, sourceType: source.sourceType, pdfEvidence: source.pdfEvidence,
+        importMethod: 'url', fallbackAttempted: false, fallbackUploadStarted: false, failedUrlSourceId: null,
+        sourceId: null, step: 'add_source', stepDetail: 'Adding selected source...',
+        sources: state.sources.map((item, index) => index === nextIndex ? { ...item, status: 'importing' } : item) });
+    if (!claimed) return true;
+    try {
+        await requireActiveRun(runId, ['add_source']);
+        const result = await addUrlSource(state.notebookId, source.pdfUrl);
+        if (!result?.id) throw new Error('Source result needs checking.');
+        await transitionRun(runId, { sourceId: result.id, step: 'wait_source', stepStartedAt: new Date().toISOString() }, { expectedSteps: ['add_source'] });
+    } catch (error) {
+        if (isConfirmedImportRejection(error) && canFallback(await getState(runId))) await fallbackPdf(runId);
+        else await failPipeline(runId, error, state.notebookId);
+    }
+    return true;
+}
+async function continueCombinedSources(runId, expectedIndex = null) {
+    await ensureBootReconciled();
+    return withJobOperation(runId, async () => {
+        const state = await requireActiveRun(runId, ['wait_source_choice', 'wait_pdf_access']);
+        if (!state.sources) throw new Error('This is not a combined notebook.');
+        if (expectedIndex != null && expectedIndex !== state.sourceIndex) throw new Error('The selected source has changed. Refresh the job.');
+        const changed = await transitionRun(runId, current => ({ step: 'wait_source',
+            sources: current.sources.map((item, index) => index === current.sourceIndex ? { ...item, status: 'skipped' } : item)
+        }), { expectedSteps: ['wait_source_choice', 'wait_pdf_access'] });
+        if (!changed) return { ok: false };
+        if (await advanceCombinedSource(runId)) return { ok: true };
+        const latest = await getState(runId);
+        const ready = latest.sources.filter(item => item.status === 'ready');
+        if (!ready.length) { await transitionRun(runId, { status: 'error', step: 'error', error: 'No selected source is ready.', completedAt: new Date().toISOString() }); return { ok: true }; }
+        await transitionRun(runId, { sourceIndex: latest.sources.length, sourceId: ready[0].sourceId, step: 'wait_source', stepStartedAt: new Date().toISOString() });
+        await tickSourcePoll(await getState(runId));
+        return { ok: true };
+    });
+}
+
 async function startPipelineRequest(message, uploadFile = null) {
     await ensureBootReconciled();
     const settings = { ...DEFAULT_SETTINGS, ...(message.settings || await getSettings()) };
     assertArtifactSelection(settings);
+    const sources = validateCombinedSources(message.sources);
+    if (sources) message = { ...message, ...sources[0], sourceTitle: normalizeSourceTitle(message.notebookTitle) || normalizeSourceTitle(message.sourceTitle) };
     let file = null;
     let sourceKey;
     if (uploadFile) {
@@ -1428,7 +1501,7 @@ async function startPipelineRequest(message, uploadFile = null) {
         const url = new URL(message.pdfUrl);
         if (!['https:', 'http:'].includes(url.protocol)) throw new Error('Use a webpage URL or upload a local PDF.');
         url.hash = '';
-        sourceKey = url.href;
+        sourceKey = sources ? 'combined:' + JSON.stringify(sources.map(item => item.pdfUrl)) : url.href;
     }
     const runId = crypto.randomUUID();
     let result;
@@ -1444,7 +1517,7 @@ async function startPipelineRequest(message, uploadFile = null) {
                 await pdfStore.put(runId, file);
             }
             const job = {
-                ...INITIAL_STATE, status: 'queued', runId, requestId: message.requestId || runId,
+                ...INITIAL_STATE, sources, sourceIndex: 0, status: 'queued', runId, requestId: message.requestId || runId,
                 step: 'queued', queuedAt: new Date().toISOString(), settings,
                 pdfUrl: file ? file.filename : message.pdfUrl,
                 sourceType: file ? 'pdf' : (message.sourceType || 'pdf'),
@@ -1568,10 +1641,92 @@ async function clearFinishedJobs() {
     return { ok: true };
 }
 
+async function setPaperIcon(tabId, count) {
+    const image = await createImageBitmap(await (await fetch(chrome.runtime.getURL('icons/icon48.png'))).blob());
+    const imageData = {};
+    for (const size of [16, 20, 24, 32]) {
+        const canvas = new OffscreenCanvas(size, size);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(image, 0, 0, size, size);
+        if (count) {
+            const scale = size / 16;
+            ctx.scale(scale, scale);
+            ctx.fillStyle = '#176bd6'; ctx.fillRect(0, 0, 9, 8);
+            ctx.fillStyle = 'white'; ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText(count > 9 ? '9+' : String(count), 4.5, 6.5);
+        }
+        imageData[size] = ctx.getImageData(0, 0, size, size);
+    }
+    image.close();
+    await chrome.action.setIcon({ tabId, imageData });
+    const active = (await getQueue()).jobs.filter(isUnfinishedJob).length;
+    await chrome.action.setTitle({ tabId, title: count == null ? 'ScholarRelay' : t('$1 paper candidates on this page', [count]) + ' · ' + t('Paper queue') + ' ' + active });
+}
+async function scanGrantedTab(tabId) {
+    const tab = await chrome.tabs.get(tabId);
+    if (!/^https?:/.test(tab.url || '')) return;
+    const origin = new URL(tab.url).origin + '/*';
+    const allowed = (await chrome.storage.local.get('paperDetectionOrigins')).paperDetectionOrigins || [];
+    if (!allowed.includes(origin) || !await chrome.permissions.contains({ origins: [origin] })) return;
+    const results = await chrome.scripting.executeScript({ target: { tabId }, func: inspectPaperPage, args: [null, null, true, true] });
+    const current = await chrome.tabs.get(tabId);
+    if (current.url === tab.url) await setPaperIcon(tabId, results[0]?.result?.candidates?.length || 0);
+}
+chrome.tabs.onUpdated?.addListener((tabId, change) => {
+    if (change.url) setPaperIcon(tabId, null).catch(() => {});
+    if (change.status === 'complete' || change.url) scanGrantedTab(tabId).catch(() => {});
+});
+chrome.tabs.onActivated?.addListener(({ tabId }) => scanGrantedTab(tabId).catch(() => {}));
+chrome.permissions?.onRemoved?.addListener(() => chrome.tabs.query({}).then(tabs => Promise.allSettled(tabs.map(tab => setPaperIcon(tab.id, null)))));
+async function paperTitles(ids) {
+    if (!await chrome.permissions.contains({ origins: ['https://arxiv.org/*'] })) return {};
+    const queue = [...new Set(ids || [])].filter(id => typeof id === 'string' && /^(?:\d{4}\.\d{4,5}|[a-z-]+(?:\.[A-Z]{2})?\/\d{7})(?:v\d+)?$/i.test(id)).slice(0, 10);
+    const cache = (await chrome.storage.local.get('paperTitleCache')).paperTitleCache || {};
+    const titles = {};
+    const task = async () => {
+        while (queue.length) {
+            const id = queue.shift();
+            if (cache[id]?.expires > Date.now()) { titles[id] = cache[id].title; continue; }
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 10000);
+            try {
+                const response = await fetch('https://arxiv.org/abs/' + id, { signal: controller.signal, credentials: 'omit' });
+                if (!response.ok) continue;
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder(); let bytes = 0, html = '';
+                try { while (bytes < 524288) { const chunk = await reader.read(); if (chunk.done) break; const part = chunk.value.subarray(0, 524288 - bytes); bytes += part.length; html += decoder.decode(part, { stream: true }); } }
+                finally { await reader.cancel(); }
+                const tag = html.match(/<meta\b[^>]*name=["']citation_title["'][^>]*>/i)?.[0];
+                const title = tag?.match(/content=(["'])([\s\S]*?)\1/i)?.[2]?.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&').trim().slice(0, 300);
+                if (title) { titles[id] = title; cache[id] = { title, expires: Date.now() + 86400000 }; }
+            } catch { /* A title failure does not block selection or import. */ }
+            finally { clearTimeout(timer); }
+        }
+    };
+    await Promise.all([task(), task()]);
+    await chrome.storage.local.set({ paperTitleCache: Object.fromEntries(Object.entries(cache).filter(([,value]) => value.expires > Date.now()).slice(-100)) });
+    return titles;
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'PAPER_TITLES') { paperTitles(message.ids).then(titles => sendResponse({ titles })).catch(() => sendResponse({ titles: {} })); return true; }
+    if (message.type === 'ENABLE_PAPER_DETECTION') {
+        (async () => {
+            const tab = await chrome.tabs.get(message.tabId);
+            const origin = new URL(tab.url).origin + '/*';
+            if (origin !== message.origin || !await chrome.permissions.contains({ origins: [origin] })) throw new Error('Site access is required.');
+            const origins = (await chrome.storage.local.get('paperDetectionOrigins')).paperDetectionOrigins || [];
+            await chrome.storage.local.set({ paperDetectionOrigins: [...new Set([...origins, origin])] });
+            await scanGrantedTab(tab.id); return { ok: true };
+        })().then(sendResponse).catch(error => sendResponse({ ok: false, message: error.message })); return true;
+    }
     if (message.type === 'DELETE_JOB_NOTEBOOK_EXPLICIT') {
         ensureBootReconciled().then(() => deleteCancelledNotebook(message.runId)).then(sendResponse)
             .catch(error => sendResponse({ ok: false, message: error.message }));
+        return true;
+    }
+    if (message.type === 'CONTINUE_COMBINED_SOURCES') {
+        continueCombinedSources(message.runId, message.sourceIndex).then(sendResponse).catch(error => sendResponse({ ok: false, message: error.message }));
         return true;
     }
     if (message.type === 'RESUME_SERVICE') {
@@ -1668,7 +1823,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({ ok: false, message: 'Detection was not associated with a browser tab.' });
             return false;
         }
-        chrome.storage.local.set({ detectedPdf }).then(() => sendResponse({ ok: true }))
+        (async () => {
+            const tab = await chrome.tabs.get(sender.tab.id);
+            if (tab.url !== detectedPdf.pageUrl) return { ok: false };
+            if (message.automatic && !await chrome.permissions.contains({ origins: [new URL(tab.url).origin + '/*'] })) return { ok: false, observationAllowed: false };
+            await chrome.storage.local.set({ detectedPdf });
+            await setPaperIcon(tab.id, detectedPdf.candidates?.length || 0).catch(() => {});
+            return { ok: true };
+        })().then(sendResponse)
             .catch(error => sendResponse({ ok: false, message: error?.message || 'Could not save PDF detection' }));
         return true;
     }

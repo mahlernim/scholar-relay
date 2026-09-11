@@ -72,3 +72,14 @@ test('BMJ metadata and Frontiers download endpoints work without a PDF extension
   assert.equal(inspectPaperPage(page({ links: [['/journals/ai/articles/10.3389/test/pdf', 'Download PDF']] }),
     'https://www.frontiersin.org/journals/ai/articles/10.3389/test/full').pdfEvidence, 'pdf_link');
 });
+
+test('linked arXiv papers merge repeated destinations and preserve explicit versions', () => {
+  const result=inspectPaperPage(page({title:'Research blog',links:[
+    ['https://arxiv.org/abs/2508.04086','Paper'],['https://arxiv.org/pdf/2508.04086','ToolGrad research paper'],
+    ['https://arxiv.org/abs/2406.07496','TextGrad'],['https://arxiv.org/abs/2410.04587v2','Hammer'],
+    ['https://arxiv.org/pdf/2410.04587v3','Hammer revision'],['/supporting.pdf','Supplement PDF']]}),'https://example.org/blog');
+  assert.equal(result.candidates.length,5);
+  assert.equal(result.candidates[0].sourceTitle,'ToolGrad research paper');
+  assert.equal(result.candidates.filter(x=>x.featured).length,1);
+  assert.equal(result.candidates.at(-1).supplementary,true);
+});

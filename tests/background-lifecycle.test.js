@@ -50,7 +50,7 @@ async function worker({ failInitialQueueRead = false, initialQueue = null, initi
     ...apiMocks, ...runtime, ...fallback, ...detection, ...pdf, ...permissions, ...i18n, ...jobs, ...settings, withRequestDeadline,
     createQueuedPdfStore: () => ({ put: async (id,file) => files.set(id,structuredClone(file)), get: async id => files.get(id), remove: async id => files.delete(id), prune: async () => {} }),
     console: Object.fromEntries(['log', 'warn', 'error'].map(level => [level, (...args) => logs.push([level, ...args])])),
-    crypto: webcrypto, URL, TextEncoder, TextDecoder, Uint8Array, ArrayBuffer, atob, btoa, setTimeout, clearTimeout,
+    crypto: webcrypto, AbortController, URL, TextEncoder, TextDecoder, Uint8Array, ArrayBuffer, atob, btoa, setTimeout, clearTimeout,
     chrome: {
       storage: { local: {
         async remove(key) { if(key!=='pipelineState') delete data[key]; },
@@ -63,7 +63,7 @@ async function worker({ failInitialQueueRead = false, initialQueue = null, initi
       notifications: { onClicked: { addListener(fn) { notificationEvents.clicked = fn; } },
         onButtonClicked: { addListener(fn) { notificationEvents.button = fn; } }, onClosed: event, clear: noop,
         create: async (id, options) => notifications.push({ id, ...options }) },
-      tabs: { create: async options => opened.push(options.url) },
+      tabs: { get: async id => ({ id, url: 'https://example.org/paper.pdf' }), create: async options => opened.push(options.url) },
     },
   });
   vm.runInContext(source, context);
@@ -704,4 +704,66 @@ test('cancelling during artifact generation prevents the next artifact request',
   await poll;
   assert.equal(w.data.jobQueue.jobs[0].status, 'stopped');
   assert.equal(writes.filter(item => item.kind === 'infographic').length, 0);
+});
+
+test('combined notebook imports only selected sources and generates once with every ready ID', async () => {
+  const w = await worker();
+  const writes = installQueueService(w);
+  let index = 0;
+  w.context.addUrlSource = async (id, url) => { const sourceId = 'source-' + (++index); writes.push({ kind: 'source', id, url, sourceId }); return { id: sourceId }; };
+  w.context.listSources = async () => writes.filter(x => x.kind === 'source').map(x => ({ id: x.sourceId, status: api.SourceStatus.READY }));
+  const urls = ['https://arxiv.org/pdf/2508.04086','https://arxiv.org/pdf/2406.07496','https://research.google/blog/example'];
+  const request = await w.startPipelineRequest({ notebookTitle: 'Combined', sources: urls.map((pdfUrl, i) => ({ pdfUrl, sourceType: i === 2 ? 'webpage' : 'pdf' })) });
+  const job = () => w.data.jobQueue.jobs.find(j => j.runId === request.runId);
+  await settleUntil(() => job().step === 'wait_source');
+  await w.tickSourcePoll(job());
+  assert.equal(writes.filter(x => x.kind === 'audio').length, 0);
+  await w.tickSourcePoll(job());
+  assert.equal(writes.filter(x => x.kind === 'audio').length, 0);
+  await w.tickSourcePoll(job());
+  assert.equal(writes.filter(x => x.kind === 'notebook').length, 1);
+  assert.deepEqual(writes.filter(x => x.kind === 'source').map(x => x.url), urls);
+  const audio = writes.find(x => x.kind === 'audio');
+  assert.deepEqual(Array.from(audio.args[0]), ['source-1','source-2','source-3']);
+  assert.equal(job().step, 'wait_artifacts');
+});
+
+test('combined source timeout waits for explicit exclusion before generating', async () => {
+  const w = await worker();
+  const writes = installQueueService(w);
+  w.context.addUrlSource = async (id, url) => { const sourceId = 's-' + writes.length; writes.push({kind:'source',sourceId}); return { id: sourceId }; };
+  w.context.listSources = async () => writes.filter(x=>x.kind==='source').map(x=>({id:x.sourceId,status:api.SourceStatus.READY}));
+  const result = await w.startPipelineRequest({ sources: [{pdfUrl:'https://example.org/a.pdf'}, {pdfUrl:'https://example.org/b.pdf'}] });
+  const job=()=>w.data.jobQueue.jobs.find(j=>j.runId===result.runId);
+  await settleUntil(()=>job().step==='wait_source');
+  await w.tickSourcePoll(job());
+  await w.failPipeline(result.runId,'Source processing timed out');
+  assert.equal(job().step,'wait_source_choice');
+  assert.equal(writes.filter(x=>x.kind==='audio').length,0);
+  w.context.continueRunId=result.runId;
+  await vm.runInContext('continueCombinedSources(continueRunId)',w.context);
+  assert.equal(job().step,'wait_artifacts');
+  assert.equal(job().sources[1].status,'skipped');
+  assert.equal(writes.find(x=>x.kind==='audio').args[0].length,1);
+});
+
+test('title lookups require permission and bound concurrency and streamed response bytes', async () => {
+  const w=await worker(); let granted=false, active=0, peak=0, cancelled=0, reads=0;
+  w.context.chrome.permissions={contains:async()=>granted};
+  w.context.fetch=async()=>{active++;peak=Math.max(peak,active);await new Promise(r=>setImmediate(r));let n=0;return {ok:true,body:{getReader:()=>({read:async()=>{reads++;return {done:false,value:new TextEncoder().encode(n++===0?'<meta name="citation_title" content="Paper title">'+' '.repeat(300000):' '.repeat(300000))}},cancel:async()=>{cancelled++;active--}})}}};
+  const ids=['2508.04086','2406.07496','2503.19786'];w.context.titleIds=ids;
+  assert.deepEqual(Object.keys(await vm.runInContext('paperTitles(titleIds)',w.context)),[]);
+  granted=true; const result=await vm.runInContext('paperTitles(titleIds)',w.context);
+  assert.equal(Object.keys(result).length,3);assert.equal(peak,2);assert.equal(cancelled,3);assert.equal(reads,6);
+});
+
+test('cancelling an accepted local upload waits before releasing saved bytes', async () => {
+  const w=await worker();installQueueService(w);let finishUpload;
+  w.context.addFileSource=()=>new Promise(resolve=>{finishUpload=resolve});
+  const result=await w.startPipelineRequest({}, {filename:'paper.pdf',fileData:btoa('%PDF-1.7\n retained bytes')});
+  await settleUntil(()=>!!finishUpload);
+  await w.stopPipelineRequest(result.runId,'keep');
+  assert.equal(w.files.size,1);
+  finishUpload({id:'accepted-file'});
+  await settleUntil(()=>w.data.jobQueue.jobs[0].status==='stopped' && w.files.size===0);
 });

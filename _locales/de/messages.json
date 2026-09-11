@@ -1020,5 +1020,97 @@
   "ui_d3d1dd4b": {
     "message": "Löscht auch alle Quellen und Ergebnisse dieses Notebooks.",
     "description": "Deletes this notebook and all its sources and results."
+  },
+  "ui_b28f5ccc": {
+    "message": "Artikel auf dieser Seite",
+    "description": "Papers on this page"
+  },
+  "ui_6af21072": {
+    "message": "Alle auswählen",
+    "description": "Select all"
+  },
+  "ui_4a57fc2": {
+    "message": "Auswahl aufheben",
+    "description": "Clear"
+  },
+  "ui_e8a27655": {
+    "message": "Hauptartikel",
+    "description": "Featured paper"
+  },
+  "ui_da557f42": {
+    "message": "Zusatzmaterial",
+    "description": "Supplement"
+  },
+  "ui_40b804c7": {
+    "message": "Artikel öffnen",
+    "description": "Open paper"
+  },
+  "ui_67283063": {
+    "message": "Notebooks erstellen",
+    "description": "Create notebooks"
+  },
+  "ui_10e895e8": {
+    "message": "Ein Notebook",
+    "description": "One notebook"
+  },
+  "ui_ab7db738": {
+    "message": "Getrennt",
+    "description": "Separate"
+  },
+  "ui_340761b3": {
+    "message": "Diese Webseite als Kontext hinzufügen",
+    "description": "Include this webpage as context"
+  },
+  "ui_894e2575": {
+    "message": "Diese Webseite verwenden",
+    "description": "Use this webpage"
+  },
+  "ui_373b446b": {
+    "message": "Auf dieser Website automatisch erkennen",
+    "description": "Detect automatically on this site"
+  },
+  "ui_200e067f": {
+    "message": "Artikeltitel abrufen",
+    "description": "Find paper titles"
+  },
+  "ui_2df60e04": {
+    "message": "$1 Quellen in einem Notebook",
+    "description": "$1 sources in one notebook"
+  },
+  "ui_e6e47f19": {
+    "message": "$1 getrennte Notebooks",
+    "description": "$1 separate notebooks"
+  },
+  "ui_55c2ab3b": {
+    "message": "Notebook mit $1 Quellen erstellen",
+    "description": "Create notebook with $1 sources"
+  },
+  "ui_ee66925c": {
+    "message": "$1 Artikel zur Warteschlange hinzufügen",
+    "description": "Add $1 papers to queue"
+  },
+  "ui_e24fe294": {
+    "message": "Automatische Erkennung aktiviert.",
+    "description": "Automatic detection enabled for this site."
+  },
+  "ui_721b8d43": {
+    "message": "$1 Aufgaben gespeichert",
+    "description": "$1 jobs saved in queue"
+  },
+  "ui_d483e2ce": {
+    "message": "Ausgewählte Quellen",
+    "description": "Selected sources"
+  },
+  "ui_32d7a557": {
+    "message": "Übersprungen",
+    "description": "Skipped"
+  },
+  "ui_70a589eb": {
+    "message": "Diese Quelle überspringen und fortfahren",
+    "description": "Skip this source and continue"
+  },
+  "ui_76aff97c": {
+    "message": "$1 Artikelkandidaten auf dieser Seite",
+    "description": "$1 paper candidates on this page"
   }
 }

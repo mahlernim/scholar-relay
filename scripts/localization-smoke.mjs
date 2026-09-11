@@ -77,6 +77,13 @@ export async function localizationSmoke({ popup, evaluate, reload, root, complet
                 if (fixture.step === 'wait_pdf_access') assert(view.resume === expected('Allow Download & Continue'), `${locale} permission action missing`);
                 if (fixture.step === 'wait_artifacts') assert(view.text.includes(expected('$1 of $2 artifacts ready.').replace('$1','1').replace('$2','2')), `${locale} progress not translated`);
             }
+            await evaluate(popup, `__smoke.renderPaperSelection({pageUrl:'https://example.org/blog',sourceTitle:'Research overview',candidates:[{id:'a',pdfUrl:'https://example.org/a.pdf',pageUrl:'https://example.org/blog',sourceTitle:'A long research paper title with useful context',featured:true},{id:'b',pdfUrl:'https://example.org/b.pdf',pageUrl:'https://example.org/blog',sourceTitle:'A second paper with a different title'}]})`);
+            await evaluate(popup, `document.querySelector('[name="paper-mode"][value="one"]').click();document.getElementById('paper-context').click()`);
+            const paperLayout=await evaluate(popup, `({width:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth,title:document.querySelector('.paper-heading strong').textContent,visible:!document.getElementById('paper-combined').hidden})`);
+            assert(paperLayout.width<=paperLayout.clientWidth && paperLayout.visible && paperLayout.title===expected('Papers on this page'), `${locale} paper selection is not localized or overflows`);
+            await evaluate(popup, `window.scrollTo(0,0)`);
+            const paperScreen=await popup.call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+            await writeFile(join(out, `${locale}-papers.png`),Buffer.from(paperScreen.data,'base64'));
             report.push({ locale, completedHeight: done.bottom, settingsWidth: settings.width, states: ['completed','settings','error','permission','polling'] });
         } finally { await popup.call('Page.removeScriptToEvaluateOnNewDocument', { identifier }); }
     }

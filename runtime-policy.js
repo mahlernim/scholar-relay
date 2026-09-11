@@ -121,6 +121,8 @@ export function runtimeRecoveryAction(state, hasAlarm) {
     return hasAlarm ? 'none' : 'create_alarm';
   }
 
+  if (state.step === 'wait_source_choice') return 'none';
+
   if (state.step === 'wait_pdf_access' || state.step === 'download_pdf') {
     return 'wait_pdf_access';
   }

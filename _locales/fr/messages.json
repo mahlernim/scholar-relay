@@ -1020,5 +1020,97 @@
   "ui_d3d1dd4b": {
     "message": "Supprime aussi toutes les sources et tous les résultats du notebook.",
     "description": "Deletes this notebook and all its sources and results."
+  },
+  "ui_b28f5ccc": {
+    "message": "Articles sur cette page",
+    "description": "Papers on this page"
+  },
+  "ui_6af21072": {
+    "message": "Tout sélectionner",
+    "description": "Select all"
+  },
+  "ui_4a57fc2": {
+    "message": "Effacer",
+    "description": "Clear"
+  },
+  "ui_e8a27655": {
+    "message": "Article principal",
+    "description": "Featured paper"
+  },
+  "ui_da557f42": {
+    "message": "Supplément",
+    "description": "Supplement"
+  },
+  "ui_40b804c7": {
+    "message": "Ouvrir l’article",
+    "description": "Open paper"
+  },
+  "ui_67283063": {
+    "message": "Créer des notebooks",
+    "description": "Create notebooks"
+  },
+  "ui_10e895e8": {
+    "message": "Un notebook",
+    "description": "One notebook"
+  },
+  "ui_ab7db738": {
+    "message": "Séparés",
+    "description": "Separate"
+  },
+  "ui_340761b3": {
+    "message": "Inclure cette page comme contexte",
+    "description": "Include this webpage as context"
+  },
+  "ui_894e2575": {
+    "message": "Utiliser cette page",
+    "description": "Use this webpage"
+  },
+  "ui_373b446b": {
+    "message": "Détecter automatiquement sur ce site",
+    "description": "Detect automatically on this site"
+  },
+  "ui_200e067f": {
+    "message": "Rechercher les titres",
+    "description": "Find paper titles"
+  },
+  "ui_2df60e04": {
+    "message": "$1 sources dans un notebook",
+    "description": "$1 sources in one notebook"
+  },
+  "ui_e6e47f19": {
+    "message": "$1 notebooks séparés",
+    "description": "$1 separate notebooks"
+  },
+  "ui_55c2ab3b": {
+    "message": "Créer avec $1 sources",
+    "description": "Create notebook with $1 sources"
+  },
+  "ui_ee66925c": {
+    "message": "Ajouter $1 articles à la file",
+    "description": "Add $1 papers to queue"
+  },
+  "ui_e24fe294": {
+    "message": "Détection automatique activée.",
+    "description": "Automatic detection enabled for this site."
+  },
+  "ui_721b8d43": {
+    "message": "$1 tâches enregistrées",
+    "description": "$1 jobs saved in queue"
+  },
+  "ui_d483e2ce": {
+    "message": "Sources sélectionnées",
+    "description": "Selected sources"
+  },
+  "ui_32d7a557": {
+    "message": "Ignoré",
+    "description": "Skipped"
+  },
+  "ui_70a589eb": {
+    "message": "Ignorer cette source et continuer",
+    "description": "Skip this source and continue"
+  },
+  "ui_76aff97c": {
+    "message": "$1 articles candidats sur cette page",
+    "description": "$1 paper candidates on this page"
   }
 }
