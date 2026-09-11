@@ -1660,7 +1660,7 @@ async function setPaperIcon(tabId, count) {
     image.close();
     await chrome.action.setIcon({ tabId, imageData });
     const active = (await getQueue()).jobs.filter(isUnfinishedJob).length;
-    await chrome.action.setTitle({ tabId, title: count == null ? 'ScholarRelay' : t('$1 paper candidates on this page', [count]) + ' · ' + t('Paper queue') + ' ' + active });
+    await chrome.action.setTitle({ tabId, title: count == null ? 'ScholarRelay' : (count === 1 ? t('One paper candidate on this page') : t('$1 paper candidates on this page', [count])) + ' · ' + t('Paper queue') + ' ' + active });
 }
 async function scanGrantedTab(tabId) {
     const tab = await chrome.tabs.get(tabId);

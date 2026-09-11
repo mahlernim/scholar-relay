@@ -255,7 +255,7 @@
   "Deletes this notebook and all its sources and results.": "也会删除此笔记本中的所有来源和结果。",
   "Papers on this page": "此页面的论文",
   "Select all": "全选",
-  "Clear": "清除",
+  "Clear": "取消全选",
   "Featured paper": "主要论文",
   "Supplement": "补充材料",
   "Open paper": "打开论文",
@@ -275,5 +275,11 @@
   "Selected sources": "所选来源",
   "Skipped": "已跳过",
   "Skip this source and continue": "跳过此来源并继续",
-  "$1 paper candidates on this page": "此页面有 $1 个论文候选项"
+  "$1 paper candidates on this page": "此页面有 $1 个论文候选项",
+  "One source in one notebook": "一个笔记本中包含 1 个来源",
+  "One separate notebook": "1 个独立笔记本",
+  "Create notebook with one source": "使用 1 个来源创建笔记本",
+  "Add one paper to queue": "将 1 篇论文加入队列",
+  "One job saved in queue": "已将 1 个任务保存到队列",
+  "One paper candidate on this page": "此页面有 1 篇候选论文"
 }

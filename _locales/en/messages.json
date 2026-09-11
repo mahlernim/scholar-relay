@@ -1112,5 +1112,29 @@
   "ui_76aff97c": {
     "message": "$1 paper candidates on this page",
     "description": "$1 paper candidates on this page"
+  },
+  "ui_f3db4860": {
+    "message": "One source in one notebook",
+    "description": "One source in one notebook"
+  },
+  "ui_958d5a41": {
+    "message": "One separate notebook",
+    "description": "One separate notebook"
+  },
+  "ui_8cd6f197": {
+    "message": "Create notebook with one source",
+    "description": "Create notebook with one source"
+  },
+  "ui_154ddf8c": {
+    "message": "Add one paper to queue",
+    "description": "Add one paper to queue"
+  },
+  "ui_c67e8add": {
+    "message": "One job saved in queue",
+    "description": "One job saved in queue"
+  },
+  "ui_2a03efde": {
+    "message": "One paper candidate on this page",
+    "description": "One paper candidate on this page"
   }
 }

@@ -1030,7 +1030,7 @@
     "description": "Select all"
   },
   "ui_4a57fc2": {
-    "message": "Limpiar",
+    "message": "Deseleccionar todo",
     "description": "Clear"
   },
   "ui_e8a27655": {
@@ -1112,5 +1112,29 @@
   "ui_76aff97c": {
     "message": "$1 artículos candidatos en esta página",
     "description": "$1 paper candidates on this page"
+  },
+  "ui_f3db4860": {
+    "message": "Una fuente en un cuaderno",
+    "description": "One source in one notebook"
+  },
+  "ui_958d5a41": {
+    "message": "Un cuaderno separado",
+    "description": "One separate notebook"
+  },
+  "ui_8cd6f197": {
+    "message": "Crear cuaderno con una fuente",
+    "description": "Create notebook with one source"
+  },
+  "ui_154ddf8c": {
+    "message": "Añadir un artículo a la cola",
+    "description": "Add one paper to queue"
+  },
+  "ui_c67e8add": {
+    "message": "Una tarea guardada en la cola",
+    "description": "One job saved in queue"
+  },
+  "ui_2a03efde": {
+    "message": "Un artículo candidato en esta página",
+    "description": "One paper candidate on this page"
   }
 }

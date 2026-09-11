@@ -626,8 +626,8 @@ async function renderPaperSelection(data) {
         contentEl.querySelectorAll('[name="paper-mode"]').forEach(radio => radio.checked = radio.value === view.mode);
         const count = selected.size + (one && view.context ? 1 : 0);
         el('paper-count').textContent = selected.size + ' / ' + data.candidates.length + (data.truncated ? '+' : '');
-        el('paper-summary').textContent = one ? t('$1 sources in one notebook', [count]) : t('$1 separate notebooks', [selected.size]);
-        el('paper-add').textContent = one ? t('Create notebook with $1 sources', [count]) : t('Add $1 papers to queue', [selected.size]);
+        el('paper-summary').textContent = one ? (count === 1 ? t('One source in one notebook') : t('$1 sources in one notebook', [count])) : (selected.size === 1 ? t('One separate notebook') : t('$1 separate notebooks', [selected.size]));
+        el('paper-add').textContent = one ? (count === 1 ? t('Create notebook with one source') : t('Create notebook with $1 sources', [count])) : (selected.size === 1 ? t('Add one paper to queue') : t('Add $1 papers to queue', [selected.size]));
         el('paper-add').disabled = !!view.busy || !count || count > 20 || (one && !view.title.trim());
         save().catch(console.warn);
     };
@@ -679,9 +679,9 @@ async function renderPaperSelection(data) {
                 if (view.mode === 'separate') { selected.delete(message.id); await save(); }
             }
             selected.clear(); view.context = false; el('paper-context').checked = false; update();
-            el('paper-feedback').textContent = t('$1 jobs saved in queue', [accepted]);
+            el('paper-feedback').textContent = (accepted === 1 ? t('One job saved in queue') : t('$1 jobs saved in queue', [accepted]));
             await refreshQueue();
-        } catch (error) { el('paper-feedback').textContent = t('$1 jobs saved in queue', [accepted]) + '. ' + error.message; }
+        } catch (error) { el('paper-feedback').textContent = (accepted === 1 ? t('One job saved in queue') : t('$1 jobs saved in queue', [accepted])) + '. ' + error.message; }
         finally { view.busy = false; if (paperView === view) update(); }
     };
     update();
@@ -848,7 +848,7 @@ function renderProgress(state) {
           ${state.stepDetail ? `<details class="workflow-details"><summary>${escapeHtml(t("Download details"))}</summary><div class="step-detail">${escapeHtml(state.stepDetail)}</div></details>` : ''}`;
     }
     if (state.sources) {
-        bottomHtml += '<details class="workflow-details"><summary>' + escapeHtml(t('Selected sources')) + '</summary>' + state.sources.map(item => '<div class="step-detail">' + escapeHtml(item.sourceTitle || item.pdfUrl) + ' · ' + escapeHtml(t(item.status === 'ready' ? 'Ready' : item.status === 'skipped' ? 'Skipped' : 'Waiting')) + '</div>').join('') + '</details>';
+        bottomHtml += '<details class="workflow-details"><summary>' + escapeHtml(t('Selected sources')) + '</summary>' + state.sources.map(item => '<div class="step-detail">' + escapeHtml(item.sourceTitle || item.pdfUrl) + ' · ' + escapeHtml(t(item.status === 'ready' ? 'Ready' : item.status === 'skipped' ? 'Skipped' : item.status === 'failed' ? 'Failed' : 'Waiting')) + '</div>').join('') + '</details>';
         if (['wait_source_choice', 'wait_pdf_access'].includes(state.step)) bottomHtml += '<button class="btn-secondary" id="skip-source">' + escapeHtml(t('Skip this source and continue')) + '</button>';
     }
     bottomHtml += '<div class="job-actions">' + cancellationActions(state) + '</div>';

@@ -262,6 +262,19 @@ try {
         `docs/store-assets/${locale}/screenshot-${kind}-1280x800.png`, 1280, 800, {locale,kind,copy:copy[kind]});
     }
   }
+  // Use the real selector captured by smoke:chrome, with localized store framing.
+  for (const locale of ['en', ...Object.keys(localizedCopy)]) {
+    const catalog = JSON.parse(await readFile(join(extensionRoot, '_locales', locale, 'messages.json'), 'utf8'));
+    const label = key => catalog[messageKey(key)].message;
+    const folder = join(extensionRoot, 'docs', 'screenshots', locale);
+    await mkdir(folder, { recursive: true });
+    await writeFile(join(folder, 'papers.png'), await readFile(join(extensionRoot, 'dist', 'localization-qa', `${locale}-papers.png`)));
+    await mkdir(join(extensionRoot, 'docs', 'store-assets', locale), { recursive: true });
+    await captureStoreAsset(port, 'docs/store-assets/source/workflow.html',
+      `docs/store-assets/${locale}/screenshot-papers-1280x800.png`, 1280, 800,
+      {locale, kind:'papers', copy:[label('Create notebooks'), label('Papers on this page'),
+        label('Include this webpage as context'), label('Separate'), label('One notebook'), label('Find paper titles')]});
+  }
   console.log('Captured ScholarRelay README and Chrome Web Store assets.');
 } finally {
   chrome.kill();

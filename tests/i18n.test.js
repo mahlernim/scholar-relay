@@ -4,8 +4,9 @@ import { readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { messageKey, t, progressDetail, errorSummary, generationLimitSummary } from '../i18n.js';
 
-const locales = ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN'];
+const locales = ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it'];
 const rows = JSON.parse(await readFile(new URL('../docs/localization/messages.json', import.meta.url), 'utf8'));
+const italian = JSON.parse(await readFile(new URL('../docs/localization/it.json', import.meta.url), 'utf8'));
 const chinese = JSON.parse(await readFile(new URL('../docs/localization/zh_CN.json', import.meta.url), 'utf8'));
 const catalogs = Object.fromEntries(await Promise.all(locales.map(async locale => [locale,
     JSON.parse(await readFile(new URL(`../_locales/${locale}/messages.json`, import.meta.url), 'utf8'))])));
@@ -22,7 +23,7 @@ test('generation limits name only confirmed failed artifacts and retain legacy c
     assert.equal(generationLimitSummary([{ ...limited, code: null, error: 'Storage quota exceeded' }]), '');
 });
 
-test('all eight shipped catalogs match the translation source and preserve placeholders', () => {
+test('all nine shipped catalogs match the translation source and preserve placeholders', () => {
     execFileSync(process.execPath, ['scripts/build-locales.mjs', '--check']);
     for (const catalog of Object.values(catalogs)) {
         assert.deepEqual(Object.keys(catalog), Object.keys(catalogs.en));
@@ -58,7 +59,7 @@ test('translation uses Chrome UI locale, preserves substitutions literally and f
                 return catalogs[locale][key]?.message.replace(/\$(\d+)/g, (_, index) => values[index - 1]) || '';
             } } };
             const title = 'Settings "$1" <img src=x> & 日本語';
-            const translated = locale === 'en' ? 'Added to $1' : locale === 'zh_CN' ? chinese['Added to $1'] : rows['Added to $1'][locales.indexOf(locale)-1];
+            const translated = locale === 'en' ? 'Added to $1' : locale === 'zh_CN' ? chinese['Added to $1'] : locale === 'it' ? italian['Added to $1'] : rows['Added to $1'][locales.indexOf(locale)-1];
             assert.equal(t('Added to $1', [title]), translated.replace('$1', () => title));
             assert.ok(progressDetail({ step: 'wait_artifacts', tasks: [{ status: 'completed' }] }).includes('1'));
             assert.equal(errorSummary('Mutation outcome unknown'), t('The result could not be confirmed. Check Gemini Notebook before starting again.'));

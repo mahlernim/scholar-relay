@@ -1,10 +1,11 @@
 {
-  "en": ["Scholar Relay - Gemini Notebook (NotebookLM) Automation", "Import PDFs, arXiv papers, and webpages into Gemini Notebook (NotebookLM). Generate audio overviews and study materials."],
-  "ko": ["Scholar Relay - Gemini Notebook(NotebookLM) 자동화", "PDF, arXiv 논문, 웹페이지를 Gemini Notebook(NotebookLM)으로 가져오고 AI 오디오 오버뷰와 학습 자료를 생성합니다."],
-  "ja": ["Scholar Relay - Gemini Notebook（NotebookLM）の自動化", "PDF、arXiv 論文、ウェブページを Gemini Notebook（NotebookLM）にインポートし、音声解説や学習資料を生成します。"],
-  "es": ["Scholar Relay - Automatización de Gemini Notebook (NotebookLM)", "Importa PDF, artículos de arXiv y páginas a Gemini Notebook (NotebookLM). Genera resúmenes de audio y materiales de estudio."],
-  "fr": ["Scholar Relay - Automatisation de Gemini Notebook (NotebookLM)", "Importez PDF, articles arXiv et pages dans Gemini Notebook (NotebookLM). Créez des résumés audio et supports d’étude."],
-  "de": ["Scholar Relay - Automatisierung für Gemini Notebook (NotebookLM)", "PDFs, arXiv-Artikel und Webseiten in Gemini Notebook (NotebookLM) importieren. Audio-Zusammenfassungen und Lernmaterial erstellen."],
-  "pt_BR": ["Scholar Relay - Automação do Gemini Notebook (NotebookLM)", "Importe PDFs, artigos arXiv e páginas para o Gemini Notebook (NotebookLM). Crie Resumos em Áudio e materiais de estudo."],
-  "zh_CN": ["Scholar Relay - Gemini Notebook (NotebookLM) 自动化", "将 PDF、arXiv 论文和网页导入 Gemini Notebook (NotebookLM)，自动生成音频概览和学习资料。"]
+  "en": ["Scholar Relay - Gemini Notebook (NotebookLM) Automation","Import PDFs, arXiv papers, and webpages into Gemini Notebook (NotebookLM). Generate audio overviews and study materials."],
+  "ko": ["Scholar Relay - Gemini Notebook(NotebookLM) 자동화","PDF, arXiv 논문, 웹페이지를 Gemini Notebook(NotebookLM)으로 가져오고 AI 오디오 오버뷰와 학습 자료를 생성합니다."],
+  "ja": ["Scholar Relay - Gemini Notebook（NotebookLM）の自動化","PDF、arXiv 論文、ウェブページを Gemini Notebook（NotebookLM）にインポートし、音声解説や学習資料を生成します。"],
+  "es": ["Scholar Relay - Automatización de Gemini Notebook (NotebookLM)","Importa PDF, artículos de arXiv y páginas a Gemini Notebook (NotebookLM). Genera resúmenes de audio y materiales de estudio."],
+  "fr": ["Scholar Relay - Automatisation de Gemini Notebook (NotebookLM)","Importez PDF, articles arXiv et pages dans Gemini Notebook (NotebookLM). Créez des résumés audio et supports d’étude."],
+  "de": ["Scholar Relay - Automatisierung für Gemini Notebook (NotebookLM)","PDFs, arXiv-Artikel und Webseiten in Gemini Notebook (NotebookLM) importieren. Audio-Zusammenfassungen und Lernmaterial erstellen."],
+  "pt_BR": ["Scholar Relay - Automação do Gemini Notebook (NotebookLM)","Importe PDFs, artigos arXiv e páginas para o Gemini Notebook (NotebookLM). Crie Resumos em Áudio e materiais de estudo."],
+  "zh_CN": ["Scholar Relay - Gemini Notebook (NotebookLM) 自动化","将 PDF、arXiv 论文和网页导入 Gemini Notebook (NotebookLM)，自动生成音频概览和学习资料。"],
+  "it": ["Scholar Relay - Automazione Gemini Notebook (NotebookLM)","Importa PDF, articoli arXiv e pagine web in Gemini Notebook (NotebookLM). Genera panoramiche audio e materiali di studio."]
 }

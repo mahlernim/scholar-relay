@@ -9,7 +9,7 @@ export async function localizationSmoke({ popup, evaluate, reload, root, complet
     const report = [];
     const out = join(root, 'dist', 'localization-qa');
     await mkdir(out, { recursive: true });
-    for (const locale of ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN']) {
+    for (const locale of ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it']) {
         const catalog = JSON.parse(await readFile(join(root, '_locales', locale, 'messages.json'), 'utf8'));
         const expected = source => catalog[messageKey(source)].message;
         const { identifier } = await popup.call('Page.addScriptToEvaluateOnNewDocument', { source: `
@@ -78,16 +78,20 @@ export async function localizationSmoke({ popup, evaluate, reload, root, complet
                 if (fixture.step === 'wait_artifacts') assert(view.text.includes(expected('$1 of $2 artifacts ready.').replace('$1','1').replace('$2','2')), `${locale} progress not translated`);
             }
             await evaluate(popup, `__smoke.renderPaperSelection({pageUrl:'https://example.org/blog',sourceTitle:'Research overview',candidates:[{id:'a',pdfUrl:'https://example.org/a.pdf',pageUrl:'https://example.org/blog',sourceTitle:'A long research paper title with useful context',featured:true},{id:'b',pdfUrl:'https://example.org/b.pdf',pageUrl:'https://example.org/blog',sourceTitle:'A second paper with a different title'}]})`);
+            await evaluate(popup, `document.getElementById('paper-clear').click();document.querySelector('[data-candidate="a"]').click();document.querySelector('[name="paper-mode"][value="separate"]').click()`);
+            assert(await evaluate(popup, `document.getElementById('paper-add').textContent`) === expected('Add one paper to queue'), `${locale} single-paper action uses a plural`);
             await evaluate(popup, `document.querySelector('[name="paper-mode"][value="one"]').click();document.getElementById('paper-context').click()`);
             const paperLayout=await evaluate(popup, `({width:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth,title:document.querySelector('.paper-heading strong').textContent,visible:!document.getElementById('paper-combined').hidden})`);
             assert(paperLayout.width<=paperLayout.clientWidth && paperLayout.visible && paperLayout.title===expected('Papers on this page'), `${locale} paper selection is not localized or overflows`);
             await evaluate(popup, `window.scrollTo(0,0)`);
             const paperScreen=await popup.call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
             await writeFile(join(out, `${locale}-papers.png`),Buffer.from(paperScreen.data,'base64'));
+            await evaluate(popup, `__smoke.renderProgress({runId:'failed-source-fixture',status:'running',step:'wait_source_choice',sourceIndex:0,sources:[{sourceTitle:'Example source',status:'failed'}],tasks:[]})`);
+            assert(await evaluate(popup, `document.getElementById('content').textContent.includes(${JSON.stringify(expected('Failed'))})`), `${locale} failed source is mislabeled`);
             report.push({ locale, completedHeight: done.bottom, settingsWidth: settings.width, states: ['completed','settings','error','permission','polling'] });
         } finally { await popup.call('Page.removeScriptToEvaluateOnNewDocument', { identifier }); }
     }
     await reload(popup);
     await writeFile(join(out, 'report.json'), JSON.stringify(report, null, 2)+'\n');
-    console.log(`Localization smoke passed for eight locales: ${JSON.stringify(report)}`);
+    console.log(`Localization smoke passed for nine locales: ${JSON.stringify(report)}`);
 }

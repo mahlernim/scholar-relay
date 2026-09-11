@@ -512,3 +512,11 @@ The blue count includes a single detected paper. Single-paper pages also offer t
 한국어: 논문을 선택하여 개별 노트북이나 하나의 노트북으로 만들고, 현재 웹페이지도 선택하여 포함할 수 있습니다. 소스 준비 후 생성하며 처리 실패는 명시적으로 제외한 뒤 계속할 수 있습니다. 선택 권한으로 사이트별 자동 감지와 제한된 arXiv 제목 조회를 제공하고 진행 배지와 별도로 후보 수를 표시합니다.
 
 논문이 하나만 감지되어도 파란색 숫자 1을 표시합니다. 단일 논문 페이지에서도 사이트 자동 감지를 켤 수 있어 다음 방문부터 표시를 확인할 수 있습니다.
+
+### v1.5.0 Italian and localization audit
+
+Italian is the ninth interface locale, with 283 messages, store metadata and screenshots. All nine catalogs preserve placeholders. Single-item paper and source counts use singular wording, selection clearing is explicit, and a failed combined source shows Failed rather than Waiting. The unpacked browser checks cover the selector, progress, errors, settings and layout in nine languages. Italian is machine-assisted without independent native-speaker sign-off.
+
+Manifest and package versions are aligned at 1.5.0. English and Korean release notes and nine store descriptions are prepared under `docs/releases/`. The live website remains the published-release site until the release rollout. Store submission and publication are separate steps, and issue #66 remains observational.
+
+한국어: 이탈리아어를 아홉 번째 화면 언어로 추가하고 283개 문구와 스토어 메타데이터, 스크린샷을 준비했습니다. 모든 언어의 치환 값을 확인하고 단일 항목 문구, 전체 선택 해제와 실패한 소스 표시를 개선했습니다. 실제 확장 프로그램의 선택 화면, 진행 상황, 오류와 설정을 9개 언어로 검증합니다. 이탈리아어는 기계 보조 번역이며 독립적인 원어민 검수는 받지 않았습니다. 버전은 1.5.0으로 맞추고 릴리스 자료를 준비하되 스토어 제출과 게시는 별도로 진행합니다.
