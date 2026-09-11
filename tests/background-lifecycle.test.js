@@ -387,7 +387,7 @@ test('three monitored notebooks prevent another start until a generation slot is
   const queued = await w.startPipelineRequest({ pdfUrl: 'https://example.org/next.pdf' });
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(writes.length, 0);
-  await w.stopPipelineRequest('run-1');
+  await w.stopPipelineRequest('run-1', 'keep');
   await settleUntil(() => w.data.jobQueue.jobs.find(job => job.runId === queued.runId).step === 'wait_source');
   assert.equal(w.data.jobQueue.jobs.find(job => job.runId === 'run-2').status, 'running');
 });
@@ -635,4 +635,73 @@ test('notification routing rejects unsafe targets and preserves valid completion
   assert.deepEqual(w.opened, ['https://notebook.google.com/notebook/accepted-id']);
   await w.notificationEvents.clicked('pipeline-error:missing');
   assert.equal(w.opened.at(-1), 'chrome-extension://scholarrelay-test/popup.html?runId=missing');
+});
+
+test('cancel during creation persists intent and deletes the late notebook once', async () => {
+  const w = await worker();
+  let resolveCreate;
+  let deleted = 0;
+  w.context.fetchTokens = async () => ({});
+  w.context.createNotebook = () => new Promise(resolve => { resolveCreate = resolve; });
+  w.context.getNotebookUrl = id => 'https://notebook.google.com/notebook/' + id;
+  w.context.deleteNotebook = async id => { assert.equal(id, 'late'); deleted++; };
+  const request = await w.startPipelineRequest({ pdfUrl: 'https://example.org/a.pdf' });
+  await settleUntil(() => !!resolveCreate);
+  assert.equal((await w.stopPipelineRequest(request.runId)).code, 'CANCEL_CHOICE_REQUIRED');
+  await w.stopPipelineRequest(request.runId, 'delete');
+  assert.equal(w.data.jobQueue.jobs[0].status, 'stopping');
+  await w.stopPipelineRequest(request.runId, 'delete');
+  assert.equal(deleted, 0);
+  resolveCreate({ id: 'late' });
+  await settleUntil(() => w.data.jobQueue.jobs[0].cleanupStatus === 'deleted');
+  assert.equal(deleted, 1);
+  assert.equal(w.data.jobQueue.jobs[0].notebookId, 'late');
+});
+
+test('explicit failed-job cleanup allows partial successes and never replays uncertain deletion', async () => {
+  const w = await worker();
+  w.data.pipelineState = { ...running([{ taskId: 'useful', status: 'completed' }]), status: 'error' };
+  let deletes = 0;
+  w.context.deleteNotebook = async () => { deletes++; throw new Error('Unknown result'); };
+  await assert.rejects(vm.runInContext("deleteCancelledNotebook('old')", w.context), /Unknown result/);
+  const second = await vm.runInContext("deleteCancelledNotebook('old')", w.context);
+  assert.equal(second.ok, false);
+  assert.equal(deletes, 1);
+  assert.equal(w.data.pipelineState.cleanupStatus, 'unknown');
+});
+
+test('restart preserves unknown creation identity without creating or deleting another notebook', async () => {
+  const w = await worker({ initialQueue: { version: 1, paused: true, jobs: [{ runId: 'cancelled', status: 'stopping', step: 'create_notebook', cancelledStep: 'create_notebook', cancelIntent: 'delete' }] } });
+  assert.equal(w.data.jobQueue.jobs[0].status, 'stopped');
+  assert.equal(w.data.jobQueue.jobs[0].cleanupStatus, 'unknown');
+});
+
+test('cancelling an accepted source request keeps its notebook and prevents generation', async () => {
+  const w = await worker();
+  installQueueService(w);
+  let finishSource;
+  w.context.addUrlSource = () => new Promise(resolve => { finishSource = resolve; });
+  const request = await w.startPipelineRequest({ pdfUrl: 'https://example.org/a.pdf' });
+  await settleUntil(() => !!finishSource);
+  await w.stopPipelineRequest(request.runId, 'keep');
+  finishSource({ id: 'accepted-source' });
+  await settleUntil(() => w.data.jobQueue.jobs[0].status === 'stopped');
+  assert.ok(w.data.jobQueue.jobs[0].notebookId);
+  assert.equal(w.data.jobQueue.jobs[0].tasks.length, 0);
+});
+
+test('cancelling during artifact generation prevents the next artifact request', async () => {
+  const w = await worker();
+  const writes = installQueueService(w);
+  const request = await w.startPipelineRequest({ pdfUrl: 'https://example.org/a.pdf' });
+  await settleUntil(() => w.data.jobQueue.jobs[0].step === 'wait_source');
+  let finishAudio;
+  w.context.generateAudio = () => new Promise(resolve => { finishAudio = resolve; });
+  const poll = w.tickSourcePoll(w.data.jobQueue.jobs[0]);
+  await settleUntil(() => !!finishAudio);
+  await w.stopPipelineRequest(request.runId, 'keep');
+  finishAudio({ taskId: 'accepted-audio', status: 'in_progress' });
+  await poll;
+  assert.equal(w.data.jobQueue.jobs[0].status, 'stopped');
+  assert.equal(writes.filter(item => item.kind === 'infographic').length, 0);
 });

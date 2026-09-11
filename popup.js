@@ -78,6 +78,50 @@ function updateElapsedTimes() {
     }
 }
 
+const cancellationChoices = new Map();
+function cancellationActions(job) {
+    const id = escapeHtml(job.runId);
+    const button = (key, label) => '<button data-' + key + '="' + id + '">' + escapeHtml(t(label)) + '</button>';
+    if (job.cleanupStatus === 'unknown') return '<span role="status">' + escapeHtml(t('Deletion needs checking')) + '</span>';
+    if (job.status === 'stopping' || job.cleanupStatus === 'deleting') return '<span role="status">' + escapeHtml(t(job.cleanupStatus === 'deleting' ? 'Deleting...' : 'Stopping...')) + '</span>';
+    const choice = cancellationChoices.get(job.runId);
+    if (choice) return (choice === 'delete' ? '<span>' + escapeHtml(t('Deletes this notebook and all its sources and results.')) + '</span>' : '') +
+        (choice === 'stop' ? button('cancel-keep', 'Stop and keep notebook') : '') +
+        button('cancel-delete', choice === 'stop' ? 'Stop and delete notebook' : 'Delete notebook') + button('cancel-back', 'Back');
+    if (['queued', 'running'].includes(job.status)) return button('cancel', 'Cancel');
+    if (['error', 'stopped'].includes(job.status) && job.notebookId && !job.notebookDeletedAt) return button('cleanup', 'Delete notebook');
+    return '';
+}
+function wireCancellation(root) {
+    const bind = (key, fn) => root.querySelectorAll('[data-' + key + ']').forEach(button => button.addEventListener('click', () => fn(button.getAttribute('data-' + key), button)));
+    const refresh = async () => { lastProgressSignature = null; await refreshQueue(); if (selectedRunId) renderProgress(queueSnapshot.jobs.find(j => j.runId === selectedRunId)); };
+    bind('cancel', async id => {
+        try {
+            const job = queueSnapshot.jobs.find(j => j.runId === id);
+            if (job?.status === 'queued') {
+                const result = await chrome.runtime.sendMessage({ type: 'ABORT_PIPELINE', runId: id });
+                if (result?.code === 'CANCEL_CHOICE_REQUIRED') cancellationChoices.set(id, 'stop');
+                else if (!result?.ok) throw new Error(result?.message);
+            } else cancellationChoices.set(id, 'stop');
+            await refresh();
+        } catch (error) { showError(error.message); }
+    });
+    bind('cleanup', async id => { cancellationChoices.set(id, 'delete'); await refresh(); });
+    bind('cancel-back', async id => { cancellationChoices.delete(id); await refresh(); });
+    const apply = async (id, button, intent) => {
+        button.disabled = true;
+        try {
+            const result = await chrome.runtime.sendMessage({ type: cancellationChoices.get(id) === 'delete' ? 'DELETE_JOB_NOTEBOOK_EXPLICIT' : 'ABORT_PIPELINE', runId: id, intent });
+            if (!result?.ok) throw new Error(result?.message || 'Could not stop this job.');
+            cancellationChoices.delete(id);
+            await refresh();
+            if (selectedRunId === id && queueSnapshot.jobs.find(j => j.runId === id)?.status === 'stopped') { selectedRunId = null; await detectAndRender(); }
+        } catch (error) { showError(error.message); } finally { button.disabled = false; }
+    };
+    bind('cancel-keep', (id, button) => apply(id, button, 'keep'));
+    bind('cancel-delete', (id, button) => apply(id, button, 'delete'));
+}
+
 async function refreshQueue() {
     const queue = await chrome.runtime.sendMessage({ type: 'GET_QUEUE' });
     if (!Array.isArray(queue?.jobs)) throw new Error(queue?.error || 'Could not read the saved queue.');
@@ -85,8 +129,6 @@ async function refreshQueue() {
     const active = queue.jobs.filter(isUnfinishedJob);
     const finished = queue.jobs.filter(job => !isUnfinishedJob(job)).reverse();
     const card = job => {
-        const canStop = job.status === 'queued' || (job.status === 'running' &&
-            ['wait_source','wait_artifacts','wait_pdf_access','download_pdf','queued_pdf'].includes(job.step));
         return '<article class="job-card" data-job="' + escapeHtml(job.runId) + '">' +
             '<button class="job-title" data-show="' + escapeHtml(job.runId) + '">' + escapeHtml(job.sourceTitle || job.notebookTitle || job.pdfUrl || t('Source')) + '</button>' +
             queueStatusHtml(job) +
@@ -96,7 +138,7 @@ async function refreshQueue() {
                 '<button data-show="' + escapeHtml(job.runId) + '">' + escapeHtml(t('Details')) + '</button>' +
                 '<button data-pdf-file="' + escapeHtml(job.runId) + '">' + escapeHtml(t('Upload PDF & Continue')) + '</button>' +
                 (pdfWaitReason(job) === 'permission' ? '<button data-pdf-permission="' + escapeHtml(job.runId) + '">' + escapeHtml(t('Allow Download & Continue')) + '</button>' : '') : '') +
-            (canStop ? '<button data-stop="' + escapeHtml(job.runId) + '">' + escapeHtml(job.status === 'queued' || job.step === 'queued_pdf' ? t('Remove from queue') : job.step === 'wait_pdf_access' ? t('Dismiss job') : t('Stop this job')) + '</button>' : '') + '</div></article>';
+            cancellationActions(job) + '</div></article>';
     };
     const html = '<div class="queue-heading"><strong>' + escapeHtml(t('Paper queue')) + ' · ' + active.length + '</strong>' +
         '<button id="btn-pause-queue">' + escapeHtml(queue.paused ? t('Resume queue') : t('Pause queue')) + '</button></div>' +
@@ -127,6 +169,7 @@ async function refreshQueue() {
             renderProgress(queueSnapshot.jobs.find(job => job.runId === selectedRunId));
             contentEl.scrollIntoView({ block: 'start' });
         }));
+        wireCancellation(queueEl);
         queueEl.querySelectorAll('[data-stop]').forEach(button => button.addEventListener('click', () => abortPipeline(button.dataset.stop)));
         queueEl.querySelector('#btn-pause-queue').addEventListener('click', async () => {
             try {
@@ -680,9 +723,6 @@ function renderProgress(state) {
     if (state.status !== 'error' && generationLimitSummary(state.tasks)) {
         bottomHtml += `<div class="pipeline-error-box" role="status">${escapeHtml(generationLimitSummary(state.tasks))}</div>`;
     }
-    if (['error', 'stopped'].includes(state.status) && state.cleanupAvailable && state.notebookId && !state.notebookDeletedAt) {
-        bottomHtml += `<button class="btn-secondary" id="btn-delete-notebook">${escapeHtml(t('Delete unused notebook'))}</button>`;
-    }
     if (state.notebookDeletedAt) {
         bottomHtml += `<p class="handoff-note" role="status">${escapeHtml(t('Notebook deleted from Gemini Notebook.'))}</p>`;
     }
@@ -697,9 +737,7 @@ function renderProgress(state) {
           <button class="btn-secondary" id="btn-fallback-file">${escapeHtml(t("Upload PDF & Continue"))}</button>
           ${state.stepDetail ? `<details class="workflow-details"><summary>${escapeHtml(t("Download details"))}</summary><div class="step-detail">${escapeHtml(state.stepDetail)}</div></details>` : ''}`;
     }
-    if (state.status === 'running' && ['wait_source', 'wait_artifacts', 'wait_pdf_access', 'download_pdf', 'queued_pdf'].includes(state.step)) {
-        bottomHtml += `<button class="btn-secondary" id="btn-abort" aria-describedby="stop-help">${escapeHtml(t("Stop Monitoring"))}</button><p class="s-help" id="stop-help">${escapeHtml(t("Stops this workflow. Work already started in Gemini Notebook may continue."))}</p>`;
-    }
+    bottomHtml += '<div class="job-actions">' + cancellationActions(state) + '</div>';
     bottomHtml += `<button class="btn-secondary" id="btn-reset">${escapeHtml(t('Add another paper'))}</button>`;
 
     contentEl.innerHTML = `
@@ -713,6 +751,7 @@ function renderProgress(state) {
     ${['completed', 'queued', 'stopped'].includes(state.status)
         ? `${bottomHtml}<details class="workflow-details"><summary>${escapeHtml(t("Workflow details"))}</summary><div class="pipeline">${stepsHtml}</div></details>`
         : `<div class="pipeline">${stepsHtml}</div>${bottomHtml}`}`;
+    wireCancellation(contentEl);
     contentEl.dataset.renderMode = 'progress';
     lastProgressSignature = renderSignature;
 

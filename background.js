@@ -135,6 +135,69 @@ const pipelineState = createJobQueue({
     write: jobQueue => chrome.storage.local.set({ jobQueue }),
 });
 
+// Keep cancellation pending until accepted requests return. No mutation is replayed.
+const pendingJobOperations = new Map();
+async function withJobOperation(runId, operation) {
+    pendingJobOperations.set(runId, (pendingJobOperations.get(runId) || 0) + 1);
+    try { return await operation(); }
+    finally {
+        const remaining = pendingJobOperations.get(runId) - 1;
+        if (remaining) pendingJobOperations.set(runId, remaining);
+        else { pendingJobOperations.delete(runId); await finishCancellation(runId); }
+    }
+}
+async function finishCancellation(runId) {
+    if (pendingJobOperations.has(runId)) return;
+    const result = await pipelineState.transact(queue => {
+        const job = queue.jobs.find(item => item.runId === runId);
+        if (job?.status !== 'stopping') return null;
+        Object.assign(job, { status: 'stopped', step: 'stopped', completedAt: new Date().toISOString(), cleanupAvailable: !!job.notebookId });
+        if (!job.notebookId && job.cancelledStep === 'create_notebook') {
+            job.cleanupStatus = 'unknown';
+            job.cleanupError = 'Notebook creation needs checking. No delete request was sent without a confirmed identity.';
+        }
+        return { state: job };
+    });
+    if (!result.applied) return;
+    await releaseJobPdf(runId);
+    if (result.state.cancelIntent === 'delete' && result.state.notebookId) {
+        await deleteCancelledNotebook(runId).catch(error => console.warn('[Cancellation]', error.message));
+    }
+    kickQueue();
+}
+async function deleteCancelledNotebook(runId) {
+    const claimed = await pipelineState.transact(queue => {
+        const job = queue.jobs.find(item => item.runId === runId);
+        if (!job || !['error', 'stopped'].includes(job.status) || !job.notebookId || job.notebookDeletedAt) return null;
+        if (['deleting', 'unknown'].includes(job.cleanupStatus)) return null;
+        if (queue.jobs.some(item => item.runId !== runId && item.notebookId === job.notebookId && !item.notebookDeletedAt)) {
+            throw new Error('Another job references this notebook.');
+        }
+        job.cleanupStatus = 'deleting';
+        return { notebookId: job.notebookId };
+    });
+    if (!claimed.applied) return { ok: false, message: 'Deletion needs checking. Open the notebook before taking another action.' };
+    try {
+        await deleteNotebook(claimed.notebookId);
+        await pipelineState.transact(queue => {
+            const job = queue.jobs.find(item => item.runId === runId && item.notebookId === claimed.notebookId);
+            if (!job) return null;
+            Object.assign(job, { notebookDeletedAt: new Date().toISOString(), cleanupStatus: 'deleted', notebookUrl: null });
+            return {};
+        });
+        return { ok: true };
+    } catch (error) {
+        await pipelineState.transact(queue => {
+            const job = queue.jobs.find(item => item.runId === runId);
+            if (!job) return null;
+            job.cleanupStatus = 'unknown';
+            job.cleanupError = error.message;
+            return {};
+        });
+        throw error;
+    }
+}
+
 async function transitionRun(runId, updates, options = {}) {
     const result = await pipelineState.transition(runId, updates, options);
     if (result.effectError) throw result.effectError;
@@ -664,7 +727,8 @@ async function failPipeline(runId, errorInput, notebookId = null) {
  * Checks if the source is ready. If so, triggers artifact generation
  * and transitions state to 'wait_artifacts'.
  */
-async function tickSourcePoll(state) {
+async function tickSourcePoll(state) { return withJobOperation(state.runId, () => tickSourcePollOperation(state)); }
+async function tickSourcePollOperation(state) {
     const runId = state.runId;
     await requireActiveRun(runId, ['wait_source']);
     const SOURCE_TIMEOUT_MS = 600000; // 10 minutes
@@ -930,7 +994,8 @@ async function tickSourcePoll(state) {
  * One tick of the artifact-polling phase.
  * Polls all artifact tasks. Calls completePipeline() when all have settled.
  */
-async function tickArtifactPoll(state) {
+async function tickArtifactPoll(state) { return withJobOperation(state.runId, () => tickArtifactPollOperation(state)); }
+async function tickArtifactPollOperation(state) {
     const runId = state.runId;
     await requireActiveRun(runId, ['wait_artifacts']);
     const tasks = state.tasks || [];
@@ -1107,6 +1172,7 @@ async function reconcilePipelineRuntime() {
     await pipelineState.transact(queue => {
         for (const job of queue.jobs) {
             job.settings ||= { ...settings };
+            if (job.cleanupStatus === 'deleting') job.cleanupStatus = 'unknown';
             const action = runtimeRecoveryAction(job, false);
             if (action === 'wait_pdf_access') {
                 if (job.step !== 'wait_pdf_access') {
@@ -1126,6 +1192,7 @@ async function reconcilePipelineRuntime() {
     });
     const queue = await getQueue();
     await pdfStore.prune(queue.jobs.filter(job => isUnfinishedJob(job)).map(job => job.payloadId).filter(Boolean));
+    for (const job of queue.jobs.filter(item => item.status === 'stopping')) await finishCancellation(job.runId);
     await chrome.storage.local.remove('pipelineState');
     await syncQueueRuntime();
     for (const runId of attention) {
@@ -1134,7 +1201,8 @@ async function reconcilePipelineRuntime() {
     }
 }
 
-const fallbackPdf = createPdfFallback({
+const fallbackPdf = (runId, options) => withJobOperation(runId, () => fallbackPdfOperation(runId, options));
+const fallbackPdfOperation = createPdfFallback({
     getState,
     transition: transitionRun,
     download: downloadRemotePdfForUpload,
@@ -1205,7 +1273,8 @@ async function ensureBootReconciled() {
 // Pipeline orchestration (steps 1-3: synchronous network calls)
 // =========================================================================
 
-async function runPipeline(runId, pdfUrl, pageUrl, uploadFile = null, sourceType = 'pdf', sourceTitle = null) {
+async function runPipeline(runId, ...args) { return withJobOperation(runId, () => runPipelineOperation(runId, ...args)); }
+async function runPipelineOperation(runId, pdfUrl, pageUrl, uploadFile = null, sourceType = 'pdf', sourceTitle = null) {
     const effectiveSourceType = uploadFile ? 'pdf' : (sourceType || 'pdf');
     const sourceLabel = getSourceLabel(effectiveSourceType);
     const ingestionLabel = getIngestionLabel(effectiveSourceType);
@@ -1233,6 +1302,12 @@ async function runPipeline(runId, pdfUrl, pageUrl, uploadFile = null, sourceType
         const notebook = await createNotebook(requestedNotebookTitle);
         if (!notebook.id) throw new Error('Failed to create notebook -- no ID returned');
         notebookId = notebook.id;
+        await pipelineState.transact(queue => {
+            const job = queue.jobs.find(item => item.runId === runId);
+            if (!job || !['running', 'stopping'].includes(job.status)) return null;
+            Object.assign(job, { notebookId: notebook.id, notebookUrl: getNotebookUrl(notebook.id) });
+            return {};
+        });
         await requireActiveRun(runId, ['create_notebook']);
 
         const notebookUrl = getNotebookUrl(notebook.id);
@@ -1396,18 +1471,32 @@ async function startPipelineRequest(message, uploadFile = null) {
     return { ok: true, runId: result.state.runId, duplicate: !!result.duplicate, message: 'Paper saved in queue' };
 }
 
-async function stopPipelineRequest(requestedRunId) {
+async function stopPipelineRequest(requestedRunId, intent = null) {
     await ensureBootReconciled();
+    if (intent && !['keep', 'delete'].includes(intent)) throw new Error('Invalid cancellation choice');
     const result = await pipelineState.transact(queue => {
         const job = queue.jobs.find(item => item.runId === requestedRunId);
-        if (!job || !(job.status === 'queued' || job.step === 'queued_pdf' || canStopPipeline(job, requestedRunId))) return null;
-        Object.assign(job, { status: 'stopped', completedAt: new Date().toISOString(), cleanupAvailable: !!job.notebookId });
+        if (!job) return null;
+        if (job.status === 'stopping' || job.status === 'stopped') return { state: job };
+        if (job.status === 'queued' && !job.notebookId) {
+            Object.assign(job, { status: 'stopped', step: 'stopped', completedAt: new Date().toISOString() });
+            return { state: job, removeQueued: true };
+        }
+        if (job.status !== 'running') return null;
+        if (!intent) return { needsChoice: true, state: job };
+        Object.assign(job, { status: 'stopping', cancelIntent: intent, cancelledStep: job.step,
+            cancelRequestedAt: new Date().toISOString() });
         return { state: job };
     });
-    if (!result.applied) return { ok: false, code: 'PIPELINE_NOT_STOPPABLE', message: 'This job has already advanced. Refresh the queue.' };
-    await releaseJobPdf(requestedRunId);
+    if (!result.applied) return { ok: false, message: 'This job has already finished. Refresh the queue.' };
+    if (result.needsChoice) return { ok: false, code: 'CANCEL_CHOICE_REQUIRED' };
+    if (result.state.status === 'stopped') await releaseJobPdf(requestedRunId);
+    if (result.removeQueued) {
+        await pipelineState.transact(queue => { queue.jobs = queue.jobs.filter(job => job.runId !== requestedRunId); return {}; });
+    }
+    await finishCancellation(requestedRunId);
     kickQueue();
-    return { ok: true, state: result.state };
+    return { ok: true, state: await getState(requestedRunId) };
 }
 
 function cleanupSnapshot(sources, artifacts) {
@@ -1472,7 +1561,7 @@ async function deleteJobNotebook(message) {
 async function clearFinishedJobs() {
     await ensureBootReconciled();
     await pipelineState.transact(queue => {
-        queue.jobs = queue.jobs.filter(isUnfinishedJob);
+        queue.jobs = queue.jobs.filter(job => isUnfinishedJob(job) || ['deleting', 'unknown'].includes(job.cleanupStatus));
         return {};
     });
     await syncQueueRuntime();
@@ -1480,6 +1569,11 @@ async function clearFinishedJobs() {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'DELETE_JOB_NOTEBOOK_EXPLICIT') {
+        ensureBootReconciled().then(() => deleteCancelledNotebook(message.runId)).then(sendResponse)
+            .catch(error => sendResponse({ ok: false, message: error.message }));
+        return true;
+    }
     if (message.type === 'RESUME_SERVICE') {
         resumeServiceBlock(message.blockId).then(sendResponse)
             .catch(error => sendResponse({ ok: false, message: error.message }));
@@ -1551,7 +1645,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === 'ABORT_PIPELINE') {
-        stopPipelineRequest(message.runId).then(sendResponse)
+        stopPipelineRequest(message.runId, message.intent).then(sendResponse)
             .catch(error => sendResponse({ ok: false, message: error?.message || 'Could not stop monitoring' }));
         return true;
     }

@@ -984,5 +984,41 @@
   "ui_efd1bd2d": {
     "message": "Nenhum artigo foi detectado. Criar um notebook e iniciar a automação selecionada mesmo assim?",
     "description": "No paper was detected. Create a notebook and start the selected automation anyway?"
+  },
+  "ui_35afca3b": {
+    "message": "Cancelar",
+    "description": "Cancel"
+  },
+  "ui_c2954bc2": {
+    "message": "Voltar",
+    "description": "Back"
+  },
+  "ui_4408e966": {
+    "message": "Parar e manter o notebook",
+    "description": "Stop and keep notebook"
+  },
+  "ui_66613304": {
+    "message": "Parar e excluir o notebook",
+    "description": "Stop and delete notebook"
+  },
+  "ui_9b369a0f": {
+    "message": "Excluir notebook",
+    "description": "Delete notebook"
+  },
+  "ui_e100f46d": {
+    "message": "Parando...",
+    "description": "Stopping..."
+  },
+  "ui_32be65e1": {
+    "message": "Excluindo...",
+    "description": "Deleting..."
+  },
+  "ui_134d554a": {
+    "message": "Verifique a exclusão",
+    "description": "Deletion needs checking"
+  },
+  "ui_d3d1dd4b": {
+    "message": "Também exclui todas as fontes e resultados deste notebook.",
+    "description": "Deletes this notebook and all its sources and results."
   }
 }
