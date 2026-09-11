@@ -1030,7 +1030,7 @@
     "description": "Select all"
   },
   "ui_4a57fc2": {
-    "message": "選択解除",
+    "message": "すべて選択解除",
     "description": "Clear"
   },
   "ui_e8a27655": {
@@ -1112,5 +1112,29 @@
   "ui_76aff97c": {
     "message": "このページに$1件の論文候補",
     "description": "$1 paper candidates on this page"
+  },
+  "ui_f3db4860": {
+    "message": "1つのノートブックに1件のソース",
+    "description": "One source in one notebook"
+  },
+  "ui_958d5a41": {
+    "message": "個別のノートブック1個",
+    "description": "One separate notebook"
+  },
+  "ui_8cd6f197": {
+    "message": "1件のソースで作成",
+    "description": "Create notebook with one source"
+  },
+  "ui_154ddf8c": {
+    "message": "1件をキューに追加",
+    "description": "Add one paper to queue"
+  },
+  "ui_c67e8add": {
+    "message": "1件をキューに保存しました",
+    "description": "One job saved in queue"
+  },
+  "ui_2a03efde": {
+    "message": "このページに1件の論文候補",
+    "description": "One paper candidate on this page"
   }
 }

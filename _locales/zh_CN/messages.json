@@ -1030,7 +1030,7 @@
     "description": "Select all"
   },
   "ui_4a57fc2": {
-    "message": "清除",
+    "message": "取消全选",
     "description": "Clear"
   },
   "ui_e8a27655": {
@@ -1112,5 +1112,29 @@
   "ui_76aff97c": {
     "message": "此页面有 $1 个论文候选项",
     "description": "$1 paper candidates on this page"
+  },
+  "ui_f3db4860": {
+    "message": "一个笔记本中包含 1 个来源",
+    "description": "One source in one notebook"
+  },
+  "ui_958d5a41": {
+    "message": "1 个独立笔记本",
+    "description": "One separate notebook"
+  },
+  "ui_8cd6f197": {
+    "message": "使用 1 个来源创建笔记本",
+    "description": "Create notebook with one source"
+  },
+  "ui_154ddf8c": {
+    "message": "将 1 篇论文加入队列",
+    "description": "Add one paper to queue"
+  },
+  "ui_c67e8add": {
+    "message": "已将 1 个任务保存到队列",
+    "description": "One job saved in queue"
+  },
+  "ui_2a03efde": {
+    "message": "此页面有 1 篇候选论文",
+    "description": "One paper candidate on this page"
   }
 }

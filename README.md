@@ -102,7 +102,7 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 
 ## English
 
-Version 1.4.4 localizes the interface and notifications in English, Korean, Japanese, Spanish, French, German, Brazilian Portuguese, and Simplified Chinese. The interface follows Chrome's language with English fallback. Artifact output language is a separate setting and existing choices are preserved. Original technical diagnostics remain available in Details.
+Version 1.5.0 localizes the interface and notifications in English, Korean, Japanese, Spanish, French, German, Brazilian Portuguese, Simplified Chinese, and Italian. The interface follows Chrome's language with English fallback. Artifact output language is a separate setting and existing choices are preserved. Original technical diagnostics remain available in Details.
 
 ### Highlights
 

@@ -1030,7 +1030,7 @@
     "description": "Select all"
   },
   "ui_4a57fc2": {
-    "message": "Auswahl aufheben",
+    "message": "Alle abwählen",
     "description": "Clear"
   },
   "ui_e8a27655": {
@@ -1112,5 +1112,29 @@
   "ui_76aff97c": {
     "message": "$1 Artikelkandidaten auf dieser Seite",
     "description": "$1 paper candidates on this page"
+  },
+  "ui_f3db4860": {
+    "message": "Eine Quelle in einem Notebook",
+    "description": "One source in one notebook"
+  },
+  "ui_958d5a41": {
+    "message": "Ein separates Notebook",
+    "description": "One separate notebook"
+  },
+  "ui_8cd6f197": {
+    "message": "Notebook mit einer Quelle erstellen",
+    "description": "Create notebook with one source"
+  },
+  "ui_154ddf8c": {
+    "message": "Einen Artikel zur Warteschlange hinzufügen",
+    "description": "Add one paper to queue"
+  },
+  "ui_c67e8add": {
+    "message": "Eine Aufgabe gespeichert",
+    "description": "One job saved in queue"
+  },
+  "ui_2a03efde": {
+    "message": "Ein Artikelkandidat auf dieser Seite",
+    "description": "One paper candidate on this page"
   }
 }
