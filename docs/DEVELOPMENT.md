@@ -548,3 +548,15 @@ Issue #82 recorded a live Korean Long audio request from the exact ScholarRelay 
 The store publisher account is `mahlerlabdiy@gmail.com` with service account `scholar-relay-publisher@mahlerlab-store-publisher.iam.gserviceaccount.com`. On machines where another gcloud account is active, set `CLOUDSDK_CORE_ACCOUNT` for the publishing process rather than switching the active account.
 
 한국어: v1.5.1은 중국어 번체 추가와 아티팩트 상태 읽기 오류 처리 개선을 포함합니다. 스토어 설명과 스크린샷은 개발자 대시보드에서 반영해야 합니다.
+
+### v1.5.1 release and store submission
+
+On September 26, 2026, PRs #84, #86, and release PR #88 merged after exact-head CI passed. Release commit `3193663c4a0248baecd650f8a38f3e365968e1a2` passed merged-main CI 36213513655 and preflight 36213513628. [GitHub v1.5.1](https://github.com/mahlernim/scholar-relay/releases/tag/v1.5.1) is public and its tag resolves to that commit.
+
+The ZIP was built from a clean checkout of the release commit. It has 33 allowlisted files, embeds version 1.5.1, and is 182,161 bytes. Every extracted file matches the checkout, and the only change from the v1.5.0 asset is `_locales/zh_TW/messages.json`. The downloaded GitHub asset matches. SHA-256 is `26573fdf1ddac8df0bda5ef69005a55bd46b71c2d5923c45e887607828d76599`.
+
+Status before submission showed published 1.5.0 at 100 percent with no pending submission, warning, or takedown. The CLI dry run kept warning blocking, normal review, and default publication. The same ZIP was then submitted once to publisher `8965b52e-0884-4044-b2b6-77b077d8f3f7`, item `epopghhfmpokhbalmnfcopmplffphdbb`. Upload returned `SUCCEEDED` and publication returned `PENDING_REVIEW`. An independent status read showed submitted 1.5.1 `PENDING_REVIEW` with published 1.5.0. This is a submission, not publication. Listing text and zh_TW screenshots are separate dashboard updates.
+
+On this machine the CLI's own gcloud launch failed with a withheld local error. A short-lived `CWS_ACCESS_TOKEN` minted by `gcloud auth print-access-token --account mahlerlabdiy@gmail.com --impersonate-service-account ...` in the same process worked without printing the token. The publisher account appears as Chrome account slot 5 here.
+
+한국어: v1.5.1을 GitHub에 공개하고 같은 ZIP을 Chrome 웹 스토어에 한 번 제출했습니다. 현재 상태는 검토 대기이며 게시된 버전은 1.5.0입니다.
