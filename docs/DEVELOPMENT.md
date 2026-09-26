@@ -538,3 +538,13 @@ Issue #85 adds Traditional Chinese as the tenth interface locale, with 283 messa
 `scripts/build-locales.mjs` now loads every source-keyed catalog through one map instead of per-locale branches. The ten-locale Chrome smoke passed at 360 pixels with Playwright Chromium 1200. The newest local build no longer loaded the unpacked extension through the capture flags. Only zh_TW screenshots are committed, because re-rendering other locales changed pixels without changing content. The translation is machine-assisted without independent native-speaker review.
 
 한국어: 중국어 번체를 열 번째 화면 언어로 추가했습니다. 제품 용어는 중국어 번체로 설정한 Gemini Notebook 화면의 각 스튜디오 설정 창에서 직접 확인했고, 간체 번역을 변환하지 않고 영어 원문에서 번역했습니다. 10개 언어 Chrome 검증을 통과했으며 원어민 검수는 받지 않았습니다.
+
+### v1.5.1 release preparation
+
+Version 1.5.1 combines issue #83 (PR #84) and issue #85 (PR #86). Both PRs passed CI on their exact heads before merging. The release adds Traditional Chinese and treats status-tagged null artifact listings as failed reads. Manifest and package versions are aligned at 1.5.1. English, Korean, and Traditional Chinese notes are in `docs/releases/v1.5.1.md`. The ten-language store descriptions are in `docs/releases/v1.5.1-store-listing.md` and require the Developer Dashboard, because the API cannot edit listing text or screenshots.
+
+Issue #82 recorded a live Korean Long audio request from the exact ScholarRelay payload. The web interface hides Long for Korean on the tested account, while the backend accepted and retained length 3 with `ko` and produced about 20 minutes of audio. No code change followed.
+
+The store publisher account is `mahlerlabdiy@gmail.com` with service account `scholar-relay-publisher@mahlerlab-store-publisher.iam.gserviceaccount.com`. On machines where another gcloud account is active, set `CLOUDSDK_CORE_ACCOUNT` for the publishing process rather than switching the active account.
+
+한국어: v1.5.1은 중국어 번체 추가와 아티팩트 상태 읽기 오류 처리 개선을 포함합니다. 스토어 설명과 스크린샷은 개발자 대시보드에서 반영해야 합니다.
