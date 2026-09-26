@@ -457,10 +457,37 @@ function extractRpcResult(chunks, rpcId) {
   throw new Error(`No result found for RPC ID: ${rpcId}`);
 }
 
-function decodeResponse(rawResponse, rpcId, allowNull = false) {
+// A null result can carry a google.rpc.Status at index 5. Only canonical
+// non-OK codes (1-16) count, matching notebooklm-py _extract_status_code.
+const GRPC_UNAUTHENTICATED = 16;
+
+function findNullResultStatus(chunks, rpcId) {
+  for (const chunk of chunks) {
+    if (!Array.isArray(chunk)) continue;
+    const items = (chunk.length > 0 && Array.isArray(chunk[0])) ? chunk : [chunk];
+    for (const item of items) {
+      if (!Array.isArray(item) || item.length < 6) continue;
+      if (item[0] !== 'wrb.fr' || item[1] !== rpcId || item[2] !== null) continue;
+      const code = Array.isArray(item[5]) ? item[5][0] : null;
+      if (Number.isInteger(code) && code >= 1 && code <= 16) return code;
+    }
+  }
+  return null;
+}
+
+function decodeResponse(rawResponse, rpcId, allowNull = false, raiseOnNullStatus = false) {
   const cleaned = stripAntiXssi(rawResponse);
   const chunks = parseChunkedResponse(cleaned);
   const result = extractRpcResult(chunks, rpcId);
+
+  // Opt-in per call site, because some RPCs attach a status to successful nulls.
+  const status = result === null && raiseOnNullStatus ? findNullResultStatus(chunks, rpcId) : null;
+  if (status !== null) {
+    const error = new Error(`RPC_NULL_STATUS: ${rpcId} returned no result with status code ${status}.`);
+    error.code = 'RPC_NULL_STATUS';
+    error.rpcCode = status;
+    throw error;
+  }
 
   if (result === null && !allowNull) {
     throw new Error(`No result found for RPC ID: ${rpcId}`);
@@ -574,11 +601,26 @@ function mutationUncertainError(methodId, detail) {
   return error;
 }
 
-async function rpcCall(methodId, params, sourcePath = '/', allowNull = false) {
+async function rpcCall(methodId, params, sourcePath = '/', allowNull = false, { raiseOnNullStatus = false } = {}) {
   const isReadOnly = READ_ONLY_RPC_METHODS.has(methodId);
   const maxAttempts = isReadOnly ? MAX_READ_ATTEMPTS : 1;
   let transientAttempt = 0;
   let authRetried = false;
+
+  async function refreshAfterAuthFailure(csrfToken, sessionId) {
+    if (authRetried) {
+      throw new Error('AUTH_REQUIRED: Gemini Notebook authentication failed after refreshing the session. Sign in again and retry.');
+    }
+    authRetried = true;
+    // A late rejection of old credentials must not invalidate a newer refresh.
+    if (_csrfToken === csrfToken && _sessionId === sessionId) {
+      _csrfToken = null;
+      _sessionId = null;
+      await fetchTokens();
+    } else {
+      await ensureTokens();
+    }
+  }
 
   while (transientAttempt < maxAttempts) {
     const { csrfToken, sessionId } = await ensureTokens();
@@ -662,18 +704,7 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false) {
     }
 
     if (response.status === 401 || response.status === 403) {
-      if (authRetried) {
-        throw new Error('AUTH_REQUIRED: Gemini Notebook authentication failed after refreshing the session. Sign in again and retry.');
-      }
-      authRetried = true;
-      // A late rejection of old credentials must not invalidate a newer refresh.
-      if (_csrfToken === csrfToken && _sessionId === sessionId) {
-        _csrfToken = null;
-        _sessionId = null;
-        await fetchTokens();
-      } else {
-        await ensureTokens();
-      }
+      await refreshAfterAuthFailure(csrfToken, sessionId);
       continue;
     }
 
@@ -696,8 +727,12 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false) {
     }
 
     try {
-      return decodeResponse(responseText, methodId, allowNull);
+      return decodeResponse(responseText, methodId, allowNull, raiseOnNullStatus);
     } catch (error) {
+      if (isReadOnly && error?.code === 'RPC_NULL_STATUS' && error.rpcCode === GRPC_UNAUTHENTICATED) {
+        await refreshAfterAuthFailure(csrfToken, sessionId);
+        continue;
+      }
       if (!isReadOnly && !['RPC_REJECTED', 'RATE_LIMITED'].includes(error?.code)) {
         throw mutationUncertainError(methodId, 'The mutation response could not be decoded.');
       }
@@ -1787,10 +1822,12 @@ function isMediaArtifactReady(artifact, typeCode) {
 
 async function listArtifactStatuses(notebookId) {
   const params = [[2], notebookId, 'NOT artifact.status = "ARTIFACT_STATUS_SUGGESTED"'];
+  // A status-tagged null is a failed read, not an empty listing (notebooklm-py #2432).
   const result = await rpcCall(
     RPCMethod.LIST_ARTIFACTS, params,
     `/notebook/${notebookId}`,
-    true
+    true,
+    { raiseOnNullStatus: true }
   );
 
   if (!result || !Array.isArray(result) || result.length === 0) {
