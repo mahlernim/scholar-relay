@@ -26,7 +26,7 @@ The compact selector remembers its notebook mode. Optional per-site detection sh
 
 ScholarRelay(Scholar Relay)는 PDF, arXiv 연구 논문, 웹페이지를 Gemini Notebook(이전 명칭 NotebookLM)으로 가져옵니다. 노트북을 정리하고 AI 오디오 오버뷰, 학습 자료 등 원하는 아티팩트를 한 번에 생성합니다.
 
-v1.4.4에서는 화면과 알림을 영어, 한국어, 일본어, 스페인어, 프랑스어, 독일어, 브라질 포르투갈어, 중국어 간체로 제공합니다. 화면 언어는 Chrome 설정을 따르며 지원하지 않는 언어에서는 영어를 사용합니다. 아티팩트 생성 언어는 별도 설정이며 기존 선택값은 유지됩니다. 기술 진단은 상세 내용에 원문으로 표시됩니다.
+v1.5.1에서는 화면과 알림을 영어, 한국어, 일본어, 스페인어, 프랑스어, 독일어, 브라질 포르투갈어, 중국어 간체, 이탈리아어, 중국어 번체로 제공합니다. 화면 언어는 Chrome 설정을 따르며 지원하지 않는 언어에서는 영어를 사용합니다. 아티팩트 생성 언어는 별도 설정이며 기존 선택값은 유지됩니다. 기술 진단은 상세 내용에 원문으로 표시됩니다.
 
 1.4.4는 생성 제한과 PDF 다운로드 대기를 명확히 표시하고, 논문이 아닌 페이지에서 자동화를 시작하기 전에 확인합니다. 실패하거나 중지된 ScholarRelay 노트북은 내용을 확인한 뒤 명시적으로 삭제할 수 있으며 자동 삭제는 하지 않습니다.
 
@@ -102,7 +102,7 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 
 ## English
 
-Version 1.5.0 localizes the interface and notifications in English, Korean, Japanese, Spanish, French, German, Brazilian Portuguese, Simplified Chinese, and Italian. The interface follows Chrome's language with English fallback. Artifact output language is a separate setting and existing choices are preserved. Original technical diagnostics remain available in Details.
+Version 1.5.1 localizes the interface and notifications in English, Korean, Japanese, Spanish, French, German, Brazilian Portuguese, Simplified Chinese, Italian, and Traditional Chinese. The interface follows Chrome's language with English fallback. Artifact output language is a separate setting and existing choices are preserved. Original technical diagnostics remain available in Details.
 
 ### Highlights
 

@@ -142,5 +142,23 @@
       "Audio e materiali di studio",
       "Notifiche e apertura automatica"
     ]
+  },
+  "zh_TW": {
+    "workflow": [
+      "論文自動化佇列",
+      "加入論文，持續學習",
+      "Gemini Notebook 生成內容時，你可以先儲存下一篇論文。清楚知道何時可以關閉彈出式視窗並繼續。",
+      "PDF 和 arXiv 偵測",
+      "集合",
+      "清楚的進度"
+    ],
+    "settings": [
+      "精簡的預設設定",
+      "選擇 Gemini Notebook 要生成的工作室內容",
+      "介面語言與工作室內容語言可分開設定。儲存一次，即可重複用於多篇論文。",
+      "集合與論文標題",
+      "語音摘要和多種學習工具",
+      "通知、完成提示音和自動開啟"
+    ]
   }
 }

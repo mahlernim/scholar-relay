@@ -1,12 +1,15 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { messageKey } from '../i18n.js';
 
-export const locales = ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it'];
+export const locales = ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW'];
 const root = new URL('../', import.meta.url);
 const rows = JSON.parse(await readFile(new URL('docs/localization/messages.json', root), 'utf8'));
 const metadata = JSON.parse(await readFile(new URL('docs/localization/metadata.json', root), 'utf8'));
-const chinese = JSON.parse(await readFile(new URL('docs/localization/zh_CN.json', root), 'utf8'));
-const italian = JSON.parse(await readFile(new URL('docs/localization/it.json', root), 'utf8'));
+// Locales translated from the English source key rather than a messages.json row.
+const catalogs = {};
+for (const locale of ['zh_CN', 'it', 'zh_TW']) {
+    catalogs[locale] = JSON.parse(await readFile(new URL(`docs/localization/${locale}.json`, root), 'utf8'));
+}
 const seen = new Set();
 for (const [source, translations] of Object.entries(rows)) {
     const key = messageKey(source);
@@ -19,11 +22,10 @@ for (const [source, translations] of Object.entries(rows)) {
     if (translations.some(value => placeholders(value) !== placeholders(source))) {
         throw new Error(`Placeholder mismatch for ${source}`);
     }
-    if (typeof chinese[source] !== 'string' || !chinese[source].trim() || placeholders(chinese[source]) !== placeholders(source)) {
-        throw new Error(`Incomplete zh_CN translation for ${source}`);
-    }
-    if (typeof italian[source] !== 'string' || !italian[source].trim() || placeholders(italian[source]) !== placeholders(source)) {
-        throw new Error(`Incomplete it translation for ${source}`);
+    for (const [locale, catalog] of Object.entries(catalogs)) {
+        if (typeof catalog[source] !== 'string' || !catalog[source].trim() || placeholders(catalog[source]) !== placeholders(source)) {
+            throw new Error(`Incomplete ${locale} translation for ${source}`);
+        }
     }
 }
 for (const [index, locale] of locales.entries()) {
@@ -35,7 +37,7 @@ for (const [index, locale] of locales.entries()) {
     };
     for (const [source, translations] of Object.entries(rows)) {
         messages[messageKey(source)] = {
-            message: locale === 'en' ? source : locale === 'zh_CN' ? chinese[source] : locale === 'it' ? italian[source] : translations[index - 1],
+            message: locale === 'en' ? source : catalogs[locale] ? catalogs[locale][source] : translations[index - 1],
             description: source,
         };
     }

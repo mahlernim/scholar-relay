@@ -530,3 +530,11 @@ ScholarRelay previously checked that slot only for `UserDisplayableError`, so an
 Deterministic tests cover a status-tagged failure, plain and empty listings, unrecognized payloads, the unauthenticated refresh and its exhaustion, and unchanged handling for calls without the opt-in.
 
 한국어: notebooklm-py `e11c91b`와 비교해 아티팩트 목록 응답이 비어 있으면서 오류 상태를 담은 경우를 빈 목록이 아닌 읽기 실패로 처리합니다. 인증 상태는 기존의 한 번의 세션 갱신을 따르고, 그 밖의 실패는 기록만 하고 작업을 계속 기다립니다. 정리 기능은 이런 응답에서 노트북을 삭제하지 않습니다. 다른 요청의 동작은 바뀌지 않습니다.
+
+### September 26 Traditional Chinese
+
+Issue #85 adds Traditional Chinese as the tenth interface locale, with 283 messages, store metadata, and screenshots. The existing Simplified Chinese catalog contains mistranslated product terms, so zh_TW is translated from the English source rather than converted from zh_CN. Product labels were read from every Studio customize dialog in the signed-in Gemini Notebook interface with `hl=zh-TW`, without generating anything. Examples are 語音摘要, 影片摘要, 報告, 學習卡, 測驗, 資訊圖表, 簡報, 心智圖, 資料表, and the audio formats 深入探索, 摘要, 評論, 辯論. The interface uses 報告 where the help page says 報表, and the interface wins. Artifact becomes 工作室內容, following the interface's 工作室製作內容 wording.
+
+`scripts/build-locales.mjs` now loads every source-keyed catalog through one map instead of per-locale branches. The ten-locale Chrome smoke passed at 360 pixels with Playwright Chromium 1200. The newest local build no longer loaded the unpacked extension through the capture flags. Only zh_TW screenshots are committed, because re-rendering other locales changed pixels without changing content. The translation is machine-assisted without independent native-speaker review.
+
+한국어: 중국어 번체를 열 번째 화면 언어로 추가했습니다. 제품 용어는 중국어 번체로 설정한 Gemini Notebook 화면의 각 스튜디오 설정 창에서 직접 확인했고, 간체 번역을 변환하지 않고 영어 원문에서 번역했습니다. 10개 언어 Chrome 검증을 통과했으며 원어민 검수는 받지 않았습니다.
