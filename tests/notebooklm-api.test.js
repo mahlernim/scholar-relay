@@ -819,6 +819,78 @@ test('unknown artifact status keeps polling and generic values are not IDs', asy
   assert.equal(__testing.extractFirstIdFromResult('AbCdEfGhIjKlMnOp'), 'AbCdEfGhIjKlMnOp');
 });
 
+function nullStatusResponse(methodId, status) {
+  const envelope = [['wrb.fr', methodId, null, null, null, status, 'generic']];
+  return mockResponse({ body: `)]}'\n${JSON.stringify(envelope)}` });
+}
+
+test('artifact listing treats a status-tagged null as a failed read', async () => {
+  let rpcAttempts = 0;
+  installFetch(url => {
+    if (url.endsWith('/')) return tokenResponse();
+    rpcAttempts++;
+    return nullStatusResponse(__testing.RPCMethod.LIST_ARTIFACTS, [14]);
+  });
+
+  await assert.rejects(
+    () => listArtifactStatuses('notebook-id-12345'),
+    error => error.code === 'RPC_NULL_STATUS' && error.rpcCode === 14
+  );
+  assert.equal(rpcAttempts, 1);
+});
+
+test('artifact listing keeps plain nulls, empty listings, and unrecognized payloads empty', async () => {
+  for (const response of [
+    () => nullStatusResponse(__testing.RPCMethod.LIST_ARTIFACTS, null),
+    () => nullStatusResponse(__testing.RPCMethod.LIST_ARTIFACTS, [0]),
+    () => nullStatusResponse(__testing.RPCMethod.LIST_ARTIFACTS, [99]),
+    () => nullStatusResponse(__testing.RPCMethod.LIST_ARTIFACTS, [true]),
+    () => rpcResponse(__testing.RPCMethod.LIST_ARTIFACTS, []),
+    () => rpcResponse(__testing.RPCMethod.LIST_ARTIFACTS, [[]]),
+  ]) {
+    reset();
+    installFetch(url => url.endsWith('/') ? tokenResponse() : response());
+    assert.equal((await listArtifactStatuses('notebook-id-12345')).size, 0);
+  }
+});
+
+test('artifact listing refreshes once after an unauthenticated null status', async () => {
+  let homepageCalls = 0;
+  let rpcAttempts = 0;
+  installFetch(url => {
+    if (url.endsWith('/')) {
+      homepageCalls++;
+      return tokenResponse(`csrf-${homepageCalls}`);
+    }
+    rpcAttempts++;
+    if (rpcAttempts === 1) return nullStatusResponse(__testing.RPCMethod.LIST_ARTIFACTS, [16]);
+    const artifact = Array(5).fill(null);
+    artifact[0] = 'artifact-id-12345';
+    artifact[2] = 2;
+    artifact[4] = 2;
+    return rpcResponse(__testing.RPCMethod.LIST_ARTIFACTS, [[artifact]]);
+  });
+
+  const statuses = await listArtifactStatuses('notebook-id-12345');
+  assert.equal(statuses.get('artifact-id-12345').status, 'in_progress');
+  assert.equal(homepageCalls, 2);
+  assert.equal(rpcAttempts, 2);
+
+  reset();
+  installFetch(url => url.endsWith('/') ? tokenResponse()
+    : nullStatusResponse(__testing.RPCMethod.LIST_ARTIFACTS, [16]));
+  await assert.rejects(() => listArtifactStatuses('notebook-id-12345'), /AUTH_REQUIRED/);
+});
+
+test('calls without the opt-in keep their existing null handling', async () => {
+  installFetch(url => url.endsWith('/') ? tokenResponse()
+    : nullStatusResponse(__testing.RPCMethod.GET_NOTEBOOK, [13]));
+  await assert.rejects(
+    () => listSources('notebook-id-12345'),
+    error => error.code !== 'RPC_NULL_STATUS' && /No result found/.test(error.message)
+  );
+});
+
 test('notebook creation reads the ID field instead of a title or nested IDs', async () => {
   for (const wrap of [false, true]) {
     reset();
