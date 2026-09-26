@@ -1,14 +1,16 @@
 # ScholarRelay localization
 
-The supported UI locales are English, Korean, Japanese, Spanish, French, German, Brazilian Portuguese, and Simplified Chinese. Chrome selects the interface language through its native extension locale fallback. Unsupported locales fall back to English. The existing artifact output setting remains independent, including the existing `pt` output value. No Google account language or generated-content preference is changed by localization.
+The supported UI locales are English, Korean, Japanese, Spanish, French, German, Brazilian Portuguese, Simplified Chinese, Italian, and Traditional Chinese. Chrome selects the interface language through its native extension locale fallback. Unsupported locales fall back to English. The existing artifact output setting remains independent, including the existing `pt` output value. No Google account language or generated-content preference is changed by localization.
 
-Edit `messages.json`, `zh_CN.json`, and `metadata.json`, then run `node scripts/build-locales.mjs`. Each message row contains Korean, Japanese, Spanish, French, German, and Brazilian Portuguese, in that order. English is the source key and `zh_CN.json` maps the same source keys to Simplified Chinese. The generator emits eight Chrome catalogs and checks placeholders, completeness, metadata limits, and key collisions. `npm test` rejects stale generated catalogs or missing static popup labels. Source-English keys are hashed only to satisfy Chrome message identifiers. English changes deliberately require translation review.
+Edit `messages.json`, the per-locale catalogs `zh_CN.json`, `it.json`, and `zh_TW.json`, and `metadata.json`, then run `node scripts/build-locales.mjs`. Each message row contains Korean, Japanese, Spanish, French, German, and Brazilian Portuguese, in that order. English is the source key and each per-locale catalog maps the same source keys to its language. The generator emits ten Chrome catalogs and checks placeholders, completeness, metadata limits, and key collisions. `npm test` rejects stale generated catalogs or missing static popup labels. Source-English keys are hashed only to satisfy Chrome message identifiers. English changes deliberately require translation review.
 
 Only UI text is translated. Notebook titles, collection names, URLs, custom prompts, persisted enum values, and API payloads remain unchanged. Worker diagnostic strings remain original for support and error classification, displayed inside collapsed Details. Primary recovery guidance and desktop notifications are localized. Progress derives from stable state, including state saved by earlier releases. No locale-dependent strings drive mutations, retries, ownership, or cancellation.
 
 ## Terminology evidence
 
 Checked Google's localized help on September 4, 2026. These are published help terms, not a claim of inspecting every signed-in localized interface. Help pages can themselves contain machine translations and inconsistent wording. Prefer the named Studio control over a generic term elsewhere in the article. Extension-specific concepts such as layout presets, collections, and Stop Monitoring use clear local translations, not a claim of official Google terminology.
+
+Traditional Chinese labels were read from every Studio customize dialog in the signed-in interface with `hl=zh-TW`, without generating anything. That interface uses 報告 for Report where the help page says 報表, so the interface wins. Artifact becomes 工作室內容, following the interface's 工作室製作內容 wording. Infographic presets absent from the current interface, such as Minimal, Data Dense, Playful, Technical, Timeline, Comparison, and Poster, are editorial translations.
 
 | Locale | Audio Overview | Flashcards | Quiz | Sources |
 | --- | --- | --- | --- | --- |
@@ -19,6 +21,7 @@ Checked Google's localized help on September 4, 2026. These are published help t
 | German | Audio-Zusammenfassung | Lernkarten | Quizfragen | [Audio](https://support.google.com/gemininotebook/answer/16212820?hl=de), [Study tools](https://support.google.com/gemininotebook/answer/16958963?hl=de) |
 | Brazilian Portuguese | Resumo em Áudio | Cartões didáticos | Teste | [Audio](https://support.google.com/gemininotebook/answer/16212820?hl=pt-BR), [Study tools](https://support.google.com/gemininotebook/answer/16958963?hl=pt-BR) |
 | Simplified Chinese | 音频概览 | 闪卡 | 测验 | Editorial translation pending direct localized UI review |
+| Traditional Chinese | 語音摘要 | 學習卡 | 測驗 | Signed-in interface at `hl=zh-TW` on September 26, 2026, and [Audio](https://support.google.com/notebooklm/answer/16212820?hl=zh-Hant) |
 
 The audio articles also expose localized links to video, infographic, and slide-deck help. Japanese difficulty labels use 初級, 中級, 上級 from the study-tool control guidance. The Spanish study-tool article was rate-limited during verification, so those two Spanish terms are editorial translations pending a future direct UI check. Keep product names unchanged.
 

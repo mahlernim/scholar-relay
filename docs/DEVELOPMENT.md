@@ -520,3 +520,11 @@ Italian is the ninth interface locale, with 283 messages, store metadata and scr
 Manifest and package versions are aligned at 1.5.0. English and Korean release notes and nine store descriptions are prepared under `docs/releases/`. The live website remains the published-release site until the release rollout. Store submission and publication are separate steps, and issue #66 remains observational.
 
 한국어: 이탈리아어를 아홉 번째 화면 언어로 추가하고 283개 문구와 스토어 메타데이터, 스크린샷을 준비했습니다. 모든 언어의 치환 값을 확인하고 단일 항목 문구, 전체 선택 해제와 실패한 소스 표시를 개선했습니다. 실제 확장 프로그램의 선택 화면, 진행 상황, 오류와 설정을 9개 언어로 검증합니다. 이탈리아어는 기계 보조 번역이며 독립적인 원어민 검수는 받지 않았습니다. 버전은 1.5.0으로 맞추고 릴리스 자료를 준비하되 스토어 제출과 게시는 별도로 진행합니다.
+
+### September 26 Traditional Chinese
+
+Issue #85 adds Traditional Chinese as the tenth interface locale, with 283 messages, store metadata, and screenshots. The existing Simplified Chinese catalog contains mistranslated product terms, so zh_TW is translated from the English source rather than converted from zh_CN. Product labels were read from every Studio customize dialog in the signed-in Gemini Notebook interface with `hl=zh-TW`, without generating anything. Examples are 語音摘要, 影片摘要, 報告, 學習卡, 測驗, 資訊圖表, 簡報, 心智圖, 資料表, and the audio formats 深入探索, 摘要, 評論, 辯論. The interface uses 報告 where the help page says 報表, and the interface wins. Artifact becomes 工作室內容, following the interface's 工作室製作內容 wording.
+
+`scripts/build-locales.mjs` now loads every source-keyed catalog through one map instead of per-locale branches. The ten-locale Chrome smoke passed at 360 pixels with Playwright Chromium 1200. The newest local build no longer loaded the unpacked extension through the capture flags. Only zh_TW screenshots are committed, because re-rendering other locales changed pixels without changing content. The translation is machine-assisted without independent native-speaker review.
+
+한국어: 중국어 번체를 열 번째 화면 언어로 추가했습니다. 제품 용어는 중국어 번체로 설정한 Gemini Notebook 화면의 각 스튜디오 설정 창에서 직접 확인했고, 간체 번역을 변환하지 않고 영어 원문에서 번역했습니다. 10개 언어 Chrome 검증을 통과했으며 원어민 검수는 받지 않았습니다.
