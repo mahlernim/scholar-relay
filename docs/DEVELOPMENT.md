@@ -548,3 +548,11 @@ Issue #82 recorded a live Korean Long audio request from the exact ScholarRelay 
 The store publisher account is `mahlerlabdiy@gmail.com` with service account `scholar-relay-publisher@mahlerlab-store-publisher.iam.gserviceaccount.com`. On machines where another gcloud account is active, set `CLOUDSDK_CORE_ACCOUNT` for the publishing process rather than switching the active account.
 
 한국어: v1.5.1은 중국어 번체 추가와 아티팩트 상태 읽기 오류 처리 개선을 포함합니다. 스토어 설명과 스크린샷은 개발자 대시보드에서 반영해야 합니다.
+
+### v1.5.1 listing update
+
+On September 26, 2026, the pending v1.5.1 review was canceled with explicit authorization and returned to draft. The existing v1.5.1 package was retained. Traditional Chinese now has the description from `docs/releases/v1.5.1-store-listing.md` and the three `zh_TW` screenshots in workflow, settings, papers order. Its package title and summary match `docs/localization/metadata.json`. Each existing locale matched the v1.5.0 source before editing, with only the language-count sentence changed from nine to ten. After saving and reloading, all ten descriptions matched the v1.5.1 source exactly and all existing image sets were unchanged. Privacy, permission justifications, distribution and pricing were not edited.
+
+The dashboard confirmed "Your extension was submitted for review" and "Status: Pending review" with automatic publication after approval enabled. At 03:45 UTC, the API confirmed submitted v1.5.1 `PENDING_REVIEW` and published v1.5.0 `PUBLISHED`, with no warning or takedown flags. No package was uploaded again. The retained release is commit `3193663c4a0248baecd650f8a38f3e365968e1a2`, whose published ZIP SHA-256 is `26573fdf1ddac8df0bda5ef69005a55bd46b71c2d5923c45e887607828d76599`. Submission is not publication. Verification that the public listing shows ten languages including 中文（繁體） remains pending until approval and publication.
+
+한국어로는 기존 v1.5.1 심사를 명시적 승인에 따라 취소한 뒤 중국어 번체 설명과 워크플로, 설정, 논문 순서의 스크린샷 3장을 추가했습니다. 기존 9개 언어는 지원 언어 수를 9개에서 10개로 바꾸는 문장만 수정했고, 저장 후 다시 불러와 10개 설명이 원문과 정확히 일치하며 기존 이미지가 그대로임을 확인했습니다. 기존 패키지와 개인정보, 권한 설명, 배포 및 가격 설정은 유지했습니다. 승인 후 자동 게시하도록 다시 제출했으며 현재 v1.5.1은 심사 대기, 공개 버전은 v1.5.0입니다. 게시 후 공개 페이지에 중국어 번체를 포함한 10개 언어가 표시되는지 확인해야 합니다.
