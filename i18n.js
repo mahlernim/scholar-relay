@@ -1,4 +1,5 @@
 import { pdfWaitReason } from './source-import.js';
+import { formatReset } from './usage.js';
 // Source-English keys keep call sites readable. Catalog generation checks collisions.
 export function messageKey(source) {
     let hash = 2166136261;
@@ -74,12 +75,14 @@ export function progressDetail(state) {
     }[state.step] || 'Work in progress...');
 }
 
-export function generationLimitSummary(tasks = []) {
+export function generationLimitSummary(tasks = [], resetAt = null) {
     const limited = tasks.filter(task => task.status === 'failed' &&
         (task.code === 'RATE_LIMITED' || /^RATE_LIMITED:/.test(task.error || '')));
     if (!limited.length) return '';
-    return t('Generation is limited for $1. Try again later in the existing notebook.',
+    const summary = t('Generation is limited for $1. Try again later in the existing notebook.',
         [[...new Set(limited.map(task => artifactLabel(task.type)))].join(', ')]);
+    return summary + (Number.isFinite(resetAt) && resetAt > Date.now()
+        ? ' ' + t('Compute window resets $1.', [formatReset(resetAt, globalThis.chrome?.i18n?.getUILanguage?.())]) : '');
 }
 
 export function errorSummary(detail) {

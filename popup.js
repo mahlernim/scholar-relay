@@ -1,4 +1,6 @@
 import { pdfWaitReason } from './source-import.js';
+import { canRecoverPageText } from './page-text.js';
+import { activeUsage, actionLimited, formatReset } from './usage.js';
 import { jobHandoff, isUnfinishedJob, jobElapsedText, jobReadyCount, hasJobActivity } from './job-queue.js';
 import { DEFAULT_SETTINGS as DEFAULTS } from './settings.js';
 import { t, localizeStaticDocument, progressDetail, errorSummary, generationLimitSummary, pdfWaitSummary, artifactLabel, artifactStatusLabel } from './i18n.js';
@@ -29,11 +31,63 @@ let selectedRunId = new URLSearchParams(location.search).get('runId') || null;
 let lastQueueHtml = '';
 let lastProgressSignature = null;
 let queueSnapshot = { jobs: [], paused: false };
+let usageSnapshot = null;
+const pageTextChoices = new Set();
+function renderUsage() {
+    const window = activeUsage(usageSnapshot);
+    const locale = chrome.i18n?.getUILanguage?.();
+    const subtitle = document.querySelector('.header .subtitle');
+    if (subtitle) {
+        subtitle.textContent = window ? t('Usage $1% · $2', [new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(window.code === 2 && window.used >= 100 ? 100 : 100 - window.remaining), formatReset(window.resetsAt, locale)]) : t('Send papers to Gemini Notebook');
+        subtitle.title = window ? formatReset(window.resetsAt, locale, Date.now(), true) : '';
+    }
+    const types = { Audio: 'audio', Video: 'video', Report: 'report', Quiz: 'quiz', Flashcards: 'flashcards', Infographic: 'infographic', SlideDeck: 'slide_deck', MindMap: 'mind_map', DataTable: 'data_table' };
+    for (const [suffix, type] of Object.entries(types)) {
+        const label = document.getElementById('s-generate' + suffix)?.closest('.s-section-header')?.querySelector('.s-section-title');
+        if (!label) continue;
+        label.dataset.baseLabel ||= label.textContent;
+        label.textContent = label.dataset.baseLabel + (actionLimited(usageSnapshot, type) ? ' · ' + t('Limit') : '');
+    }
+}
+function retryHint(job) {
+    const at = job.retryAt || job.nextEligibleAt || job.failure?.nextEligibleAt || job.tasks?.find(task => task.nextEligibleAt > Date.now())?.nextEligibleAt;
+    return Number.isFinite(at) && at > Date.now() ? t('Server wait until $1.', [formatReset(at, chrome.i18n?.getUILanguage?.())]) : '';
+}
+function pageTextActions(job) {
+    if (!canRecoverPageText(job)) return '';
+    const id = escapeHtml(job.runId);
+    if (!pageTextChoices.has(job.runId)) return '<button data-page-text="' + id + '">' + escapeHtml(t('Import page text')) + '</button>';
+    return '<span role="status">' + escapeHtml(t('Sends tab text to Google as a text source. May include sign-in-only content.')) + '</span>' +
+        '<button data-page-text-confirm="' + id + '">' + escapeHtml(t('Import page text')) + '</button><button data-page-text-back="' + id + '">' + escapeHtml(t('Back')) + '</button>';
+}
+function wirePageText(root) {
+    root.querySelectorAll('[data-page-text]').forEach(button => button.onclick = async () => { pageTextChoices.add(button.dataset.pageText); await refreshQueue(); });
+    root.querySelectorAll('[data-page-text-back]').forEach(button => button.onclick = async () => { pageTextChoices.delete(button.dataset.pageTextBack); await refreshQueue(); });
+    root.querySelectorAll('[data-page-text-confirm]').forEach(button => button.onclick = async () => {
+        const job = queueSnapshot.jobs.find(item => item.runId === button.dataset.pageTextConfirm);
+        if (!canRecoverPageText(job)) return;
+        button.disabled = true;
+        try {
+            // Keep the permission request directly in the consent gesture.
+            const origin = httpOriginPattern(job.pageTextFailure.url);
+            if (!origin || !await chrome.permissions.request({ origins: [origin] })) return;
+            const tab = await chrome.tabs.get(job.pageTabId).catch(() => null);
+            if (!tab || tab.url !== job.pageTextFailure.url) throw new Error(t('Open the original page to import its text.'));
+            const result = await chrome.runtime.sendMessage({ type: 'RECOVER_PAGE_TEXT', runId: job.runId, tabId: tab.id, confirmed: true });
+            if (!result?.ok) throw new Error(result?.message || t('Page text could not be imported. Check the existing notebook.'));
+            pageTextChoices.delete(job.runId);
+            await refreshQueue();
+        } catch (error) { showError(error.message); }
+        finally { button.disabled = false; }
+    });
+}
 
 function handoffMessage(job) {
     if (job.status === 'running' && job.step === 'wait_pdf_access') return pdfWaitSummary(job);
-    const limit = generationLimitSummary(job.tasks);
+    const limit = generationLimitSummary(job.tasks, job.usageResetAt);
     if (limit) return limit;
+    const wait = retryHint(job);
+    if (wait) return wait;
     if (job.status === 'queued' && queueSnapshot.serviceBlock) return t('Waiting for connection. Your paper is saved.');
     if (job.status === 'completed' && !job.tasks?.length) return t('Source imported. No artifacts requested.');
     return {
@@ -70,6 +124,7 @@ function queueStatusHtml(job) {
 }
 
 function updateElapsedTimes() {
+    renderUsage();
     const jobs = new Map(queueSnapshot.jobs.map(job => [job.runId, job]));
     const now = Date.now();
     for (const element of queueEl.querySelectorAll('[data-elapsed]')) {
@@ -141,7 +196,7 @@ async function refreshQueue() {
                 '<button data-show="' + escapeHtml(job.runId) + '">' + escapeHtml(t('Details')) + '</button>' +
                 '<button data-pdf-file="' + escapeHtml(job.runId) + '">' + escapeHtml(t('Upload PDF and continue')) + '</button>' +
                 (pdfWaitReason(job) === 'permission' ? '<button data-pdf-permission="' + escapeHtml(job.runId) + '">' + escapeHtml(t('Allow download and continue')) + '</button>' : '') : '') +
-            cancellationActions(job) + '</div></article>';
+            pageTextActions(job) + cancellationActions(job) + '</div></article>';
     };
     const html = '<div class="queue-heading"><strong>' + escapeHtml(t('Paper queue')) + ' · ' + active.length + '</strong>' +
         '<button id="btn-pause-queue">' + escapeHtml(queue.paused ? t('Resume queue') : t('Pause queue')) + '</button></div>' +
@@ -173,6 +228,7 @@ async function refreshQueue() {
             contentEl.scrollIntoView({ block: 'start' });
         }));
         wireCancellation(queueEl);
+        wirePageText(queueEl);
         queueEl.querySelectorAll('[data-stop]').forEach(button => button.addEventListener('click', () => abortPipeline(button.dataset.stop)));
         queueEl.querySelector('#btn-pause-queue').addEventListener('click', async () => {
             try {
@@ -199,9 +255,11 @@ async function refreshQueue() {
 
 async function enqueueRequest(message) {
     const settings = listenersWired ? await saveSettings() : ((await chrome.storage.local.get('userSettings')).userSettings || {});
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const pageTabId = tab && (tab.url === message.pageUrl || message.sources?.some(source => source.pageUrl === tab.url)) ? tab.id : null;
     const requestId = message.requestId || crypto.randomUUID();
     let response;
-    try { response = await chrome.runtime.sendMessage({ ...message, requestId, settings }); }
+    try { response = await chrome.runtime.sendMessage({ ...message, pageTabId, requestId, settings }); }
     catch (error) {
         const queue = await chrome.runtime.sendMessage({ type: 'GET_QUEUE' });
         const saved = queue?.jobs?.find(job => job.requestId === requestId);
@@ -559,6 +617,7 @@ function wireSettingsListeners() {
 // =========================================================================
 
 async function init() {
+    void chrome.runtime.sendMessage({ type: 'GET_USAGE' }).then(result => { usageSnapshot = result?.usage || null; renderUsage(); }).catch(() => {});
     await detectAndRender();
     try { await refreshQueue(); } catch (error) { showError(error.message); }
     startPolling();
@@ -802,7 +861,7 @@ function showError(detail) {
 
 function renderProgress(state) {
     if (!state) return;
-    const renderSignature = JSON.stringify(state);
+    const renderSignature = JSON.stringify([state, pageTextChoices.has(state.runId)]);
     if (contentEl.dataset.renderMode === 'progress' && renderSignature === lastProgressSignature) return;
     const openDetails = new Set([...contentEl.querySelectorAll('details[open]')].map(el => el.querySelector('summary')?.textContent));
     const currentStepIndex = STEPS.findIndex(s => s.keys.includes(state.status === 'error' ? state.failedStep || state.step : state.step));
@@ -861,10 +920,10 @@ function renderProgress(state) {
       </div>`;
     }
     if (state.status === 'error') {
-        bottomHtml += errorHtml(state.error || state.stepDetail || 'The workflow stopped.', generationLimitSummary(state.tasks) || errorSummary(state.error || state.stepDetail));
+        bottomHtml += errorHtml(state.error || state.stepDetail || 'The workflow stopped.', generationLimitSummary(state.tasks, state.usageResetAt) || errorSummary(state.error || state.stepDetail));
     }
     if (state.status !== 'error' && generationLimitSummary(state.tasks)) {
-        bottomHtml += `<div class="pipeline-error-box" role="status">${escapeHtml(generationLimitSummary(state.tasks))}</div>`;
+        bottomHtml += `<div class="pipeline-error-box" role="status">${escapeHtml(generationLimitSummary(state.tasks, state.usageResetAt))}</div>`;
     }
     if (state.notebookDeletedAt) {
         bottomHtml += `<p class="handoff-note" role="status">${escapeHtml(t('Notebook deleted from Gemini Notebook.'))}</p>`;
@@ -884,7 +943,7 @@ function renderProgress(state) {
         bottomHtml += '<details class="workflow-details"><summary>' + escapeHtml(t('Selected sources')) + '</summary>' + state.sources.map(item => '<div class="step-detail">' + escapeHtml(item.sourceTitle || item.pdfUrl) + ' · ' + escapeHtml(t(item.status === 'ready' ? 'Ready' : item.status === 'skipped' ? 'Skipped' : item.status === 'failed' ? 'Failed' : 'Waiting')) + '</div>').join('') + '</details>';
         if (['wait_source_choice', 'wait_pdf_access'].includes(state.step)) bottomHtml += '<button class="btn-secondary" id="skip-source">' + escapeHtml(t('Skip this source and continue')) + '</button>';
     }
-    bottomHtml += '<div class="job-actions">' + cancellationActions(state) + '</div>';
+    bottomHtml += '<div class="job-actions">' + pageTextActions(state) + cancellationActions(state) + '</div>';
     bottomHtml += `<button class="btn-secondary" id="btn-reset">${escapeHtml(t('Add another paper'))}</button>`;
 
     contentEl.innerHTML = `
@@ -905,6 +964,7 @@ function renderProgress(state) {
         await refreshQueue();
     });
     wireCancellation(contentEl);
+    wirePageText(contentEl);
     contentEl.dataset.renderMode = 'progress';
     lastProgressSignature = renderSignature;
 

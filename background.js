@@ -1,5 +1,7 @@
 import { inspectPaperPage } from './content.js';
 import { withRequestDeadline } from './request-deadline.js';
+import { canRecoverPageText, extractPageText } from './page-text.js';
+import { activeUsage, actionLimited } from './usage.js';
 /**
  * Background service worker for ScholarRelay.
  *
@@ -28,6 +30,8 @@ import { createQueuedPdfStore } from './queued-pdfs.js';
 import { t, errorSummary, generationLimitSummary, pdfWaitSummary } from './i18n.js';
 import {
     fetchTokens,
+    getUsage,
+    addTextSource,
     getNotebookUrl,
     createNotebook,
     deleteNotebook,
@@ -85,6 +89,95 @@ import { httpOriginPattern, sameHttpOrigin } from './site-permissions.js';
 
 const ALARM_NAME = PIPELINE_ALARM_NAME;
 const ARTIFACT_START_DELAY_MS = 1000;
+
+// Ephemeral per-job failure snapshots never enter the saved job history.
+const failureUsage = new Map();
+async function refreshFailureUsage(runId) {
+    if (failureUsage.has(runId)) return;
+    failureUsage.set(runId, null);
+    try { failureUsage.set(runId, await getUsage({ after: Date.now() })); } catch (_) { /* Advisory only. */ }
+    if (failureUsage.size > 50) failureUsage.delete(failureUsage.keys().next().value);
+}
+function withUsageHints(job) {
+    const snapshot = failureUsage.get(job.runId);
+    const window = activeUsage(snapshot);
+    const relevant = job.tasks?.some(task => task.code === 'RATE_LIMITED' && task.status === 'failed' &&
+        Date.parse(task.failedAt) <= snapshot?.startedAt && actionLimited(snapshot, task.type));
+    return { ...job, usageResetAt: window && relevant ? window.resetsAt : null };
+}
+
+function sourceReadOptions(state) {
+    return { operationId: `${state.runId}:source:${state.sourceIndex || 0}`, deadline: state.retryDeadline || undefined,
+        beforeMutation: () => requireActiveRun(state.runId, ['add_source']) };
+}
+async function resumeSourceRead(state) {
+    if (Date.now() < state.retryAt && Date.now() < state.retryDeadline) return;
+    return withJobOperation(state.runId, async () => {
+        const claimed = await transitionRun(state.runId, { step: 'add_source' }, { expectedSteps: ['wait_read'] });
+        if (!claimed) return;
+        try {
+            const source = await addUrlSource(state.notebookId, state.pdfUrl, sourceReadOptions(state));
+            await transitionRun(state.runId, { sourceId: source.id, step: 'wait_source', retryAt: null, retryDeadline: null,
+                stepStartedAt: new Date().toISOString() }, { expectedSteps: ['add_source'] });
+        } catch (error) {
+            if (error?.code !== 'PIPELINE_STALE_RUN') await failPipeline(state.runId, error, state.notebookId);
+        }
+    });
+}
+
+async function recoverPageText(message) {
+    if (message.confirmed !== true) return { ok: false };
+    await ensureBootReconciled();
+    const initial = await getState(message.runId);
+    if (!canRecoverPageText(initial) || message.tabId !== initial.pageTabId) return { ok: false, message: t('This recovery is no longer available.') };
+    const tab = await chrome.tabs.get(message.tabId);
+    if (tab.url !== initial.pageTextFailure.url) throw new Error(t('Open the original page to import its text.'));
+    // The popup requests this specific host on the consent click. No broad grant.
+    if (!await chrome.permissions.contains({ origins: [httpOriginPattern(tab.url)] })) throw new Error(t('Site access is required.'));
+    const claim = await pipelineState.transact(queue => {
+        const job = queue.jobs.find(item => item.runId === message.runId);
+        if (!canRecoverPageText(job) || job.pageTextFailure.sourceId !== initial.pageTextFailure.sourceId) return null;
+        if (!canStartNextJob(queue)) return { busy: true };
+        Object.assign(job, { pageTextClaimed: true, status: 'running', step: 'extract_text', completedAt: null,
+            error: null, failure: null, cleanupAvailable: false });
+        return { state: job };
+    });
+    if (claim.busy) return { ok: false, message: t('Wait for the queue to resume or finish preparing another job.') };
+    if (!claim.applied) return { ok: false, message: t('This recovery is no longer available.') };
+    return withJobOperation(message.runId, async () => {
+        try {
+            const matches = (await listSources(initial.notebookId, { mode: 'optional' })).filter(source =>
+                source.id === initial.pageTextFailure.sourceId && source.url === initial.pageTextFailure.url &&
+                source.status === SourceStatus.ERROR && source.experimentalFailureCode === 1);
+            if (matches.length !== 1) throw new Error(t('This recovery is no longer available.'));
+            await requireActiveRun(message.runId, ['extract_text']);
+            const results = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: extractPageText, args: [initial.pageTextFailure.url] });
+            const content = results?.[0]?.result;
+            if (!content?.content || new TextEncoder().encode(content.content).length > 200000) throw new Error(t('Page text could not be read.'));
+            const currentTab = await chrome.tabs.get(tab.id);
+            if (currentTab.url !== initial.pageTextFailure.url) throw new Error(t('Open the original page to import its text.'));
+            const uploading = await transitionRun(message.runId, { step: 'upload_text', pageTextUploadStarted: true,
+                failedUrlSourceId: initial.pageTextFailure.sourceId }, { expectedSteps: ['extract_text'] });
+            if (!uploading) return { ok: false };
+            const source = await addTextSource(initial.notebookId, content.title || initial.sourceTitle || t('Page text'), content.content);
+            // Retain a late source identity even if cancellation arrived in flight.
+            await pipelineState.transact(queue => {
+                const job = queue.jobs.find(item => item.runId === message.runId);
+                if (!job || !['running', 'stopping'].includes(job.status)) return null;
+                Object.assign(job, { replacementSourceId: source.id, sourceId: source.id, importMethod: 'text' });
+                return {};
+            });
+            const waiting = await transitionRun(message.runId, { step: 'wait_source', stepStartedAt: new Date().toISOString(),
+                stepDetail: 'Waiting for imported page text.' }, { expectedSteps: ['upload_text'] });
+            if (waiting) await syncQueueRuntime();
+            return { ok: !!waiting };
+        } catch (error) {
+            const current = await getState(message.runId);
+            if (current.status === 'running') await failPipeline(message.runId, error, initial.notebookId);
+            return { ok: false, message: t('Page text could not be imported. Check the existing notebook.') };
+        }
+    });
+}
 
 // =========================================================================
 // State management
@@ -648,7 +741,8 @@ async function completePipeline(runId) {
 function failureDiagnostic(error, step) {
     const message = typeof error === 'string' ? error : error?.message || 'Unknown error';
     const code = error?.code || message.match(/^([A-Z_]+):/)?.[1] || null;
-    return { code, message: message.slice(0, 2000), failedStep: step, failedAt: new Date().toISOString() };
+    return { code, message: message.slice(0, 2000), failedStep: step, failedAt: new Date().toISOString(),
+        retryAfterSeconds: error?.retryAfterSeconds ?? null, nextEligibleAt: error?.delayUnknown ? null : error?.nextEligibleAt ?? null };
 }
 
 function jobDetailsUrl(runId) {
@@ -707,6 +801,13 @@ async function resumeServiceBlock(blockId) {
 
 async function failPipeline(runId, errorInput, notebookId = null) {
     const state = await requireActiveRun(runId);
+    if (errorInput?.code === 'READ_DEFERRED' && errorInput.replaySafe && errorInput.canRetry && state.step === 'add_source') {
+        await transitionRun(runId, { step: 'wait_read', retryAt: errorInput.nextEligibleAt,
+            retryDeadline: errorInput.deadline, retryAfterSeconds: errorInput.retryAfterSeconds,
+            stepDetail: 'Waiting for the server before reading source status.' });
+        await syncQueueRuntime();
+        return;
+    }
     const diagnostic = failureDiagnostic(errorInput, state.step);
     const finalError = diagnostic.message;
     if (state.sources && ['wait_source', 'download_pdf'].includes(state.step)) {
@@ -719,6 +820,7 @@ async function failPipeline(runId, errorInput, notebookId = null) {
         status: 'error', step: 'error', failedStep: diagnostic.failedStep, failure: diagnostic,
         stepDetail: finalError, error: finalError, completedAt: new Date().toISOString(),
         cleanupAvailable: !!(notebookId || state.notebookId),
+        pageTextFailure: errorInput?.pageTextFailure || null,
     });
     if (!failedState) return;
     await notifyJobAttention(failedState, { ...diagnostic, message: finalError });
@@ -754,13 +856,14 @@ async function tickSourcePollOperation(state) {
 
     let sources;
     try {
-        sources = await listSources(state.notebookId);
+        sources = await listSources(state.notebookId, { mode: 'poll', deadline: Date.parse(state.stepStartedAt) + SOURCE_TIMEOUT_MS });
         await requireActiveRun(runId, ['wait_source']);
     } catch (err) {
         if (err?.code === 'PIPELINE_STALE_RUN') return;
         // Transient network error -- log and retry next tick
         console.warn('[Tick] Could not list sources, will retry:', err.message);
         await transitionRun(runId, {
+            nextEligibleAt: err.delayUnknown ? null : err.nextEligibleAt || null,
             stepDetail: `Waiting for ${ingestionLabel} (${Math.round(elapsed / 1000)}s, retrying...)`,
         }, { expectedSteps: ['wait_source'] });
         return;
@@ -877,7 +980,9 @@ async function tickSourcePollOperation(state) {
                 console.warn(`[Pipeline] Failed to start ${type}:`, e.message);
                 tasks.push({ type, taskId: null,
                     status: e?.code === 'TRANSIENT_MUTATION_UNCERTAIN' ? 'uncertain' : 'failed',
-                    error: e.message, code: e?.code || null });
+                    error: e.message, code: e?.code || null, failedAt: new Date().toISOString(),
+                    retryAfterSeconds: e?.retryAfterSeconds ?? null, nextEligibleAt: e?.delayUnknown ? null : e?.nextEligibleAt ?? null });
+                if (e?.code === 'RATE_LIMITED') void refreshFailureUsage(runId, type);
             }
             await transitionRun(runId, {
                 tasks: [...tasks],
@@ -1030,11 +1135,12 @@ async function tickArtifactPollOperation(state) {
     let statusByTaskId = new Map();
 
     try {
-        statusByTaskId = await listArtifactStatuses(state.notebookId);
+        statusByTaskId = await listArtifactStatuses(state.notebookId, { mode: 'poll', deadline: Date.parse(state.stepStartedAt) + ARTIFACT_TIMEOUT_MS });
         await requireActiveRun(runId, ['wait_artifacts']);
     } catch (err) {
         if (err?.code === 'PIPELINE_STALE_RUN') return;
         console.warn('[Tick] Error listing artifact statuses:', err.message);
+        await transitionRun(runId, { nextEligibleAt: err.delayUnknown ? null : err.nextEligibleAt || null }, { expectedSteps: ['wait_artifacts'] });
     }
 
     for (let i = 0; i < tasks.length; i++) {
@@ -1165,7 +1271,8 @@ async function handlePollAlarm(alarm) {
             // preparing, so artifact-start mutations remain serialized.
             await Promise.allSettled(queue.jobs.filter(job => job.status === 'running').map(async state => {
                 try {
-                    if (state.step === 'wait_source') await tickSourcePoll(state);
+                    if (state.step === 'wait_read') await resumeSourceRead(state);
+                    else if (state.step === 'wait_source') await tickSourcePoll(state);
                     else if (state.step === 'wait_artifacts') await tickArtifactPoll(state);
                 } catch (error) {
                     if (error?.code === 'PIPELINE_STALE_RUN') console.log('[Alarm] Ignoring stale tick');
@@ -1305,6 +1412,8 @@ async function runPipelineOperation(runId, pdfUrl, pageUrl, uploadFile = null, s
         await requireActiveRun(runId, ['auth']);
         await fetchTokens();
         await requireActiveRun(runId, ['auth']);
+        // Advisory meter reads must never delay notebook creation.
+        void Promise.resolve().then(() => getUsage()).catch(() => {});
         const creating = await transitionRun(runId, {
             step: 'create_notebook',
             stepDetail: 'Creating notebook...',
@@ -1358,7 +1467,7 @@ async function runPipelineOperation(runId, pdfUrl, pageUrl, uploadFile = null, s
             try {
                 await requireActiveRun(runId, ['add_source']);
                 sourceMutationStarted = true;
-                source = await addUrlSource(notebook.id, pdfUrl);
+                source = await addUrlSource(notebook.id, pdfUrl, sourceReadOptions(await getState(runId)));
             } catch (urlErr) {
                 if (isConfirmedImportRejection(urlErr) && canFallback(await getState(runId))) {
                     await fallbackPdf(runId);
@@ -1448,15 +1557,16 @@ async function advanceCombinedSource(runId) {
     const nextIndex = state.sources.findIndex(item => item.status === 'queued');
     if (nextIndex < 0) return false;
     const source = state.sources[nextIndex];
-    const claimed = await transitionRun(runId, { sourceIndex: nextIndex, pdfUrl: source.pdfUrl,
+    const claimed = await transitionRun(runId, { sourceIndex: nextIndex, pdfUrl: source.pdfUrl, pageUrl: source.pageUrl,
         originalPdfUrl: source.pdfUrl, sourceType: source.sourceType, pdfEvidence: source.pdfEvidence,
         importMethod: 'url', fallbackAttempted: false, fallbackUploadStarted: false, failedUrlSourceId: null,
+        pageTextClaimed: false, pageTextFailure: null, retryDeadline: null,
         sourceId: null, step: 'add_source', stepDetail: 'Adding selected source...',
         sources: state.sources.map((item, index) => index === nextIndex ? { ...item, status: 'importing' } : item) });
     if (!claimed) return true;
     try {
         await requireActiveRun(runId, ['add_source']);
-        const result = await addUrlSource(state.notebookId, source.pdfUrl);
+        const result = await addUrlSource(state.notebookId, source.pdfUrl, sourceReadOptions(claimed));
         if (!result?.id) throw new Error('Source result needs checking.');
         await transitionRun(runId, { sourceId: result.id, step: 'wait_source', stepStartedAt: new Date().toISOString() }, { expectedSteps: ['add_source'] });
     } catch (error) {
@@ -1521,7 +1631,8 @@ async function startPipelineRequest(message, uploadFile = null) {
                 step: 'queued', queuedAt: new Date().toISOString(), settings,
                 pdfUrl: file ? file.filename : message.pdfUrl,
                 sourceType: file ? 'pdf' : (message.sourceType || 'pdf'),
-                pageUrl: message.pageUrl || null, sourceTitle: normalizeSourceTitle(message.sourceTitle) || null,
+                pageUrl: message.pageUrl || null, pageTabId: Number.isInteger(message.pageTabId) ? message.pageTabId : null,
+                sourceTitle: normalizeSourceTitle(message.sourceTitle) || null,
                 sourceKey, importMethod: file ? 'file' : 'url', originalPdfUrl: file ? null : message.pdfUrl,
                 pdfEvidence: message.pdfEvidence || null,
                 payloadId: file ? runId : null, payloadBytes: file?.fileData.byteLength || 0,
@@ -1709,6 +1820,12 @@ async function paperTitles(ids) {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'GET_USAGE') {
+        getUsage().then(usage => sendResponse({ usage })).catch(() => sendResponse({ usage: null })); return true;
+    }
+    if (message.type === 'RECOVER_PAGE_TEXT') {
+        recoverPageText(message).then(sendResponse).catch(error => sendResponse({ ok: false, message: error.message })); return true;
+    }
     if (message.type === 'PAPER_TITLES') { paperTitles(message.ids).then(titles => sendResponse({ titles })).catch(() => sendResponse({ titles: {} })); return true; }
     if (message.type === 'ENABLE_PAPER_DETECTION') {
         (async () => {
@@ -1764,7 +1881,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     if (message.type === 'GET_QUEUE') {
-        ensureBootReconciled().then(getQueue).then(sendResponse)
+        ensureBootReconciled().then(getQueue).then(queue => sendResponse({ ...queue, jobs: queue.jobs.map(withUsageHints) }))
             .catch(error => sendResponse({ error: error.message }));
         return true;
     }
@@ -1777,7 +1894,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true;
     }
     if (message.type === 'GET_STATE') {
-        ensureBootReconciled().then(() => getState(message.runId)).then(sendResponse)
+        ensureBootReconciled().then(() => getState(message.runId)).then(job => sendResponse(withUsageHints(job)))
             .catch(error => sendResponse({ ok: false, message: error?.message || 'Could not load pipeline state' }));
         return true;
     }

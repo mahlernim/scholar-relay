@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { localizationSmoke } from './localization-smoke.mjs';
+import { usageRecoverySmoke } from './usage-recovery-smoke.mjs';
 import { recoverySmoke, compactProgressSmoke, generationLimitSmoke, pdfWaitSmoke } from './review-smoke.mjs';
 
 const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -484,6 +485,7 @@ try {
   await compactProgressSmoke({ popup, evaluate, reload, root: sourceRoot, origin });
   await generationLimitSmoke({ popup, evaluate, reload, root: sourceRoot, completedState });
   await pdfWaitSmoke({ popup, evaluate, reload, root: sourceRoot, completedState });
+  await usageRecoverySmoke({ popup, evaluate, reload, root: sourceRoot, origin });
 
   // Exercise the real Chrome message bridge and the complete file upload client.
   await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'idle'})`);

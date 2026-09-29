@@ -569,6 +569,22 @@ The dashboard confirmed "Your extension was submitted for review" and "Status: P
 
 한국어로는 기존 v1.5.1 심사를 명시적 승인에 따라 취소한 뒤 중국어 번체 설명과 워크플로, 설정, 논문 순서의 스크린샷 3장을 추가했습니다. 기존 9개 언어는 지원 언어 수를 9개에서 10개로 바꾸는 문장만 수정했고, 저장 후 다시 불러와 10개 설명이 원문과 정확히 일치하며 기존 이미지가 그대로임을 확인했습니다. 기존 패키지와 개인정보, 권한 설명, 배포 및 가격 설정은 유지했습니다. 승인 후 자동 게시하도록 다시 제출했으며 현재 v1.5.1은 심사 대기, 공개 버전은 v1.5.0입니다. 게시 후 공개 페이지에 중국어 번체를 포함한 10개 언어가 표시되는지 확인해야 합니다.
 
+### September 29 usage, server waits and page-text recovery
+
+Issues #93, #96 and #97 share transport, queue ownership and failure presentation. The candidate adds three focused runtime modules and keeps the existing compact popup layout. Usage occupies the subtitle and artifact labels. Recovery consent occupies the failed job's action row.
+
+Server Retry-After values are not clamped. A persisted read gate shares the not-before time across the extension's default browser-account context, including session-token refreshes and Notebook service host aliases. This is deliberately conservative client policy, not a claim that Google's rate limit is account-wide. Switching the default Google account does not shorten an existing wait. PDF-origin throttling and compute reset timestamps remain separate. A resumable source baseline read keeps its original five-minute deadline and attempt budget. Source and artifact polling preserve their original ten- and twenty-minute deadlines. Uncertain writes retain a known wait without being replayed.
+
+Usage decoding accepts the enabled account flag and successful quota response only. It selects windows by their wire codes, retains unknown action codes, and derives omitted zero percentages only from a finite counterpart. Popup-open, job-start and one coalesced post-failure read are best effort. A request already running before the failure cannot supply fresh failure context. Snapshots and failure reset hints stay in memory and expire at the earliest reset. A compute reset is advisory and is never used as a transport retry time.
+
+Page-text recovery requires RPC code 9 and exactly one newly matching ERROR source with experimental connection diagnostic 1. Unknown or ambiguous diagnostics remain ineligible. The job retains the original tab ID and URL. Consent and the specific site permission precede all extraction. A standalone top-frame extractor reads visible article/main content, excludes forms, hidden nodes and embedded material, and caps UTF-8 text plus provenance at 200 kB. It does not fetch the page. A persisted claim and upload-start marker prevent repeated uploads across concurrent clicks or restarts. The existing preparation slot, cancellation ownership and readiness checks also apply. The failed URL source remains in the notebook. Interrupted or uncertain imports require inspection rather than another automatic mutation.
+
+Validation includes deterministic API and worker tests, browser extraction checks, consent and advisory-label layouts in all ten locales at 320 and 360 pixels, and the existing 40 MiB PDF and queue smoke. A signed-in read-only live probe confirmed the enabled flag, success status, window codes 1 and 2, omitted zero encoding, timestamp tuples and 24 action codes. It created no notebook, source or generation. Text upload and quota-failure behavior use controlled fixtures, not a destructive live account test. Translations have no independent native-speaker review. Updated privacy disclosures and all ten store descriptions are release candidates and require the dashboard privacy review before publication. The submitted v1.5.1 package is unchanged.
+
+한국어
+
+서버 대기 시각과 준비 단계의 기한을 저장하고 세션 갱신으로 대기를 우회하지 않도록 했습니다. 연산 사용량은 기존 부제와 항목 이름에 안내용으로 표시하며 메모리에서만 유지하고 만료 시 숨깁니다. 페이지 본문 복구는 실패 원인과 소스가 확인된 경우에만 제공하며, 원래 탭의 ID와 URL, 동의, 사이트 권한을 확인합니다. 최대 200 kB의 본문을 기존 노트북에 한 번만 전송하고 실패 소스는 보존합니다. 취소와 재시작 시 중복 전송을 막습니다. 10개 언어의 좁은 화면, 브라우저 추출, 대기열과 기존 PDF 검증을 수행했습니다. 실제 계정에서는 조회만 검증했으며 업로드나 생성은 수행하지 않았습니다. 공개 및 스토어 개인정보 변경은 후속 릴리스 단계로 남습니다.
+
 ### Popup design polish
 
 Issue #98 changes popup presentation without adding strings. The start views now show the requested artifacts and artifact language under the primary button, and that line opens Settings. It reads saved settings over the defaults and updates on every autosave. The single PDF view leads with a known paper title and keeps the URL as secondary text.

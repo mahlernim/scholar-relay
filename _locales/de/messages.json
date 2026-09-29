@@ -1116,5 +1116,57 @@
   "ui_2a03efde": {
     "message": "Ein Artikelkandidat auf dieser Seite",
     "description": "One paper candidate on this page"
+  },
+  "ui_72c708f3": {
+    "message": "Nutzung $1 % · $2",
+    "description": "Usage $1% · $2"
+  },
+  "ui_d8964ad4": {
+    "message": "Limit",
+    "description": "Limit"
+  },
+  "ui_fd031aad": {
+    "message": "Das Rechenzeitfenster wird am $1 zurückgesetzt.",
+    "description": "Compute window resets $1."
+  },
+  "ui_f42db284": {
+    "message": "Vom Server angeforderte Wartezeit bis $1.",
+    "description": "Server wait until $1."
+  },
+  "ui_d56e7ace": {
+    "message": "Seitentext importieren",
+    "description": "Import page text"
+  },
+  "ui_15d48e31": {
+    "message": "Sendet den Tabtext als Textquelle an Google. Er kann Inhalte enthalten, die nur nach Anmeldung zugänglich sind.",
+    "description": "Sends tab text to Google as a text source. May include sign-in-only content."
+  },
+  "ui_953fba37": {
+    "message": "Diese Wiederherstellung ist nicht mehr verfügbar.",
+    "description": "This recovery is no longer available."
+  },
+  "ui_8a77184b": {
+    "message": "Öffnen Sie die ursprüngliche Seite, um ihren Text zu importieren.",
+    "description": "Open the original page to import its text."
+  },
+  "ui_c85ac8d9": {
+    "message": "Zugriff auf die Website ist erforderlich.",
+    "description": "Site access is required."
+  },
+  "ui_5c3eb330": {
+    "message": "Der Seitentext konnte nicht gelesen werden.",
+    "description": "Page text could not be read."
+  },
+  "ui_fa291f21": {
+    "message": "Der Seitentext konnte nicht importiert werden. Prüfen Sie das bestehende Notizbuch.",
+    "description": "Page text could not be imported. Check the existing notebook."
+  },
+  "ui_f90efa29": {
+    "message": "Seitentext",
+    "description": "Page text"
+  },
+  "ui_4a3d4bfb": {
+    "message": "Warte, bis die Warteschlange fortgesetzt oder ein anderer Auftrag vorbereitet wurde.",
+    "description": "Wait for the queue to resume or finish preparing another job."
   }
 }

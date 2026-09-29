@@ -1116,5 +1116,57 @@
   "ui_2a03efde": {
     "message": "Um artigo candidato nesta página",
     "description": "One paper candidate on this page"
+  },
+  "ui_72c708f3": {
+    "message": "Uso $1% · $2",
+    "description": "Usage $1% · $2"
+  },
+  "ui_d8964ad4": {
+    "message": "Limite",
+    "description": "Limit"
+  },
+  "ui_fd031aad": {
+    "message": "O período de computação é redefinido em $1.",
+    "description": "Compute window resets $1."
+  },
+  "ui_f42db284": {
+    "message": "Espera solicitada pelo servidor até $1.",
+    "description": "Server wait until $1."
+  },
+  "ui_d56e7ace": {
+    "message": "Importar texto da página",
+    "description": "Import page text"
+  },
+  "ui_15d48e31": {
+    "message": "Envia o texto da aba ao Google como fonte de texto. Pode incluir conteúdo acessível apenas após login.",
+    "description": "Sends tab text to Google as a text source. May include sign-in-only content."
+  },
+  "ui_953fba37": {
+    "message": "Esta recuperação não está mais disponível.",
+    "description": "This recovery is no longer available."
+  },
+  "ui_8a77184b": {
+    "message": "Abra a página original para importar o texto.",
+    "description": "Open the original page to import its text."
+  },
+  "ui_c85ac8d9": {
+    "message": "É necessário acesso ao site.",
+    "description": "Site access is required."
+  },
+  "ui_5c3eb330": {
+    "message": "Não foi possível ler o texto da página.",
+    "description": "Page text could not be read."
+  },
+  "ui_fa291f21": {
+    "message": "Não foi possível importar o texto. Verifique o notebook existente.",
+    "description": "Page text could not be imported. Check the existing notebook."
+  },
+  "ui_f90efa29": {
+    "message": "Texto da página",
+    "description": "Page text"
+  },
+  "ui_4a3d4bfb": {
+    "message": "Aguarde a retomada da fila ou o fim da preparação de outro trabalho.",
+    "description": "Wait for the queue to resume or finish preparing another job."
   }
 }

@@ -1116,5 +1116,57 @@
   "ui_2a03efde": {
     "message": "One paper candidate on this page",
     "description": "One paper candidate on this page"
+  },
+  "ui_72c708f3": {
+    "message": "Usage $1% · $2",
+    "description": "Usage $1% · $2"
+  },
+  "ui_d8964ad4": {
+    "message": "Limit",
+    "description": "Limit"
+  },
+  "ui_fd031aad": {
+    "message": "Compute window resets $1.",
+    "description": "Compute window resets $1."
+  },
+  "ui_f42db284": {
+    "message": "Server wait until $1.",
+    "description": "Server wait until $1."
+  },
+  "ui_d56e7ace": {
+    "message": "Import page text",
+    "description": "Import page text"
+  },
+  "ui_15d48e31": {
+    "message": "Sends tab text to Google as a text source. May include sign-in-only content.",
+    "description": "Sends tab text to Google as a text source. May include sign-in-only content."
+  },
+  "ui_953fba37": {
+    "message": "This recovery is no longer available.",
+    "description": "This recovery is no longer available."
+  },
+  "ui_8a77184b": {
+    "message": "Open the original page to import its text.",
+    "description": "Open the original page to import its text."
+  },
+  "ui_c85ac8d9": {
+    "message": "Site access is required.",
+    "description": "Site access is required."
+  },
+  "ui_5c3eb330": {
+    "message": "Page text could not be read.",
+    "description": "Page text could not be read."
+  },
+  "ui_fa291f21": {
+    "message": "Page text could not be imported. Check the existing notebook.",
+    "description": "Page text could not be imported. Check the existing notebook."
+  },
+  "ui_f90efa29": {
+    "message": "Page text",
+    "description": "Page text"
+  },
+  "ui_4a3d4bfb": {
+    "message": "Wait for the queue to resume or finish preparing another job.",
+    "description": "Wait for the queue to resume or finish preparing another job."
   }
 }

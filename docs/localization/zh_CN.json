@@ -276,5 +276,18 @@
   "Create notebook with one source": "使用 1 个来源创建笔记本",
   "Create one notebook": "创建 1 个笔记本",
   "One job saved in queue": "已将 1 个任务保存到队列",
-  "One paper candidate on this page": "此页面有 1 篇候选论文"
+  "One paper candidate on this page": "此页面有 1 篇候选论文",
+  "Usage $1% · $2": "用量 $1% · $2",
+  "Limit": "受限",
+  "Compute window resets $1.": "计算用量窗口于 $1 重置。",
+  "Server wait until $1.": "按服务器要求等待至 $1。",
+  "Import page text": "导入网页正文",
+  "Sends tab text to Google as a text source. May include sign-in-only content.": "将标签页正文作为文本来源发送给 Google，可能包含仅登录后可见的内容。",
+  "This recovery is no longer available.": "此恢复操作已不可用。",
+  "Open the original page to import its text.": "请打开原始网页以导入正文。",
+  "Site access is required.": "需要网站访问权限。",
+  "Page text could not be read.": "无法读取网页正文。",
+  "Page text could not be imported. Check the existing notebook.": "无法导入网页正文。请检查现有笔记本。",
+  "Page text": "网页正文",
+  "Wait for the queue to resume or finish preparing another job.": "请等待队列恢复或另一项任务准备完成。"
 }

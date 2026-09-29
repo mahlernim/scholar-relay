@@ -1,13 +1,15 @@
 export const PIPELINE_ALARM_NAME = 'pipeline-poll';
 export const PIPELINE_POLL_PERIOD_MINUTES = 0.5;
 
-const RECOVERABLE_POLLING_STEPS = new Set(['wait_source', 'wait_artifacts']);
+const RECOVERABLE_POLLING_STEPS = new Set(['wait_source', 'wait_artifacts', 'wait_read']);
 const NON_IDEMPOTENT_STEPS = new Set([
   'auth',
   'create_notebook',
   'add_source',
   'upload_pdf',
   'generate_artifacts',
+  'extract_text',
+  'upload_text',
 ]);
 const STOPPABLE_STEPS = new Set(['wait_source', 'wait_artifacts', 'wait_pdf_access', 'download_pdf']);
 

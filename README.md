@@ -6,7 +6,17 @@ ScholarRelay (Scholar Relay) imports PDFs, arXiv research papers, and webpages i
 
 > ScholarRelay is an independent open-source extension and is not affiliated with, authorized by, or endorsed by Google. It uses your existing signed-in Gemini Notebook browser session and never asks for your Google password or verification code.
 
-## v1.5.0 candidate
+## Next release candidate
+
+The unreleased candidate preserves server-requested waits across worker restarts and defers polling without replaying uncertain writes. Available compute usage appears in the existing subtitle and artifact labels. These snapshots expire locally and do not block generation or promise when a failed request will succeed.
+
+After a confirmed, attributable webpage import failure, Import page text can send the original tab's article text to Google as a text source in the same notebook. Confirm the inline disclosure and grant access to that specific site first. Text may include sign-in-only content. Forms, hidden content, scripts, frames and media are excluded, and the total is limited to 200 kB. Equations and embedded material may be incomplete. Article text stays in memory locally. Google's copy remains until deleted in Gemini Notebook under Google's retention policy. Clearing local history does not delete it. The failed source is kept and uncertain uploads are not repeated.
+
+다음 릴리스 후보는 작업 재시작 후에도 서버가 요청한 대기 시간을 유지하고, 결과가 불확실한 요청을 반복하지 않으며 상태 조회만 연기합니다. 제공되는 연산 사용량은 기존 부제와 아티팩트 이름에 표시합니다. 시간이 지난 정보는 숨기며 생성을 막거나 재시도 성공 시각을 보장하지 않습니다.
+
+웹페이지 가져오기 실패의 원인과 소스가 확인되면 페이지 본문 가져오기로 원래 탭의 본문을 같은 노트북의 텍스트 소스로 Google에 보낼 수 있습니다. 화면 안내에 동의하고 해당 사이트 접근 권한을 허용해야 합니다. 로그인 후에만 보이는 내용이 포함될 수 있습니다. 양식, 숨겨진 내용, 스크립트, 프레임과 미디어는 제외하고 전체 크기를 200 kB로 제한합니다. 수식과 삽입 자료는 불완전할 수 있습니다. 본문은 확장 프로그램 메모리에만 임시 보관합니다. Google에 전송된 사본은 Gemini Notebook에서 삭제해야 하며 Google의 보관 정책을 따릅니다. 로컬 기록 삭제로는 원격 사본이 삭제되지 않습니다. 실패한 소스는 유지하고 결과가 불확실한 업로드는 반복하지 않습니다.
+
+## Paper selection
 
 Select linked papers individually. Create separate notebooks or combine up to 20 sources in one notebook, optionally including the current webpage as context. The combined notebook waits for source readiness before generation. If a source cannot be processed, inspect the failure or explicitly skip it before continuing. Uncertain remote mutations are never replayed automatically.
 
