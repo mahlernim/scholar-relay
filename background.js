@@ -366,11 +366,11 @@ function buildFallbackUploadErrorMessage(urlErr, fallbackErr, pdfUrl) {
     if (fallbackStatus === 401 || fallbackStatus === 403) {
         const host = hostFromUrl(pdfUrl);
         const hostText = host ? ` (${host})` : '';
-        return `Source site blocked automated PDF download${hostText} (HTTP ${fallbackStatus}). Download the PDF manually and retry with "Upload Local PDF" or "Choose Different PDF". URL source error: ${urlMsg}.`;
+        return `Source site blocked automated PDF download${hostText} (HTTP ${fallbackStatus}). Download the PDF manually and retry with "Upload local PDF" or "Choose a different PDF". URL source error: ${urlMsg}.`;
     }
 
     if (/does not appear to be a PDF/i.test(fallbackMsg)) {
-        return `The detected URL did not return a real PDF file. Open the direct PDF URL or retry with "Upload Local PDF". URL source error: ${urlMsg}. Fallback detail: ${fallbackMsg}.`;
+        return `The detected URL did not return a real PDF file. Open the direct PDF URL or retry with "Upload local PDF". URL source error: ${urlMsg}. Fallback detail: ${fallbackMsg}.`;
     }
 
     return `${urlMsg}; fallback upload failed: ${fallbackMsg}`;
@@ -725,7 +725,7 @@ async function completePipeline(runId) {
             priority: 2,
             requireInteraction: true,
             buttons: [
-                { title: t('Open Notebook') },
+                { title: t('Open notebook') },
                 { title: t('Dismiss') },
             ],
         });

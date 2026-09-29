@@ -273,7 +273,7 @@ try {
     await captureStoreAsset(port, 'docs/store-assets/source/workflow.html',
       `docs/store-assets/${locale}/screenshot-papers-1280x800.png`, 1280, 800,
       {locale, kind:'papers', copy:[label('Create notebooks'), label('Papers on this page'),
-        label('Include this webpage as context'), label('Separate'), label('One notebook'), label('Find paper titles')]});
+        label('Include this webpage as context'), label('One per paper'), label('One notebook'), label('Get titles from arXiv')]});
   }
   console.log('Captured ScholarRelay README and Chrome Web Store assets.');
 } finally {

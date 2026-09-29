@@ -41,9 +41,9 @@
     "message": "処理がすでに進行中です。新しく始める前に進行状況を確認してください。",
     "description": "A workflow is already active. Check its progress before starting another."
   },
-  "ui_74a7ea81": {
+  "ui_a2d5ec61": {
     "message": "Chrome の拡張機能設定でファイルの URL へのアクセスを許可するか、ローカル PDF のアップロードを選んでください。",
-    "description": "Enable Allow access to file URLs in Chrome extension settings, or choose Upload Local PDF."
+    "description": "Enable Allow access to file URLs in Chrome extension settings, or choose Upload local PDF."
   },
   "ui_a788ccba": {
     "message": "直接 PDF",
@@ -329,9 +329,9 @@
     "message": "指示",
     "description": "Instructions"
   },
-  "ui_28e8828a": {
-    "message": "（組み込み形式に追加）",
-    "description": "(appended for built-in formats)"
+  "ui_7f1493ae": {
+    "message": "組み込みのレポート形式に追加されます。",
+    "description": "Added to built-in report formats."
   },
   "ui_89963e82": {
     "message": "（カスタム形式では必須）",
@@ -509,9 +509,9 @@
     "message": "準備ができたらノートブックを開く",
     "description": "Open notebook when ready"
   },
-  "ui_f1435584": {
-    "message": "✓ 設定を保存",
-    "description": "✓ Save Settings"
+  "ui_8dd31791": {
+    "message": "完了",
+    "description": "Done"
   },
   "ui_f835ea8d": {
     "message": "ページ内の PDF を確認中...",
@@ -577,9 +577,9 @@
     "message": "アップロードして生成",
     "description": "Upload & Generate"
   },
-  "ui_b3573353": {
+  "ui_d2cac6f0": {
     "message": "別の PDF を選択",
-    "description": "Choose Different PDF"
+    "description": "Choose a different PDF"
   },
   "ui_3fac81f6": {
     "message": "🎧 アーティファクトを生成",
@@ -597,9 +597,9 @@
     "message": "ページをインポートして生成",
     "description": "Import Page & Generate"
   },
-  "ui_c108fead": {
+  "ui_c104ecd": {
     "message": "ローカル PDF をアップロード",
-    "description": "Upload Local PDF"
+    "description": "Upload local PDF"
   },
   "ui_9388d923": {
     "message": "有効な PDF ではありません。別のファイルを選んでください。",
@@ -669,9 +669,9 @@
     "message": "このポップアップを閉じても処理は続きます。",
     "description": "You can close this popup. Work continues."
   },
-  "ui_26242fbd": {
+  "ui_f4a0bac0": {
     "message": "ダウンロードを許可して続行",
-    "description": "Allow Download & Continue"
+    "description": "Allow download and continue"
   },
   "ui_dd6a9d74": {
     "message": "代わりに PDF をアップロード",
@@ -769,9 +769,9 @@
     "message": "Gemini Notebook の準備完了！",
     "description": "Gemini Notebook Ready!"
   },
-  "ui_ed59a0d6": {
+  "ui_3d2484f6": {
     "message": "ノートブックを開く",
-    "description": "Open Notebook"
+    "description": "Open notebook"
   },
   "ui_265915f3": {
     "message": "閉じる",
@@ -817,17 +817,13 @@
     "message": "停止済み",
     "description": "Stopped"
   },
-  "ui_cf1d1846": {
-    "message": "キューに追加",
-    "description": "Add to queue"
+  "ui_1d839782": {
+    "message": "ノートブックを作成",
+    "description": "Create notebook"
   },
-  "ui_1512a308": {
-    "message": "PDFをキューに保存",
-    "description": "Save PDF to queue"
-  },
-  "ui_d5809db3": {
-    "message": "ページをキューに追加",
-    "description": "Add page to queue"
+  "ui_bb365f4d": {
+    "message": "ページからノートブックを作成",
+    "description": "Create notebook from page"
   },
   "ui_c66a1109": {
     "message": "別の論文を追加",
@@ -861,21 +857,21 @@
     "message": "キューは一時停止中です。開始済みのジョブは続行します。",
     "description": "Queue paused. Jobs already started continue."
   },
-  "ui_c7972f4e": {
-    "message": "論文は1件ずつ準備します。最大3つのノートブックで同時に生成できます。",
-    "description": "Prepare one paper at a time. Up to three notebooks can generate together."
+  "ui_75e45781": {
+    "message": "論文は1件ずつ準備されます。最大3つのノートブックで同時に生成されます。",
+    "description": "Papers are prepared one at a time. Up to three notebooks generate at once."
   },
-  "ui_c744f96c": {
-    "message": "保存済みです。このポップアップは閉じられます。待機中の論文を開始するにはChromeを起動したままにしてください。",
-    "description": "Saved. You can close this popup. Keep Chrome running to start queued papers."
+  "ui_70762261": {
+    "message": "待機中です。このポップアップは閉じられますが、Chromeは開いたままにしてください。",
+    "description": "Queued. You can close this popup, but keep Chrome open."
   },
-  "ui_a6133a54": {
-    "message": "リクエストは受理されました。Chromeを閉じてもGemini Notebookで生成が続きます。別の論文を追加できます。",
-    "description": "Requests accepted. Gemini Notebook will keep generating even if you close Chrome. You can add another paper."
+  "ui_70eb74c2": {
+    "message": "Chromeを閉じても問題ありません。Gemini Notebookで生成が続きます。",
+    "description": "You can close Chrome. Gemini Notebook keeps generating."
   },
-  "ui_8481df34": {
-    "message": "このポップアップは閉じられます。成果物の生成リクエストが受理されるまでChromeを起動したままにしてください。",
-    "description": "You can close this popup. Keep Chrome running until the artifact requests are accepted."
+  "ui_1591c255": {
+    "message": "このポップアップは閉じられますが、生成が始まるまでChromeは開いたままにしてください。",
+    "description": "You can close this popup, but keep Chrome open until generation starts."
   },
   "ui_440cb2bf": {
     "message": "この論文は確認が必要です。キュー内の他の論文は続行できます。",
@@ -945,9 +941,9 @@
     "message": "ジョブを終了",
     "description": "Dismiss job"
   },
-  "ui_45c40cb9": {
+  "ui_47c21b54": {
     "message": "PDF をアップロードして続行",
-    "description": "Upload PDF & Continue"
+    "description": "Upload PDF and continue"
   },
   "ui_38f2e1ae": {
     "message": "ダウンロードの許可が必要です。アクセスを許可するか PDF を選択して、このノートブックで続行してください。",
@@ -1021,6 +1017,10 @@
     "message": "このページの論文",
     "description": "Papers on this page"
   },
+  "ui_8d353d4c": {
+    "message": "$2件中$1件を選択",
+    "description": "$1 of $2 selected"
+  },
   "ui_6af21072": {
     "message": "すべて選択",
     "description": "Select all"
@@ -1049,9 +1049,9 @@
     "message": "1つにまとめる",
     "description": "One notebook"
   },
-  "ui_ab7db738": {
-    "message": "個別に作成",
-    "description": "Separate"
+  "ui_f72c78e6": {
+    "message": "論文ごと",
+    "description": "One per paper"
   },
   "ui_340761b3": {
     "message": "このページも含める",
@@ -1065,25 +1065,17 @@
     "message": "このサイトで自動検出",
     "description": "Detect automatically on this site"
   },
-  "ui_200e067f": {
-    "message": "論文名を取得",
-    "description": "Find paper titles"
-  },
-  "ui_2df60e04": {
-    "message": "1つのノートブックに$1件のソース",
-    "description": "$1 sources in one notebook"
-  },
-  "ui_e6e47f19": {
-    "message": "$1個の個別ノートブック",
-    "description": "$1 separate notebooks"
+  "ui_cf80d578": {
+    "message": "arXivからタイトルを取得",
+    "description": "Get titles from arXiv"
   },
   "ui_55c2ab3b": {
     "message": "$1件のソースで作成",
     "description": "Create notebook with $1 sources"
   },
-  "ui_ee66925c": {
-    "message": "$1件をキューに追加",
-    "description": "Add $1 papers to queue"
+  "ui_a2bb458e": {
+    "message": "$1個のノートブックを作成",
+    "description": "Create $1 notebooks"
   },
   "ui_e24fe294": {
     "message": "このサイトの自動検出を有効にしました。",
@@ -1109,21 +1101,13 @@
     "message": "このページに$1件の論文候補",
     "description": "$1 paper candidates on this page"
   },
-  "ui_f3db4860": {
-    "message": "1つのノートブックに1件のソース",
-    "description": "One source in one notebook"
-  },
-  "ui_958d5a41": {
-    "message": "個別のノートブック1個",
-    "description": "One separate notebook"
-  },
   "ui_8cd6f197": {
     "message": "1件のソースで作成",
     "description": "Create notebook with one source"
   },
-  "ui_154ddf8c": {
-    "message": "1件をキューに追加",
-    "description": "Add one paper to queue"
+  "ui_c24b9e6a": {
+    "message": "ノートブックを1つ作成",
+    "description": "Create one notebook"
   },
   "ui_c67e8add": {
     "message": "1件をキューに保存しました",

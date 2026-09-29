@@ -549,6 +549,18 @@ The store publisher account is `mahlerlabdiy@gmail.com` with service account `sc
 
 한국어: v1.5.1은 중국어 번체 추가와 아티팩트 상태 읽기 오류 처리 개선을 포함합니다. 스토어 설명과 스크린샷은 개발자 대시보드에서 반영해야 합니다.
 
+### v1.5.1 initial release and store submission
+
+On September 26, 2026, PRs #84, #86 and #88 merged after exact-head CI passed. Release commit `3193663c4a0248baecd650f8a38f3e365968e1a2` passed merged-main CI 36213513655 and preflight 36213513628. [GitHub v1.5.1](https://github.com/mahlernim/scholar-relay/releases/tag/v1.5.1) points to that commit.
+
+The release ZIP contains 33 allowlisted files and embeds version 1.5.1. Its published size is 182,161 bytes and SHA-256 is `26573fdf1ddac8df0bda5ef69005a55bd46b71c2d5923c45e887607828d76599`. This release includes the artifact-listing fix and Traditional Chinese support. The earlier draft's claim that only one file changed from v1.5.0 was incorrect.
+
+The original submission returned upload SUCCEEDED and PENDING_REVIEW while 1.5.0 remained published. This is a historical submission record. The subsequent cancellation, listing update and resubmission are recorded below, and current status must be checked before another release.
+
+한국어
+
+2026년 9월 26일 v1.5.1을 GitHub에 공개하고 같은 ZIP을 Chrome 웹 스토어에 제출했습니다. 아티팩트 목록 조회 수정과 중국어 번체 지원을 포함하며 이전 버전에서 한 파일만 바뀌었다는 초안의 주장은 수정했습니다. 최초 제출 당시에는 검토 대기였고 1.5.0이 게시되어 있었습니다. 이후 설명 갱신과 재제출은 아래에 기록하며 새 릴리스 전에는 현재 상태를 다시 확인해야 합니다.
+
 ### v1.5.1 listing update
 
 On September 26, 2026, the pending v1.5.1 review was canceled with explicit authorization and returned to draft. The existing v1.5.1 package was retained. Traditional Chinese now has the description from `docs/releases/v1.5.1-store-listing.md` and the three `zh_TW` screenshots in workflow, settings, papers order. Its package title and summary match `docs/localization/metadata.json`. Each existing locale matched the v1.5.0 source before editing, with only the language-count sentence changed from nine to ten. After saving and reloading, all ten descriptions matched the v1.5.1 source exactly and all existing image sets were unchanged. Privacy, permission justifications, distribution and pricing were not edited.
@@ -580,3 +592,12 @@ Issue #98 changes popup presentation without adding strings. The start views now
 Accent, success, warning, error, and dim text colors were darkened to reach WCAG AA contrast on white, and 10px text was raised to 11px. Artifact rows in Settings use sentence case below the uppercase group titles. The duplicate Settings header was removed along with its catalog entry, leaving 282 messages. The close button uses the accent color. Queue, job, and site tool actions are outlined buttons, while selection shortcuts stay as text links.
 
 Wording changes are deferred because the catalog is keyed by English source text and every change needs translation in ten locales. The compact progress smoke now waits for the finished-jobs list instead of a fixed delay after reload. That delay failed once in CI and once locally. README and store screenshots are unchanged and should be recaptured when this ships. The local capture script did not load the unpacked extension reliably on this machine, as noted for v1.5.1.
+
+### Popup wording pass
+
+Issue #101 follows the design pass with copy changes. Start buttons name the result instead of the queue. They read Create notebook, Create notebook from page, and Create $1 notebooks, while the saved-job feedback still mentions the queue. The paper list drops the summary line that repeated the button, labels its count as selected, and offers One per paper beside One notebook. The arXiv title action now says where titles come from.
+
+Queue help describes system behavior, and the queued, preparing, and accepted hints are shorter. Buttons use sentence case, and the Settings close button reads Done because settings already save on change. Report instructions keep the Custom requirement in the label and move the built-in note to help text.
+
+The catalog has 278 messages. New and changed rows were translated from the English source for all nine other locales, reusing each catalog's existing notebook and queue terms. Case-only renames keep their previous translations. Translations are machine-assisted without native-speaker review. Product labels such as Audio Overview and Deep Dive are unchanged.
+

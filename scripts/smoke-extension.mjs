@@ -348,7 +348,7 @@ try {
     view = await evaluate(popup, `({text:document.getElementById('content').innerText,resume:!!document.getElementById('btn-resume-pdf'),file:!!document.getElementById('btn-fallback-file'),stop:!!document.querySelector('#content [data-cancel]'),width:document.documentElement.scrollWidth})`);
     assert(view.stop && view.width<=360, 'Running popup lacks stop control or clips horizontally');
     assert(!view.text.includes('failed-source'), 'Internal source ID leaked into primary wording');
-    assert(step==='wait_pdf_access' ? view.resume && view.file && view.text.includes('Download permission is needed') : view.text.includes('Keep Chrome running'), `Permission wait incorrectly presents background progress: ${JSON.stringify(view)}`);
+    assert(step==='wait_pdf_access' ? view.resume && view.file && view.text.includes('Download permission is needed') : view.text.includes('keep Chrome open'), `Permission wait incorrectly presents background progress: ${JSON.stringify(view)}`);
   }
 
 
@@ -409,7 +409,7 @@ try {
   await waitForJob(second.runId,'wait_source');
   await reload(popup);
   const queueView=await evaluate(popup, `({text:document.getElementById('job-queue').innerText,current:!!document.getElementById('btn-start'),width:document.documentElement.scrollWidth})`);
-  assert(queueView.current && queueView.width<=360 && queueView.text.includes('Requests accepted') && queueView.text.includes('Preparing'),'Popup does not explain the handoff while allowing another paper');
+  assert(queueView.current && queueView.width<=360 && queueView.text.includes('Gemini Notebook keeps generating') && queueView.text.includes('Preparing'),'Popup does not explain the handoff while allowing another paper');
   await evaluate(popup, `chrome.runtime.sendMessage({type:'SMOKE_TICK'})`);
   await waitForJob(second.runId,'wait_artifacts');
   generationComplete=true;
