@@ -9,7 +9,7 @@ export async function localizationSmoke({ popup, evaluate, reload, root, complet
     const report = [];
     const out = join(root, 'dist', 'localization-qa');
     await mkdir(out, { recursive: true });
-    for (const locale of ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW']) {
+    for (const locale of ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW', 'hi']) {
         const catalog = JSON.parse(await readFile(join(root, '_locales', locale, 'messages.json'), 'utf8'));
         const expected = source => catalog[messageKey(source)].message;
         const { identifier } = await popup.call('Page.addScriptToEvaluateOnNewDocument', { source: `
@@ -93,5 +93,5 @@ export async function localizationSmoke({ popup, evaluate, reload, root, complet
     }
     await reload(popup);
     await writeFile(join(out, 'report.json'), JSON.stringify(report, null, 2)+'\n');
-    console.log(`Localization smoke passed for ten locales: ${JSON.stringify(report)}`);
+    console.log(`Localization smoke passed for eleven locales: ${JSON.stringify(report)}`);
 }

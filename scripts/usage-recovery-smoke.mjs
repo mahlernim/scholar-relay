@@ -12,7 +12,7 @@ export async function usageRecoverySmoke({ popup, evaluate, reload, root, origin
         notebookId:'nb',notebookUrl:origin+'/notebook/nb',pdfUrl:origin+'/article',pageUrl:origin+'/article',importMethod:'url',
         error:'RPC_REJECTED',pageTextFailure:{rpcCode:9,diagnostic:1,sourceId:'failed-source',url:origin+'/article'},tasks:[]};
     const out=join(root,'dist','usage-recovery-qa'); await mkdir(out,{recursive:true});
-    for (const locale of ['en','ko','ja','es','fr','de','pt_BR','zh_CN','it','zh_TW']) {
+    for (const locale of ['en','ko','ja','es','fr','de','pt_BR','zh_CN','it','zh_TW', 'hi']) {
         const catalog=JSON.parse(await readFile(join(root,'_locales',locale,'messages.json'),'utf8'));
         const expected=source=>catalog[messageKey(source)].message;
         const {identifier}=await popup.call('Page.addScriptToEvaluateOnNewDocument',{source:`
@@ -66,5 +66,5 @@ export async function usageRecoverySmoke({ popup, evaluate, reload, root, origin
         assert(Object.values(checks[0].result).every(Boolean),'Article extraction safety failed');
     } finally { await evaluate(popup,`chrome.tabs.remove(${fixtureTab.id})`); }
     await popup.call('Emulation.setDeviceMetricsOverride',{width:360,height:800,deviceScaleFactor:1,mobile:false});
-    console.log('Usage and page-text consent smoke passed in ten locales at 320/360 px.');
+    console.log('Usage and page-text consent smoke passed in eleven locales at 320/360 px.');
 }

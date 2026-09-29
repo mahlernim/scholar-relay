@@ -1,0 +1,1172 @@
+{
+  "extensionName": {
+    "message": "Scholar Relay - Gemini Notebook (NotebookLM) स्वचालन"
+  },
+  "extensionDescription": {
+    "message": "PDF, arXiv शोधपत्र और वेबपृष्ठ Gemini Notebook (NotebookLM) में लाएँ। ऑडियो अवलोकन और अध्ययन सामग्री बनाएँ।"
+  },
+  "ui_6440add9": {
+    "message": "नोटबुक $1 में एक सामग्री तैयार है। खोलने के लिए क्लिक करें।",
+    "description": "Notebook $1 is ready with one artifact. Click to open."
+  },
+  "ui_bca3294": {
+    "message": "तैयार",
+    "description": "Ready"
+  },
+  "ui_5579c3d4": {
+    "message": "विफल",
+    "description": "Failed"
+  },
+  "ui_71fcc075": {
+    "message": "बन रहा है",
+    "description": "Generating"
+  },
+  "ui_c9450e48": {
+    "message": "प्रतीक्षा में",
+    "description": "Waiting"
+  },
+  "ui_ce74e943": {
+    "message": "सामग्री",
+    "description": "Artifact"
+  },
+  "ui_85cc8e29": {
+    "message": "बीता समय $1 मिनट।",
+    "description": "Elapsed time: $1 min."
+  },
+  "ui_5495106b": {
+    "message": "शुरू करने से पहले सेटिंग में कम से कम एक सामग्री चुनें।",
+    "description": "Choose at least one artifact in Settings before starting."
+  },
+  "ui_af966070": {
+    "message": "एक कार्य पहले से चल रहा है। दूसरा शुरू करने से पहले उसकी प्रगति देखें।",
+    "description": "A workflow is already active. Check its progress before starting another."
+  },
+  "ui_a2d5ec61": {
+    "message": "Chrome एक्सटेंशन सेटिंग में फ़ाइल URL की अनुमति दें या स्थानीय PDF अपलोड करें चुनें।",
+    "description": "Enable Allow access to file URLs in Chrome extension settings, or choose Upload local PDF."
+  },
+  "ui_a788ccba": {
+    "message": "सीधा PDF",
+    "description": "Direct PDF"
+  },
+  "ui_8212a19a": {
+    "message": "PDF दस्तावेज़",
+    "description": "PDF document"
+  },
+  "ui_86fe33ed": {
+    "message": "प्रकाशक का PDF",
+    "description": "Publisher PDF"
+  },
+  "ui_fd7e7e2b": {
+    "message": "लेख का PDF",
+    "description": "Article PDF"
+  },
+  "ui_9a142465": {
+    "message": "एम्बेड किया गया PDF व्यूअर",
+    "description": "Embedded PDF viewer"
+  },
+  "ui_be4342c0": {
+    "message": "arXiv सारांश पृष्ठ",
+    "description": "arXiv abstract page"
+  },
+  "ui_1ae2ab63": {
+    "message": "arXiv PDF",
+    "description": "arXiv PDF"
+  },
+  "ui_5a02480d": {
+    "message": "arXiv PDF लिंक",
+    "description": "arXiv PDF link"
+  },
+  "ui_fbb8c667": {
+    "message": "पृष्ठ पर PDF लिंक",
+    "description": "PDF link on page"
+  },
+  "ui_747f5a5f": {
+    "message": "सीधा PDF URL",
+    "description": "Direct PDF URL"
+  },
+  "ui_e4668cae": {
+    "message": "स्थानीय फ़ाइल",
+    "description": "Local file"
+  },
+  "ui_102eb56b": {
+    "message": "शोधपत्र Gemini Notebook में भेजें",
+    "description": "Send papers to Gemini Notebook"
+  },
+  "ui_4b058728": {
+    "message": "सेटिंग",
+    "description": "Settings"
+  },
+  "ui_546c8007": {
+    "message": "⚠️ कम से कम एक सामग्री चुनें",
+    "description": "⚠️ Choose at least one artifact"
+  },
+  "ui_fd3f8fe8": {
+    "message": "📓 नोटबुक सेटिंग",
+    "description": "📓 Notebook Settings"
+  },
+  "ui_e0ab2da5": {
+    "message": "नई नोटबुक यहाँ जोड़ें",
+    "description": "Add new notebooks to"
+  },
+  "ui_7ed65126": {
+    "message": "कोई संग्रह नहीं",
+    "description": "No collection"
+  },
+  "ui_5cdf8229": {
+    "message": "संग्रह रीफ़्रेश करें",
+    "description": "Refresh collections"
+  },
+  "ui_655bdb8c": {
+    "message": "संग्रह आपके साइन इन किए हुए Gemini Notebook खाते से लोड होते हैं।",
+    "description": "Collections load from your signed-in Gemini Notebook account."
+  },
+  "ui_2775c98c": {
+    "message": "शोधपत्र का शीर्षक नोटबुक के लिए इस्तेमाल करें",
+    "description": "Use paper title for notebook"
+  },
+  "ui_23c94c30": {
+    "message": "बंद होने या शीर्षक न मिलने पर Gemini Notebook नाम देता है।",
+    "description": "If off or no title is found, Gemini Notebook names it."
+  },
+  "ui_e46cfd94": {
+    "message": "🎨 सामग्री सेटिंग",
+    "description": "🎨 Artifact Settings"
+  },
+  "ui_68dc958f": {
+    "message": "सामग्री की भाषा",
+    "description": "Artifact language"
+  },
+  "ui_1b9ae0bb": {
+    "message": "अंग्रेज़ी",
+    "description": "English"
+  },
+  "ui_ad70bf21": {
+    "message": "कोरियाई",
+    "description": "Korean"
+  },
+  "ui_940c2e0a": {
+    "message": "जापानी",
+    "description": "Japanese"
+  },
+  "ui_b819825b": {
+    "message": "स्पैनिश",
+    "description": "Spanish"
+  },
+  "ui_7cbd6ca5": {
+    "message": "फ़्रेंच",
+    "description": "French"
+  },
+  "ui_11100833": {
+    "message": "जर्मन",
+    "description": "German"
+  },
+  "ui_e6d67d5c": {
+    "message": "पुर्तगाली",
+    "description": "Portuguese"
+  },
+  "ui_5ecc8eb6": {
+    "message": "ऑडियो, वीडियो, रिपोर्ट, इन्फ़ोग्राफ़िक, स्लाइड डेक और डेटा टेबल पर लागू होता है।",
+    "description": "Applies to audio, video, reports, infographics, slide decks, and data tables."
+  },
+  "ui_b7a1a59b": {
+    "message": "इंटरफ़ेस Chrome की भाषा में दिखता है। सामग्री की भाषा अलग है।",
+    "description": "The interface follows Chrome's language. Artifact language is independent."
+  },
+  "ui_63435037": {
+    "message": "🎧 ऑडियो ओवरव्यू",
+    "description": "🎧 Audio Overview"
+  },
+  "ui_5e4b9b33": {
+    "message": "🎬 वीडियो ओवरव्यू",
+    "description": "🎬 Video Overview"
+  },
+  "ui_1c876167": {
+    "message": "📄 रिपोर्ट",
+    "description": "📄 Report"
+  },
+  "ui_a742b583": {
+    "message": "❓ क्विज़",
+    "description": "❓ Quiz"
+  },
+  "ui_13be9b37": {
+    "message": "🃏 फ़्लैशकार्ड",
+    "description": "🃏 Flashcards"
+  },
+  "ui_853abe6f": {
+    "message": "🖼 इन्फ़ोग्राफ़िक",
+    "description": "🖼 Infographic"
+  },
+  "ui_871b8541": {
+    "message": "📊 स्लाइड डेक",
+    "description": "📊 Slide Deck"
+  },
+  "ui_768c9843": {
+    "message": "🧠 माइंड मैप",
+    "description": "🧠 Mind Map"
+  },
+  "ui_c1a0dcce": {
+    "message": "📋 डेटा टेबल",
+    "description": "📋 Data Table"
+  },
+  "ui_ffb0ff72": {
+    "message": "प्रारूप",
+    "description": "Format"
+  },
+  "ui_fff5af1f": {
+    "message": "विस्तृत चर्चा",
+    "description": "Deep Dive"
+  },
+  "ui_b3c47c3f": {
+    "message": "संक्षिप्त",
+    "description": "Brief"
+  },
+  "ui_78edea29": {
+    "message": "समीक्षा",
+    "description": "Critique"
+  },
+  "ui_61a5d5c0": {
+    "message": "बहस",
+    "description": "Debate"
+  },
+  "ui_cc5e1935": {
+    "message": "लंबाई",
+    "description": "Length"
+  },
+  "ui_5fdddd75": {
+    "message": "छोटा",
+    "description": "Short"
+  },
+  "ui_19dc307e": {
+    "message": "डिफ़ॉल्ट",
+    "description": "Default"
+  },
+  "ui_45939473": {
+    "message": "लंबा",
+    "description": "Long"
+  },
+  "ui_cda1cf1f": {
+    "message": "अपने निर्देश",
+    "description": "Custom instructions"
+  },
+  "ui_c75093e": {
+    "message": "जैसे, शोध विधि पर ध्यान दें और मुख्य निष्कर्षों का सरल सार दें।",
+    "description": "e.g. Focus on methodology and summarize key findings simply."
+  },
+  "ui_1c96f10b": {
+    "message": "व्याख्या",
+    "description": "Explainer"
+  },
+  "ui_d3110b7c": {
+    "message": "दृश्य शैली",
+    "description": "Visual style"
+  },
+  "ui_76422ffa": {
+    "message": "अपने आप चुनें",
+    "description": "Auto Select"
+  },
+  "ui_9525b78e": {
+    "message": "कस्टम",
+    "description": "Custom"
+  },
+  "ui_7b47b1f3": {
+    "message": "क्लासिक",
+    "description": "Classic"
+  },
+  "ui_29db3ade": {
+    "message": "व्हाइटबोर्ड",
+    "description": "Whiteboard"
+  },
+  "ui_642fd4b": {
+    "message": "कवई",
+    "description": "Kawaii"
+  },
+  "ui_3e234f0f": {
+    "message": "ऐनिमे",
+    "description": "Anime"
+  },
+  "ui_9f0aff47": {
+    "message": "जलरंग",
+    "description": "Watercolor"
+  },
+  "ui_1a272890": {
+    "message": "रेट्रो प्रिंट",
+    "description": "Retro Print"
+  },
+  "ui_838b5730": {
+    "message": "पारंपरिक",
+    "description": "Heritage"
+  },
+  "ui_4b4de48f": {
+    "message": "पेपर क्राफ़्ट",
+    "description": "Paper Craft"
+  },
+  "ui_ecf7487f": {
+    "message": "जैसे, दृश्यों पर ज़ोर देते हुए डॉक्यूमेंट्री शैली अपनाएँ।",
+    "description": "e.g. Use a documentary style with emphasis on visuals."
+  },
+  "ui_45bb4d7b": {
+    "message": "कस्टम दृश्य शैली के निर्देश",
+    "description": "Custom visual style prompt"
+  },
+  "ui_f1d64ff0": {
+    "message": "दृश्य शैली कस्टम होने पर लागू होता है।",
+    "description": "Used when Visual style is Custom."
+  },
+  "ui_4d9b6fff": {
+    "message": "संक्षिप्त विवरण",
+    "description": "Briefing Doc"
+  },
+  "ui_82cda65a": {
+    "message": "अध्ययन गाइड",
+    "description": "Study Guide"
+  },
+  "ui_540782c5": {
+    "message": "ब्लॉग पोस्ट",
+    "description": "Blog Post"
+  },
+  "ui_48d33564": {
+    "message": "निर्देश",
+    "description": "Instructions"
+  },
+  "ui_7f1493ae": {
+    "message": "पहले से उपलब्ध रिपोर्ट प्रारूपों में जोड़ा जाता है।",
+    "description": "Added to built-in report formats."
+  },
+  "ui_89963e82": {
+    "message": "(कस्टम प्रारूप के लिए ज़रूरी)",
+    "description": "(required for Custom format)"
+  },
+  "ui_23b244d3": {
+    "message": "जैसे, गैर-विशेषज्ञ चिकित्सकों के लिए नैदानिक सारांश लिखें।",
+    "description": "e.g. Write a clinical summary for non-specialist physicians."
+  },
+  "ui_2bf732f8": {
+    "message": "संख्या",
+    "description": "Quantity"
+  },
+  "ui_8bca10b2": {
+    "message": "कम",
+    "description": "Fewer"
+  },
+  "ui_16ab68": {
+    "message": "मानक",
+    "description": "Standard"
+  },
+  "ui_4f34d900": {
+    "message": "अधिक",
+    "description": "More"
+  },
+  "ui_8520a210": {
+    "message": "कठिनाई",
+    "description": "Difficulty"
+  },
+  "ui_6c33113b": {
+    "message": "आसान",
+    "description": "Easy"
+  },
+  "ui_9be5f96": {
+    "message": "मध्यम",
+    "description": "Medium"
+  },
+  "ui_64efa7fc": {
+    "message": "कठिन",
+    "description": "Hard"
+  },
+  "ui_23c5022f": {
+    "message": "जैसे, चिकित्सा छात्रों के लिए नैदानिक तर्क पर ध्यान दें।",
+    "description": "e.g. Focus on clinical reasoning for medical students."
+  },
+  "ui_a5dcb66a": {
+    "message": "जैसे, मुख्य शब्दों और परिभाषाओं पर ज़ोर दें।",
+    "description": "e.g. Emphasize key terms and definitions."
+  },
+  "ui_c551d9c1": {
+    "message": "दिशा",
+    "description": "Orientation"
+  },
+  "ui_2bfbe892": {
+    "message": "क्षैतिज",
+    "description": "Landscape"
+  },
+  "ui_29092ffa": {
+    "message": "लंबवत",
+    "description": "Portrait"
+  },
+  "ui_fac98c66": {
+    "message": "वर्गाकार",
+    "description": "Square"
+  },
+  "ui_344473b4": {
+    "message": "विवरण",
+    "description": "Detail"
+  },
+  "ui_ae1f484f": {
+    "message": "संक्षिप्त",
+    "description": "Concise"
+  },
+  "ui_60e7b825": {
+    "message": "विस्तृत",
+    "description": "Detailed"
+  },
+  "ui_27129566": {
+    "message": "लेआउट प्रीसेट",
+    "description": "Layout preset"
+  },
+  "ui_126befb6": {
+    "message": "अपने आप",
+    "description": "Auto"
+  },
+  "ui_4d7b957e": {
+    "message": "संपादकीय",
+    "description": "Editorial"
+  },
+  "ui_3953c530": {
+    "message": "सादा",
+    "description": "Minimal"
+  },
+  "ui_6f955d7e": {
+    "message": "डेटा प्रधान",
+    "description": "Data Dense"
+  },
+  "ui_c7131496": {
+    "message": "मनोरंजक",
+    "description": "Playful"
+  },
+  "ui_772d3068": {
+    "message": "तकनीकी",
+    "description": "Technical"
+  },
+  "ui_30d783f6": {
+    "message": "समयरेखा",
+    "description": "Timeline"
+  },
+  "ui_ed6bcd64": {
+    "message": "तुलना",
+    "description": "Comparison"
+  },
+  "ui_78f9b63c": {
+    "message": "पोस्टर",
+    "description": "Poster"
+  },
+  "ui_4c4c7c4b": {
+    "message": "स्केच नोट",
+    "description": "Sketch Note"
+  },
+  "ui_f838ade2": {
+    "message": "पेशेवर",
+    "description": "Professional"
+  },
+  "ui_2f33ced9": {
+    "message": "बेंटो ग्रिड",
+    "description": "Bento Grid"
+  },
+  "ui_d0a9d3e2": {
+    "message": "शिक्षण",
+    "description": "Instructional"
+  },
+  "ui_d0670c2b": {
+    "message": "ईंटें",
+    "description": "Bricks"
+  },
+  "ui_ca5154a8": {
+    "message": "मिट्टी",
+    "description": "Clay"
+  },
+  "ui_e2a4f948": {
+    "message": "वैज्ञानिक",
+    "description": "Scientific"
+  },
+  "ui_872f8bff": {
+    "message": "जैसे, बड़े आइकॉन के साथ क्षैतिज समयरेखा लेआउट इस्तेमाल करें।",
+    "description": "e.g. Use a horizontal timeline layout with large icons."
+  },
+  "ui_2b961f3b": {
+    "message": "प्रस्तुतकर्ता",
+    "description": "Presenter"
+  },
+  "ui_d5672d4e": {
+    "message": "जैसे, सम्मेलन में 15 मिनट की प्रस्तुति के लिए बनाएँ।",
+    "description": "e.g. Design for a 15-minute conference presentation."
+  },
+  "ui_ebce5073": {
+    "message": "जैसे, सभी संख्यात्मक परिणामों को एक तुलना तालिका में रखें।",
+    "description": "e.g. Extract all numerical results into a comparison table."
+  },
+  "ui_beebc079": {
+    "message": "✨ अनुभव",
+    "description": "✨ Experience"
+  },
+  "ui_4aa812c3": {
+    "message": "डेस्कटॉप सूचनाएँ",
+    "description": "Desktop notifications"
+  },
+  "ui_d13e25a7": {
+    "message": "पूरा होने पर ध्वनि",
+    "description": "Completion chime"
+  },
+  "ui_204fd6fd": {
+    "message": "तैयार होने पर नोटबुक खोलें",
+    "description": "Open notebook when ready"
+  },
+  "ui_8dd31791": {
+    "message": "हो गया",
+    "description": "Done"
+  },
+  "ui_f835ea8d": {
+    "message": "पृष्ठ पर PDF खोज रहे हैं...",
+    "description": "Scanning page for PDFs..."
+  },
+  "ui_837a3d6": {
+    "message": "तैयारी",
+    "description": "Setup"
+  },
+  "ui_f3ddb69": {
+    "message": "स्रोत जोड़ें",
+    "description": "Add Source"
+  },
+  "ui_f0bfd7ef": {
+    "message": "स्रोत संसाधित हो रहा है",
+    "description": "Processing Source"
+  },
+  "ui_1a359bf5": {
+    "message": "सामग्री बनाएँ",
+    "description": "Generate Artifacts"
+  },
+  "ui_628ea1a2": {
+    "message": "पूरा",
+    "description": "Complete"
+  },
+  "ui_74b6158": {
+    "message": "पहले चुना गया संग्रह",
+    "description": "Previously selected collection"
+  },
+  "ui_caa12099": {
+    "message": "पहले चुना गया संग्रह (उपलब्ध नहीं)",
+    "description": "Previously selected collection (unavailable)"
+  },
+  "ui_9cd3026e": {
+    "message": "पहले चुना गया संग्रह (रीफ़्रेश नहीं हुआ)",
+    "description": "Previously selected collection (could not refresh)"
+  },
+  "ui_9fde4674": {
+    "message": "संग्रह लोड हो रहे हैं...",
+    "description": "Loading collections..."
+  },
+  "ui_ad9295c6": {
+    "message": "$1 संग्रह उपलब्ध हैं।",
+    "description": "Collections available: $1."
+  },
+  "ui_71b89b88": {
+    "message": "कोई संग्रह नहीं मिला। पहले Gemini Notebook में बनाएँ।",
+    "description": "No collections found. Create one in Gemini Notebook first."
+  },
+  "ui_3417b8bd": {
+    "message": "संग्रह लोड नहीं हुए। Gemini Notebook खोलकर साइन इन की स्थिति जाँचें।",
+    "description": "Could not load collections. Open Gemini Notebook and check your sign-in."
+  },
+  "ui_46a25e8a": {
+    "message": "स्थानीय PDF मिला",
+    "description": "Detected Local PDF"
+  },
+  "ui_96195221": {
+    "message": "PDF मिला",
+    "description": "Detected PDF"
+  },
+  "ui_f142f1c5": {
+    "message": "अपलोड करें और बनाएँ",
+    "description": "Upload & Generate"
+  },
+  "ui_d2cac6f0": {
+    "message": "दूसरा PDF चुनें",
+    "description": "Choose a different PDF"
+  },
+  "ui_3fac81f6": {
+    "message": "🎧 सामग्री बनाएँ",
+    "description": "🎧 Generate Artifacts"
+  },
+  "ui_c277b27a": {
+    "message": "इस पृष्ठ पर कोई PDF नहीं मिला।",
+    "description": "No PDF detected on this page."
+  },
+  "ui_f9bbdfd0": {
+    "message": "आप फिर भी इस पृष्ठ का URL सीधे आयात कर सकते हैं।",
+    "description": "You can still try importing this page URL directly."
+  },
+  "ui_f544e784": {
+    "message": "पृष्ठ आयात करें और बनाएँ",
+    "description": "Import Page & Generate"
+  },
+  "ui_c104ecd": {
+    "message": "स्थानीय PDF अपलोड करें",
+    "description": "Upload local PDF"
+  },
+  "ui_9388d923": {
+    "message": "यह फ़ाइल मान्य PDF नहीं है। दूसरी फ़ाइल चुनें।",
+    "description": "This file isn't a valid PDF. Choose another file."
+  },
+  "ui_b06fbcc0": {
+    "message": "परिणाम की पुष्टि नहीं हुई। दोबारा शुरू करने से पहले Gemini Notebook देखें।",
+    "description": "The result could not be confirmed. Check Gemini Notebook before starting again."
+  },
+  "ui_97c517c8": {
+    "message": "यह PDF अपलोड सीमा से बड़ा है। इसे सीधे Gemini Notebook में अपलोड करें।",
+    "description": "This PDF exceeds the upload limit. Upload it directly in Gemini Notebook."
+  },
+  "ui_3f0f4b44": {
+    "message": "Gemini Notebook में साइन इन करें, फिर यह पॉपअप दोबारा खोलें।",
+    "description": "Sign in to Gemini Notebook, then reopen this popup."
+  },
+  "ui_e5c255ed": {
+    "message": "Gemini Notebook की एक सीमा पूरी हो गई है। नया कार्य शुरू करने से पहले प्रतीक्षा करें।",
+    "description": "Gemini Notebook has reached a limit. Wait before starting more work."
+  },
+  "ui_1c310fdf": {
+    "message": "इस कार्य पर ध्यान देना ज़रूरी है। जारी रखने से पहले विवरण देखें।",
+    "description": "This workflow needs attention. Check the details before continuing."
+  },
+  "ui_ec24245": {
+    "message": "विवरण",
+    "description": "Details"
+  },
+  "ui_811b0256": {
+    "message": "नोटबुक का शीर्षक",
+    "description": "Notebook title"
+  },
+  "ui_d9259b7d": {
+    "message": "$1 में जोड़ा गया",
+    "description": "Added to $1"
+  },
+  "ui_9cebccf3": {
+    "message": "संग्रह में जोड़ना विफल रहा।",
+    "description": "Collection assignment failed."
+  },
+  "ui_7fad8491": {
+    "message": "संग्रह",
+    "description": "collection"
+  },
+  "ui_c4a69ed0": {
+    "message": "Gemini Notebook में खोलें",
+    "description": "Open in Gemini Notebook"
+  },
+  "ui_285dfd14": {
+    "message": "स्रोत आयात हुआ। कोई सामग्री बनाने का अनुरोध नहीं किया गया।",
+    "description": "Source imported. No artifacts requested."
+  },
+  "ui_e65751d2": {
+    "message": "$1/$2 सामग्री तैयार ($3 विफल)।",
+    "description": "$1/$2 artifacts ready ($3 failed)."
+  },
+  "ui_f59ae8c5": {
+    "message": "सामग्री तैयार है $1!",
+    "description": "Artifacts ready: $1!"
+  },
+  "ui_1aadce96": {
+    "message": "इस नोटबुक में जारी रखने के लिए डाउनलोड की अनुमति दें या PDF चुनें।",
+    "description": "Allow the download or choose a PDF to continue in this notebook."
+  },
+  "ui_f5943c95": {
+    "message": "आप यह पॉपअप बंद कर सकते हैं। कार्य जारी रहेगा।",
+    "description": "You can close this popup. Work continues."
+  },
+  "ui_f4a0bac0": {
+    "message": "डाउनलोड की अनुमति देकर जारी रखें",
+    "description": "Allow download and continue"
+  },
+  "ui_dd6a9d74": {
+    "message": "इसके बजाय PDF अपलोड करें",
+    "description": "Upload PDF Instead"
+  },
+  "ui_9d9a1d5b": {
+    "message": "डाउनलोड विवरण",
+    "description": "Download details"
+  },
+  "ui_92de1569": {
+    "message": "निगरानी रोकें",
+    "description": "Stop Monitoring"
+  },
+  "ui_59ba73c4": {
+    "message": "यह कार्य रुक जाएगा। Gemini Notebook में शुरू हो चुका कार्य जारी रह सकता है।",
+    "description": "Stops this workflow. Work already started in Gemini Notebook may continue."
+  },
+  "ui_a455e487": {
+    "message": "फिर से शुरू करें",
+    "description": "Start Over"
+  },
+  "ui_61e2a3f8": {
+    "message": "स्रोत",
+    "description": "Source"
+  },
+  "ui_d87cff14": {
+    "message": "स्रोत बदलना",
+    "description": "Source replacement"
+  },
+  "ui_18b524fa": {
+    "message": "वैकल्पिक अपलोड इसी नोटबुक में होगा। विफल URL स्रोत रखा जाएगा। सामग्री नए PDF से बनेगी।",
+    "description": "Upload fallback uses this notebook. The failed URL source is kept. Artifacts use the replacement PDF."
+  },
+  "ui_79f5dd9e": {
+    "message": "कार्य का विवरण",
+    "description": "Workflow details"
+  },
+  "ui_6cac833d": {
+    "message": "शुरू हो रहा है...",
+    "description": "Starting..."
+  },
+  "ui_25185cf8": {
+    "message": "⏳ शुरू हो रहा है...",
+    "description": "⏳ Starting..."
+  },
+  "ui_dfcc9e32": {
+    "message": "अपलोड हो रहा है...",
+    "description": "Uploading..."
+  },
+  "ui_1fb8851e": {
+    "message": "मौजूदा PDF पढ़ रहे हैं...",
+    "description": "Reading current PDF..."
+  },
+  "ui_435bb9d2": {
+    "message": "Gemini Notebook से जुड़ रहे हैं...",
+    "description": "Connecting to Gemini Notebook..."
+  },
+  "ui_8022dbaf": {
+    "message": "नोटबुक बन रही है...",
+    "description": "Creating notebook..."
+  },
+  "ui_357652bd": {
+    "message": "स्रोत जुड़ रहा है...",
+    "description": "Adding source..."
+  },
+  "ui_d2697109": {
+    "message": "PDF डाउनलोड हो रहा है...",
+    "description": "Downloading PDF..."
+  },
+  "ui_36e593a8": {
+    "message": "PDF अपलोड हो रहा है...",
+    "description": "Uploading PDF..."
+  },
+  "ui_a5712967": {
+    "message": "स्रोत संसाधित होने की प्रतीक्षा है। लगभग हर 30 सेकंड में जाँच होती है।",
+    "description": "Waiting for source processing. Checking about every 30 seconds."
+  },
+  "ui_a31472dd": {
+    "message": "सामग्री बनाने का अनुरोध भेज रहे हैं...",
+    "description": "Requesting artifacts..."
+  },
+  "ui_864fcfa3": {
+    "message": "कार्य पूरा हुआ।",
+    "description": "Workflow complete."
+  },
+  "ui_5549811c": {
+    "message": "कार्य चल रहा है...",
+    "description": "Work in progress..."
+  },
+  "ui_70571b43": {
+    "message": "$2 में से $1 सामग्री तैयार।",
+    "description": "$1 of $2 artifacts ready."
+  },
+  "ui_cf65f42b": {
+    "message": "Gemini Notebook तैयार है!",
+    "description": "Gemini Notebook Ready!"
+  },
+  "ui_3d2484f6": {
+    "message": "नोटबुक खोलें",
+    "description": "Open notebook"
+  },
+  "ui_265915f3": {
+    "message": "बंद करें",
+    "description": "Dismiss"
+  },
+  "ui_10c52774": {
+    "message": "ScholarRelay त्रुटि",
+    "description": "ScholarRelay Error"
+  },
+  "ui_5a963259": {
+    "message": "नोटबुक $1 तैयार है। स्रोत आयात हुआ, सामग्री नहीं बनाई गई। खोलने के लिए क्लिक करें।",
+    "description": "Notebook $1 is ready. Source imported without artifacts. Click to open."
+  },
+  "ui_1290e46e": {
+    "message": "नोटबुक $1 में $2 सामग्री तैयार हैं। खोलने के लिए क्लिक करें।",
+    "description": "Notebook $1 is ready with $2 artifacts. Click to open."
+  },
+  "ui_67fd3b38": {
+    "message": "नोटबुक $1 आंशिक रूप से तैयार है। $2/$3 सामग्री तैयार, $4 विफल। खोलने के लिए क्लिक करें।",
+    "description": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open."
+  },
+  "ui_6fa973d2": {
+    "message": "जाँच ज़रूरी है",
+    "description": "Needs checking"
+  },
+  "ui_dccf5581": {
+    "message": "सामग्री का विवरण",
+    "description": "Artifact details"
+  },
+  "ui_e46778ea": {
+    "message": "शोधपत्र कतार",
+    "description": "Paper queue"
+  },
+  "ui_9e437c74": {
+    "message": "कतार में",
+    "description": "Queued"
+  },
+  "ui_98bfff6f": {
+    "message": "तैयारी में",
+    "description": "Preparing"
+  },
+  "ui_863f19ee": {
+    "message": "रुका हुआ",
+    "description": "Stopped"
+  },
+  "ui_1d839782": {
+    "message": "नोटबुक बनाएँ",
+    "description": "Create notebook"
+  },
+  "ui_bb365f4d": {
+    "message": "पृष्ठ से नोटबुक बनाएँ",
+    "description": "Create notebook from page"
+  },
+  "ui_c66a1109": {
+    "message": "एक और शोधपत्र जोड़ें",
+    "description": "Add another paper"
+  },
+  "ui_fc5bf3cc": {
+    "message": "कतार से हटाएँ",
+    "description": "Remove from queue"
+  },
+  "ui_6810ced4": {
+    "message": "यह कार्य रोकें",
+    "description": "Stop this job"
+  },
+  "ui_acc12e9e": {
+    "message": "कतार रोकें",
+    "description": "Pause queue"
+  },
+  "ui_ab9aefe9": {
+    "message": "कतार फिर चलाएँ",
+    "description": "Resume queue"
+  },
+  "ui_13e397ca": {
+    "message": "हाल के कार्य",
+    "description": "Recent jobs"
+  },
+  "ui_7b37dc98": {
+    "message": "पूरे हुए कार्य हटाएँ",
+    "description": "Clear finished jobs"
+  },
+  "ui_caf6d280": {
+    "message": "कतार रुकी है। शुरू हो चुके कार्य जारी रहेंगे।",
+    "description": "Queue paused. Jobs already started continue."
+  },
+  "ui_75e45781": {
+    "message": "एक समय में एक शोधपत्र तैयार होता है। अधिकतम तीन नोटबुक में एक साथ सामग्री बनती है।",
+    "description": "Papers are prepared one at a time. Up to three notebooks generate at once."
+  },
+  "ui_70762261": {
+    "message": "कतार में है। पॉपअप बंद कर सकते हैं, पर Chrome खुला रखें।",
+    "description": "Queued. You can close this popup, but keep Chrome open."
+  },
+  "ui_70eb74c2": {
+    "message": "आप Chrome बंद कर सकते हैं। Gemini Notebook सामग्री बनाता रहेगा।",
+    "description": "You can close Chrome. Gemini Notebook keeps generating."
+  },
+  "ui_1591c255": {
+    "message": "पॉपअप बंद कर सकते हैं, पर सामग्री बनना शुरू होने तक Chrome खुला रखें।",
+    "description": "You can close this popup, but keep Chrome open until generation starts."
+  },
+  "ui_440cb2bf": {
+    "message": "इस शोधपत्र पर ध्यान देना ज़रूरी है। कतार के अन्य शोधपत्र आगे बढ़ सकते हैं।",
+    "description": "This paper needs attention. Other queued papers can continue."
+  },
+  "ui_e5cfc00b": {
+    "message": "कुछ अनुरोध Gemini Notebook में अभी चल सकते हैं। परिणाम के लिए यह नोटबुक देखें।",
+    "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
+  },
+  "ui_314695f8": {
+    "message": "सामग्री तैयार है। आप अगले शोधपत्र पर जा सकते हैं।",
+    "description": "Artifacts are ready. You can move on to another paper."
+  },
+  "ui_232cd7e": {
+    "message": "PDF सहेज रहे हैं। यह पॉपअप खुला रखें...",
+    "description": "Saving PDF. Keep this popup open..."
+  },
+  "ui_7ff14708": {
+    "message": "Gemini Notebook से अभी संपर्क नहीं हो रहा। बाद में फिर कोशिश करें।",
+    "description": "Gemini Notebook is temporarily unreachable. Try connecting again later."
+  },
+  "ui_77e33d8c": {
+    "message": "Gemini Notebook सत्र पहचाना नहीं गया। Gemini Notebook खोलकर विवरण देखें।",
+    "description": "Could not recognize the Gemini Notebook session. Open Gemini Notebook and check the details."
+  },
+  "ui_959074fd": {
+    "message": "कनेक्शन की प्रतीक्षा है। आपका शोधपत्र सहेजा गया है।",
+    "description": "Waiting for connection. Your paper is saved."
+  },
+  "ui_dc5fc1be": {
+    "message": "कनेक्शन ज़रूरी है",
+    "description": "Connection needed"
+  },
+  "ui_19f575ce": {
+    "message": "जुड़ने की कोशिश करें",
+    "description": "Try connection"
+  },
+  "ui_244aa556": {
+    "message": "$1/$2 तैयार",
+    "description": "$1/$2 ready"
+  },
+  "ui_b78d0565": {
+    "message": "कतार में बीता समय",
+    "description": "Time queued"
+  },
+  "ui_faff56b8": {
+    "message": "बीता समय",
+    "description": "Elapsed time"
+  },
+  "ui_c6bbc618": {
+    "message": "$1 बनाने की सीमा लागू है। बाद में इसी नोटबुक में फिर कोशिश करें।",
+    "description": "Generation is limited for $1. Try again later in the existing notebook."
+  },
+  "ui_72bb088c": {
+    "message": "कार्रवाई ज़रूरी है",
+    "description": "Action needed"
+  },
+  "ui_4a78a7bf": {
+    "message": "$1 से प्रतीक्षा",
+    "description": "Waiting $1"
+  },
+  "ui_e8233afc": {
+    "message": "आपकी प्रतीक्षा है",
+    "description": "Waiting for you"
+  },
+  "ui_f7066e40": {
+    "message": "कार्य हटाएँ",
+    "description": "Dismiss job"
+  },
+  "ui_47c21b54": {
+    "message": "PDF अपलोड करके जारी रखें",
+    "description": "Upload PDF and continue"
+  },
+  "ui_38f2e1ae": {
+    "message": "डाउनलोड की अनुमति ज़रूरी है। इसी नोटबुक में जारी रखने के लिए अनुमति दें या PDF चुनें।",
+    "description": "Download permission is needed. Allow access or select a PDF to continue in this notebook."
+  },
+  "ui_e431d4b": {
+    "message": "प्रकाशक ने PDF डाउनलोड रोका है। इसी नोटबुक में जारी रखने के लिए डाउनलोड किया हुआ PDF चुनें।",
+    "description": "The publisher blocked the PDF download. Select a downloaded PDF to continue in this notebook."
+  },
+  "ui_56d74e8d": {
+    "message": "PDF डाउनलोड नहीं हुआ। इसी नोटबुक में जारी रखने के लिए PDF चुनें।",
+    "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
+  },
+  "ui_9dab64e9": {
+    "message": "अनुपयोगी नोटबुक मिटाएँ",
+    "description": "Delete unused notebook"
+  },
+  "ui_97612a43": {
+    "message": "नोटबुक Gemini Notebook से मिटा दी गई।",
+    "description": "Notebook deleted from Gemini Notebook."
+  },
+  "ui_52c919ec": {
+    "message": "इस नोटबुक में $1 स्रोत और $2 विफल सामग्री हैं।",
+    "description": "This notebook has $1 source(s) and $2 failed artifact(s)."
+  },
+  "ui_2c26929": {
+    "message": "यह नोटबुक Gemini Notebook से मिटाएँ? इसे वापस नहीं पाया जा सकेगा।",
+    "description": "Delete this notebook from Gemini Notebook? This cannot be undone."
+  },
+  "ui_efd1bd2d": {
+    "message": "कोई शोधपत्र नहीं मिला। फिर भी नोटबुक बनाकर चुना हुआ स्वचालन शुरू करें?",
+    "description": "No paper was detected. Create a notebook and start the selected automation anyway?"
+  },
+  "ui_35afca3b": {
+    "message": "रद्द करें",
+    "description": "Cancel"
+  },
+  "ui_c2954bc2": {
+    "message": "वापस",
+    "description": "Back"
+  },
+  "ui_4408e966": {
+    "message": "रोकें और नोटबुक रखें",
+    "description": "Stop and keep notebook"
+  },
+  "ui_66613304": {
+    "message": "रोकें और नोटबुक मिटाएँ",
+    "description": "Stop and delete notebook"
+  },
+  "ui_9b369a0f": {
+    "message": "नोटबुक मिटाएँ",
+    "description": "Delete notebook"
+  },
+  "ui_e100f46d": {
+    "message": "रोक रहे हैं...",
+    "description": "Stopping..."
+  },
+  "ui_32be65e1": {
+    "message": "मिटा रहे हैं...",
+    "description": "Deleting..."
+  },
+  "ui_134d554a": {
+    "message": "मिटाने की स्थिति जाँचें",
+    "description": "Deletion needs checking"
+  },
+  "ui_d3d1dd4b": {
+    "message": "यह नोटबुक और इसके सभी स्रोत व परिणाम मिटा देता है।",
+    "description": "Deletes this notebook and all its sources and results."
+  },
+  "ui_b28f5ccc": {
+    "message": "इस पृष्ठ पर शोधपत्र",
+    "description": "Papers on this page"
+  },
+  "ui_8d353d4c": {
+    "message": "$2 में से $1 चुने गए",
+    "description": "$1 of $2 selected"
+  },
+  "ui_6af21072": {
+    "message": "सभी चुनें",
+    "description": "Select all"
+  },
+  "ui_4a57fc2": {
+    "message": "चयन हटाएँ",
+    "description": "Clear"
+  },
+  "ui_e8a27655": {
+    "message": "प्रमुख शोधपत्र",
+    "description": "Featured paper"
+  },
+  "ui_da557f42": {
+    "message": "पूरक सामग्री",
+    "description": "Supplement"
+  },
+  "ui_40b804c7": {
+    "message": "शोधपत्र खोलें",
+    "description": "Open paper"
+  },
+  "ui_67283063": {
+    "message": "नोटबुक बनाएँ",
+    "description": "Create notebooks"
+  },
+  "ui_10e895e8": {
+    "message": "एक नोटबुक",
+    "description": "One notebook"
+  },
+  "ui_f72c78e6": {
+    "message": "हर शोधपत्र की अलग",
+    "description": "One per paper"
+  },
+  "ui_340761b3": {
+    "message": "इस वेबपृष्ठ को संदर्भ के लिए जोड़ें",
+    "description": "Include this webpage as context"
+  },
+  "ui_894e2575": {
+    "message": "यह वेबपृष्ठ इस्तेमाल करें",
+    "description": "Use this webpage"
+  },
+  "ui_373b446b": {
+    "message": "इस साइट पर अपने आप पहचानें",
+    "description": "Detect automatically on this site"
+  },
+  "ui_cf80d578": {
+    "message": "arXiv से शीर्षक पाएँ",
+    "description": "Get titles from arXiv"
+  },
+  "ui_55c2ab3b": {
+    "message": "$1 स्रोतों से नोटबुक बनाएँ",
+    "description": "Create notebook with $1 sources"
+  },
+  "ui_a2bb458e": {
+    "message": "$1 नोटबुक बनाएँ",
+    "description": "Create $1 notebooks"
+  },
+  "ui_e24fe294": {
+    "message": "इस साइट पर अपने आप पहचानना चालू है।",
+    "description": "Automatic detection enabled for this site."
+  },
+  "ui_721b8d43": {
+    "message": "$1 कार्य कतार में सहेजे गए",
+    "description": "$1 jobs saved in queue"
+  },
+  "ui_d483e2ce": {
+    "message": "चुने गए स्रोत",
+    "description": "Selected sources"
+  },
+  "ui_32d7a557": {
+    "message": "छोड़ा गया",
+    "description": "Skipped"
+  },
+  "ui_70a589eb": {
+    "message": "यह स्रोत छोड़कर जारी रखें",
+    "description": "Skip this source and continue"
+  },
+  "ui_76aff97c": {
+    "message": "इस पृष्ठ पर $1 संभावित शोधपत्र",
+    "description": "$1 paper candidates on this page"
+  },
+  "ui_8cd6f197": {
+    "message": "एक स्रोत से नोटबुक बनाएँ",
+    "description": "Create notebook with one source"
+  },
+  "ui_c24b9e6a": {
+    "message": "एक नोटबुक बनाएँ",
+    "description": "Create one notebook"
+  },
+  "ui_c67e8add": {
+    "message": "एक कार्य कतार में सहेजा गया",
+    "description": "One job saved in queue"
+  },
+  "ui_2a03efde": {
+    "message": "इस पृष्ठ पर एक संभावित शोधपत्र",
+    "description": "One paper candidate on this page"
+  },
+  "ui_72c708f3": {
+    "message": "उपयोग $1% · $2",
+    "description": "Usage $1% · $2"
+  },
+  "ui_d8964ad4": {
+    "message": "सीमा",
+    "description": "Limit"
+  },
+  "ui_fd031aad": {
+    "message": "कंप्यूट उपयोग की अवधि $1 पर रीसेट होगी।",
+    "description": "Compute window resets $1."
+  },
+  "ui_f42db284": {
+    "message": "सर्वर के निर्देश पर $1 तक प्रतीक्षा करें।",
+    "description": "Server wait until $1."
+  },
+  "ui_d56e7ace": {
+    "message": "पृष्ठ का टेक्स्ट आयात करें",
+    "description": "Import page text"
+  },
+  "ui_15d48e31": {
+    "message": "टैब का टेक्स्ट Google को टेक्स्ट स्रोत के रूप में भेजता है। इसमें केवल साइन इन के बाद दिखने वाली सामग्री हो सकती है।",
+    "description": "Sends tab text to Google as a text source. May include sign-in-only content."
+  },
+  "ui_953fba37": {
+    "message": "यह पुनर्प्राप्ति विकल्प अब उपलब्ध नहीं है।",
+    "description": "This recovery is no longer available."
+  },
+  "ui_8a77184b": {
+    "message": "टेक्स्ट आयात करने के लिए मूल पृष्ठ खोलें।",
+    "description": "Open the original page to import its text."
+  },
+  "ui_c85ac8d9": {
+    "message": "साइट की अनुमति ज़रूरी है।",
+    "description": "Site access is required."
+  },
+  "ui_5c3eb330": {
+    "message": "पृष्ठ का टेक्स्ट पढ़ा नहीं जा सका।",
+    "description": "Page text could not be read."
+  },
+  "ui_fa291f21": {
+    "message": "पृष्ठ का टेक्स्ट आयात नहीं हुआ। मौजूदा नोटबुक देखें।",
+    "description": "Page text could not be imported. Check the existing notebook."
+  },
+  "ui_f90efa29": {
+    "message": "पृष्ठ का टेक्स्ट",
+    "description": "Page text"
+  },
+  "ui_4a3d4bfb": {
+    "message": "कतार फिर चलने या दूसरे कार्य की तैयारी पूरी होने तक प्रतीक्षा करें।",
+    "description": "Wait for the queue to resume or finish preparing another job."
+  }
+}

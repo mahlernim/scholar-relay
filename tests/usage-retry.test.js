@@ -43,7 +43,7 @@ test('skipped and schema failures do not become empty usage', () => {
     const data=raw();data[3][0]=[1];assert.equal(decodeUsage(data,now).actions[0].sufficient,false);
 });
 test('non-today reset labels include a date across all interface locales', () => {
-    for (const locale of ['en','ko','ja','es','fr','de','pt_BR','zh_CN','it','zh_TW']) {
+    for (const locale of ['en','ko','ja','es','fr','de','pt_BR','zh_CN','it','zh_TW', 'hi']) {
         assert.notEqual(formatReset(now+3600000,locale,now), formatReset(now+604800000+3600000,locale,now));
     }
 });
