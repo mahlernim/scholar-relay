@@ -12,6 +12,8 @@ import * as permissions from '../site-permissions.js';
 import * as i18n from '../i18n.js';
 import * as jobs from '../job-queue.js';
 import * as settings from '../settings.js';
+import * as usage from '../usage.js';
+import * as pageText from '../page-text.js';
 import { withRequestDeadline } from '../request-deadline.js';
 
 // Run the shipped worker with real policy modules and controlled browser/service IO.
@@ -47,7 +49,7 @@ async function worker({ failInitialQueueRead = false, initialQueue = null, initi
   const apiMocks = Object.fromEntries(Object.entries(api).map(([key, value]) => [key,
     typeof value === 'function' ? () => { throw new Error(`Unexpected service call ${key}`); } : value]));
   const context = vm.createContext({
-    ...apiMocks, ...runtime, ...fallback, ...detection, ...pdf, ...permissions, ...i18n, ...jobs, ...settings, withRequestDeadline,
+    ...apiMocks, ...runtime, ...fallback, ...detection, ...pdf, ...permissions, ...i18n, ...jobs, ...settings, ...usage, ...pageText, withRequestDeadline,
     createQueuedPdfStore: () => ({ put: async (id,file) => files.set(id,structuredClone(file)), get: async id => files.get(id), remove: async id => files.delete(id), prune: async () => {} }),
     console: Object.fromEntries(['log', 'warn', 'error'].map(level => [level, (...args) => logs.push([level, ...args])])),
     crypto: webcrypto, AbortController, URL, TextEncoder, TextDecoder, Uint8Array, ArrayBuffer, atob, btoa, setTimeout, clearTimeout,
@@ -766,4 +768,94 @@ test('cancelling an accepted local upload waits before releasing saved bytes', a
   assert.equal(w.files.size,1);
   finishUpload({id:'accepted-file'});
   await settleUntil(()=>w.data.jobQueue.jobs[0].status==='stopped' && w.files.size===0);
+});
+
+function pageRecoveryJob() {
+  return {runId:'recovery',status:'error',step:'error',failedStep:'add_source',notebookId:'notebook',notebookUrl:'https://notebook.google.com/notebook/notebook',
+    sourceType:'webpage',pageTabId:7,importMethod:'url',pdfUrl:'https://example.org/article',pageUrl:'https://example.org/article',
+    pageTextFailure:{sourceId:'failed-source',url:'https://example.org/article',rpcCode:9,diagnostic:1},settings:{generateAudio:true,notificationEnabled:false}};
+}
+async function recoveryWorker(job=pageRecoveryJob()) {
+  const w=await worker({initialQueue:{version:1,paused:false,jobs:[job]}});
+  w.context.chrome.tabs.get=async()=>({id:7,url:job.pdfUrl});
+  w.context.chrome.permissions={contains:async()=>true};
+  w.context.chrome.scripting={executeScript:async()=>[{result:{content:'Article text',title:'Article'}}]};
+  w.context.listSources=async()=>[{id:'failed-source',url:job.pdfUrl,status:3,experimentalFailureCode:1}];
+  w.context.addTextSource=async()=>({id:'replacement-source'});
+  return w;
+}
+test('page recovery requires consent before reads or extraction and persists its claim before upload',async()=>{
+  const w=await recoveryWorker();let reads=0,uploads=0;
+  w.context.chrome.scripting.executeScript=async()=>{reads++;assert.equal(w.data.jobQueue.jobs[0].pageTextClaimed,true);return[{result:{content:'text',title:'Article'}}];};
+  w.context.addTextSource=async()=>{uploads++;assert.equal(w.data.jobQueue.jobs[0].pageTextUploadStarted,true);return{id:'replacement'};};
+  assert.equal((await sendWorkerMessage(w,{type:'RECOVER_PAGE_TEXT',runId:'recovery',tabId:7,confirmed:false})).ok,false);
+  assert.equal(reads,0);
+  assert.equal((await sendWorkerMessage(w,{type:'RECOVER_PAGE_TEXT',runId:'recovery',tabId:7,confirmed:true})).ok,true);
+  assert.equal(uploads,1);assert.equal(w.data.jobQueue.jobs[0].step,'wait_source');assert.equal(w.data.jobQueue.jobs[0].failedUrlSourceId,'failed-source');
+  assert.equal((await sendWorkerMessage(w,{type:'RECOVER_PAGE_TEXT',runId:'recovery',tabId:7,confirmed:true})).ok,false);
+});
+test('uncertain page upload cannot replay after worker reload',async()=>{
+  const w=await recoveryWorker();w.context.addTextSource=async()=>{throw Object.assign(new Error('Uncertain'),{code:'TRANSIENT_MUTATION_UNCERTAIN'});};
+  await sendWorkerMessage(w,{type:'RECOVER_PAGE_TEXT',runId:'recovery',tabId:7,confirmed:true});
+  assert.equal(w.data.jobQueue.jobs[0].status,'error');
+  const restored=await worker({initialQueue:w.data.jobQueue});
+  assert.equal((await sendWorkerMessage(restored,{type:'RECOVER_PAGE_TEXT',runId:'recovery',tabId:7,confirmed:true})).ok,false);
+});
+test('cancelling an in-flight text import retains the returned source without starting generation',async()=>{
+  const w=await recoveryWorker();let finish;
+  w.context.addTextSource=()=>new Promise(resolve=>{finish=resolve;});
+  const pending=sendWorkerMessage(w,{type:'RECOVER_PAGE_TEXT',runId:'recovery',tabId:7,confirmed:true});
+  await settleUntil(()=>!!finish);await w.stopPipelineRequest('recovery','keep');
+  finish({id:'late-source'});await pending;
+  assert.equal(w.data.jobQueue.jobs[0].status,'stopped');assert.equal(w.data.jobQueue.jobs[0].replacementSourceId,'late-source');
+});
+test('setup wait persists across worker reload and cannot extend its original deadline',async()=>{
+  const job={...pageRecoveryJob(),status:'running',step:'wait_read',retryAt:Date.now()+120000,retryDeadline:Date.now()+180000};
+  const w=await worker({initialQueue:{version:1,paused:true,jobs:[job]}});
+  await w.listener({name:runtime.PIPELINE_ALARM_NAME});
+  assert.equal(w.data.jobQueue.jobs[0].step,'wait_read');assert.equal(w.data.jobQueue.jobs[0].retryDeadline,job.retryDeadline);
+  await w.stopPipelineRequest(job.runId,'keep');assert.equal(w.data.jobQueue.jobs[0].status,'stopped');
+});
+test('a cooldown never extends source or artifact stage deadlines',async()=>{
+  for(const [step,minutes] of [['wait_source',10],['wait_artifacts',20]]){
+    const job={...running([{type:'audio',taskId:'task',status:'in_progress'}]),step,stepStartedAt:new Date(Date.now()-(minutes+1)*60000).toISOString()};
+    const w=await worker({initialQueue:{version:1,paused:true,jobs:[job]}});
+    await w.listener({name:runtime.PIPELINE_ALARM_NAME});assert.equal(w.data.jobQueue.jobs[0].status,'error');assert.match(w.data.jobQueue.jobs[0].error,/timed out/);
+  }
+});
+
+test('page recovery cannot bypass paused, blocked or occupied preparation slots',async()=>{
+  for(const blocked of ['paused','serviceBlock','preparing','generating']){
+    const w=await recoveryWorker();let extracts=0;
+    w.context.chrome.scripting.executeScript=async()=>{extracts++;return[];};
+    if(blocked==='paused')w.data.jobQueue.paused=true;
+    if(blocked==='serviceBlock')w.data.jobQueue.serviceBlock={id:'hold'};
+    if(blocked==='preparing')w.data.jobQueue.jobs.push({...running(),step:'wait_source'});
+    if(blocked==='generating')w.data.jobQueue.jobs.push(...[1,2,3].map(n=>({...running(),runId:'other-'+n})));
+    assert.equal((await sendWorkerMessage(w,{type:'RECOVER_PAGE_TEXT',runId:'recovery',tabId:7,confirmed:true})).ok,false);
+    assert.equal(extracts,0);assert.equal(w.data.jobQueue.jobs[0].pageTextClaimed,undefined);
+  }
+});
+
+test('page recovery never extracts after permission denial or page navigation',async()=>{
+  for(const denied of [true,false]){
+    const w=await recoveryWorker();let extracts=0;
+    w.context.chrome.scripting.executeScript=async()=>{extracts++;return[];};
+    if(denied)w.context.chrome.permissions.contains=async()=>false;
+    else w.context.chrome.tabs.get=async()=>({id:7,url:'https://example.org/changed'});
+    assert.equal((await sendWorkerMessage(w,{type:'RECOVER_PAGE_TEXT',runId:'recovery',tabId:7,confirmed:true})).ok,false);
+    assert.equal(extracts,0);assert.equal(w.data.jobQueue.jobs[0].pageTextClaimed,undefined);
+  }
+});
+
+test('failure reset hints require an unexpired post-failure snapshot and matching insufficient action',async()=>{
+  const w=await recoveryWorker();const now=Date.now();
+  w.context.hintJob={...pageRecoveryJob(),tasks:[{type:'audio',status:'failed',code:'RATE_LIMITED',failedAt:new Date(now).toISOString()}]};
+  const snapshot={startedAt:now,capturedAt:now,expiresAt:now+60000,windows:[{code:1,used:100,resetsAt:now+60000},{code:2,used:20,resetsAt:now+120000}],actions:[{code:1,sufficient:false}]};
+  for(const [change,expected] of [[{},now+60000],[{startedAt:now-1},null],[{expiresAt:now-1},null],[{actions:[{code:1,sufficient:true}]},null],[{actions:[{code:2,sufficient:false}]},null]]){
+    w.context.hintSnapshot={...snapshot,...change};
+    const hint=vm.runInContext("failureUsage.set('recovery',hintSnapshot); withUsageHints(hintJob)",w.context);
+    assert.equal(hint.usageResetAt,expected);
+    assert.equal(w.data.jobQueue.jobs[0].usageResetAt,undefined);
+  }
 });

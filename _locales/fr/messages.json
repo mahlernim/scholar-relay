@@ -1136,5 +1136,57 @@
   "ui_2a03efde": {
     "message": "Un article candidat sur cette page",
     "description": "One paper candidate on this page"
+  },
+  "ui_72c708f3": {
+    "message": "Utilisation $1 % · $2",
+    "description": "Usage $1% · $2"
+  },
+  "ui_d8964ad4": {
+    "message": "Limite",
+    "description": "Limit"
+  },
+  "ui_fd031aad": {
+    "message": "La fenêtre de calcul se réinitialise le $1.",
+    "description": "Compute window resets $1."
+  },
+  "ui_f42db284": {
+    "message": "Attente demandée par le serveur jusqu’au $1.",
+    "description": "Server wait until $1."
+  },
+  "ui_d56e7ace": {
+    "message": "Importer le texte de la page",
+    "description": "Import page text"
+  },
+  "ui_15d48e31": {
+    "message": "Envoie le texte de l’onglet à Google comme source textuelle. Il peut contenir des informations accessibles uniquement après connexion.",
+    "description": "Sends tab text to Google as a text source. May include sign-in-only content."
+  },
+  "ui_953fba37": {
+    "message": "Cette récupération n’est plus disponible.",
+    "description": "This recovery is no longer available."
+  },
+  "ui_8a77184b": {
+    "message": "Ouvrez la page d’origine pour importer son texte.",
+    "description": "Open the original page to import its text."
+  },
+  "ui_c85ac8d9": {
+    "message": "L’accès au site est nécessaire.",
+    "description": "Site access is required."
+  },
+  "ui_5c3eb330": {
+    "message": "Impossible de lire le texte de la page.",
+    "description": "Page text could not be read."
+  },
+  "ui_fa291f21": {
+    "message": "Impossible d’importer le texte. Vérifiez le notebook existant.",
+    "description": "Page text could not be imported. Check the existing notebook."
+  },
+  "ui_f90efa29": {
+    "message": "Texte de la page",
+    "description": "Page text"
+  },
+  "ui_4a3d4bfb": {
+    "message": "Attendez la reprise de la file ou la fin de la préparation d’une autre tâche.",
+    "description": "Wait for the queue to resume or finish preparing another job."
   }
 }

@@ -1136,5 +1136,57 @@
   "ui_2a03efde": {
     "message": "このページに1件の論文候補",
     "description": "One paper candidate on this page"
+  },
+  "ui_72c708f3": {
+    "message": "使用量 $1% · $2",
+    "description": "Usage $1% · $2"
+  },
+  "ui_d8964ad4": {
+    "message": "制限",
+    "description": "Limit"
+  },
+  "ui_fd031aad": {
+    "message": "計算使用量の集計期間は $1 にリセットされます。",
+    "description": "Compute window resets $1."
+  },
+  "ui_f42db284": {
+    "message": "サーバーの指示により $1 まで待機します。",
+    "description": "Server wait until $1."
+  },
+  "ui_d56e7ace": {
+    "message": "ページ本文を取り込む",
+    "description": "Import page text"
+  },
+  "ui_15d48e31": {
+    "message": "タブの本文をテキストソースとして Google に送信します。ログイン後のみ閲覧できる内容が含まれる場合があります。",
+    "description": "Sends tab text to Google as a text source. May include sign-in-only content."
+  },
+  "ui_953fba37": {
+    "message": "この復旧操作は利用できなくなりました。",
+    "description": "This recovery is no longer available."
+  },
+  "ui_8a77184b": {
+    "message": "本文を取り込むには元のページを開いてください。",
+    "description": "Open the original page to import its text."
+  },
+  "ui_c85ac8d9": {
+    "message": "サイトへのアクセス権限が必要です。",
+    "description": "Site access is required."
+  },
+  "ui_5c3eb330": {
+    "message": "ページ本文を読み取れませんでした。",
+    "description": "Page text could not be read."
+  },
+  "ui_fa291f21": {
+    "message": "ページ本文を取り込めませんでした。既存のノートブックを確認してください。",
+    "description": "Page text could not be imported. Check the existing notebook."
+  },
+  "ui_f90efa29": {
+    "message": "ページ本文",
+    "description": "Page text"
+  },
+  "ui_4a3d4bfb": {
+    "message": "キューの再開または別のジョブの準備完了をお待ちください。",
+    "description": "Wait for the queue to resume or finish preparing another job."
   }
 }

@@ -1136,5 +1136,57 @@
   "ui_2a03efde": {
     "message": "此页面有 1 篇候选论文",
     "description": "One paper candidate on this page"
+  },
+  "ui_72c708f3": {
+    "message": "用量 $1% · $2",
+    "description": "Usage $1% · $2"
+  },
+  "ui_d8964ad4": {
+    "message": "受限",
+    "description": "Limit"
+  },
+  "ui_fd031aad": {
+    "message": "计算用量窗口于 $1 重置。",
+    "description": "Compute window resets $1."
+  },
+  "ui_f42db284": {
+    "message": "按服务器要求等待至 $1。",
+    "description": "Server wait until $1."
+  },
+  "ui_d56e7ace": {
+    "message": "导入网页正文",
+    "description": "Import page text"
+  },
+  "ui_15d48e31": {
+    "message": "将标签页正文作为文本来源发送给 Google，可能包含仅登录后可见的内容。",
+    "description": "Sends tab text to Google as a text source. May include sign-in-only content."
+  },
+  "ui_953fba37": {
+    "message": "此恢复操作已不可用。",
+    "description": "This recovery is no longer available."
+  },
+  "ui_8a77184b": {
+    "message": "请打开原始网页以导入正文。",
+    "description": "Open the original page to import its text."
+  },
+  "ui_c85ac8d9": {
+    "message": "需要网站访问权限。",
+    "description": "Site access is required."
+  },
+  "ui_5c3eb330": {
+    "message": "无法读取网页正文。",
+    "description": "Page text could not be read."
+  },
+  "ui_fa291f21": {
+    "message": "无法导入网页正文。请检查现有笔记本。",
+    "description": "Page text could not be imported. Check the existing notebook."
+  },
+  "ui_f90efa29": {
+    "message": "网页正文",
+    "description": "Page text"
+  },
+  "ui_4a3d4bfb": {
+    "message": "请等待队列恢复或另一项任务准备完成。",
+    "description": "Wait for the queue to resume or finish preparing another job."
   }
 }

@@ -1,4 +1,6 @@
 import { withRequestDeadline } from './request-deadline.js';
+import { retryGate, retryWaitError, parseRetryAfter } from './retry-policy.js';
+import { meterEnabled, decodeUsage } from './usage.js';
 /**
  * NotebookLM API client for Chrome Extension (service worker context).
  * 
@@ -21,6 +23,8 @@ function getNotebookUrl(notebookId) {
 
 // RPC Method IDs (reverse-engineered from notebooklm-py rpc/types.py)
 const RPCMethod = {
+  GET_ACCOUNT: 'SatQRc',
+  LIST_QUOTA_SUMMARY: 'EylDcb',
   CREATE_NOTEBOOK: 'CCqFvf',
   GET_NOTEBOOK: 'rLM1Ne',
   DELETE_NOTEBOOK: 'WWINqb',
@@ -177,6 +181,8 @@ let _mutationTimeoutMs = 15000;
 let _readTimeoutMs = 15000;
 
 const READ_ONLY_RPC_METHODS = new Set([
+  RPCMethod.GET_ACCOUNT,
+  RPCMethod.LIST_QUOTA_SUMMARY,
   RPCMethod.GET_NOTEBOOK,
   RPCMethod.LIST_ARTIFACTS,
   RPCMethod.LIST_LABELS,
@@ -579,17 +585,8 @@ function isLikelyOpaqueId(value) {
 // =========================================================================
 
 function retryDelayMs(response, failedAttempt) {
-  const retryAfter = response?.headers?.get?.('retry-after');
-  if (retryAfter) {
-    const seconds = Number(retryAfter);
-    if (Number.isFinite(seconds) && seconds >= 0) {
-      return Math.min(seconds * 1000, 10000);
-    }
-    const dateMs = Date.parse(retryAfter);
-    if (Number.isFinite(dateMs)) {
-      return Math.min(Math.max(0, dateMs - Date.now()), 10000);
-    }
-  }
+  const wait = parseRetryAfter(response?.headers?.get?.('retry-after'));
+  if (wait) return Math.max(0, wait.nextEligibleAt - Date.now());
   return Math.min(1000 * (2 ** failedAttempt), 10000);
 }
 
@@ -601,7 +598,7 @@ function mutationUncertainError(methodId, detail) {
   return error;
 }
 
-async function rpcCall(methodId, params, sourcePath = '/', allowNull = false, { raiseOnNullStatus = false } = {}) {
+async function rpcCall(methodId, params, sourcePath = '/', allowNull = false, { raiseOnNullStatus = false, ...readOptions } = {}) {
   const isReadOnly = READ_ONLY_RPC_METHODS.has(methodId);
   const maxAttempts = isReadOnly ? MAX_READ_ATTEMPTS : 1;
   let transientAttempt = 0;
@@ -624,6 +621,14 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false, { 
 
   while (transientAttempt < maxAttempts) {
     const { csrfToken, sessionId } = await ensureTokens();
+    // This extension has no account selector. Conservatively share the default
+    // browser-account transport wait across token refreshes and service aliases.
+    // A session token rotates on page loads and cannot identify a durable scope.
+    const scope = 'notebook-default-browser-account';
+    if (isReadOnly) {
+      const wait = await retryGate.check(scope, { ...readOptions, consume: true });
+      if (wait) throw retryWaitError(wait, readOptions.mode);
+    }
     const rpcRequest = encodeRpcRequest(methodId, params);
     const body = buildRequestBody(rpcRequest, csrfToken);
     const urlParams = buildUrlParams(methodId, sourcePath, sessionId);
@@ -652,7 +657,7 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false, { 
         const read = await withRequestDeadline(async signal => {
           const response = await fetchRpc(signal);
           return { response, text: response.ok ? await response.text() : '' };
-        }, _readTimeoutMs);
+        }, Math.min(_readTimeoutMs, Math.max(1, (readOptions.deadline ?? Infinity) - Date.now())));
         response = read.response;
         responseText = read.text;
       } else {
@@ -694,6 +699,7 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false, { 
         throw mutationUncertainError(methodId, detail);
       }
       transientAttempt++;
+      if (readOptions.mode === 'optional') throw new Error('Usage read unavailable');
       if (transientAttempt >= maxAttempts) {
         throw new Error(`NETWORK_ERROR: ${methodId} failed after ${maxAttempts} attempts: ${error?.message || 'request failed'}`);
       }
@@ -704,15 +710,22 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false, { 
     }
 
     if (response.status === 401 || response.status === 403) {
+      if (readOptions.noMutationAuthRetry && !isReadOnly) throw mutationUncertainError(methodId, 'Authentication response after sending text.');
       await refreshAfterAuthFailure(csrfToken, sessionId);
       continue;
     }
 
     if (response.status === 429 || response.status >= 500) {
+      const serverWait = await retryGate.remember(scope, response.headers?.get?.('retry-after'));
       if (!isReadOnly) {
-        throw mutationUncertainError(methodId, `Gemini Notebook returned HTTP ${response.status}.`);
+        throw Object.assign(mutationUncertainError(methodId, `Gemini Notebook returned HTTP ${response.status}.`), serverWait || {});
       }
       transientAttempt++;
+      if (serverWait?.nextEligibleAt > Date.now()) {
+        const wait = await retryGate.check(scope, readOptions);
+        throw retryWaitError(wait || { ...serverWait, canRetry: false }, readOptions.mode);
+      }
+      if (readOptions.mode === 'optional') throw new Error('Usage read unavailable');
       if (transientAttempt >= maxAttempts) {
         throw new Error(`HTTP ${response.status}: ${methodId} failed after ${maxAttempts} attempts.`);
       }
@@ -727,7 +740,9 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false, { 
     }
 
     try {
-      return decodeResponse(responseText, methodId, allowNull, raiseOnNullStatus);
+      const result = decodeResponse(responseText, methodId, allowNull, raiseOnNullStatus);
+      if (isReadOnly) await retryGate.finish(readOptions.operationId);
+      return result;
     } catch (error) {
       if (isReadOnly && error?.code === 'RPC_NULL_STATUS' && error.rpcCode === GRPC_UNAUTHENTICATED) {
         await refreshAfterAuthFailure(csrfToken, sessionId);
@@ -1004,13 +1019,14 @@ async function addFileSource(notebookId, filename, fileData, mimeType = 'applica
  * Add a URL source to a notebook.
  * Returns { id, title }
  */
-async function addUrlSource(notebookId, url) {
+async function addUrlSource(notebookId, url, readOptions = {}) {
   // Capture the existing source IDs before creating anything. URL values are
   // not unique within a notebook, so an uncertainty probe must never adopt an
   // older source that happens to use the same URL.
   const baselineSourceIds = new Set(
-    (await listSources(notebookId)).map(source => String(source.id))
+    (await listSources(notebookId, readOptions)).map(source => String(source.id))
   );
+  await readOptions.beforeMutation?.();
   const params = [
     [[null, null, [url], null, null, null, null, null, null, null, 1]],
     notebookId,
@@ -1028,6 +1044,17 @@ async function addUrlSource(notebookId, url) {
     return { id, title: null };
   } catch (caught) {
     let error = caught;
+    if (error?.code === 'RPC_REJECTED' && error.rpcCode === 9) {
+      // Only a single new matching ERROR row with the observed connection
+      // diagnostic enables recovery. Existing, ambiguous or unknown rows do not.
+      try {
+        const candidates = (await listSources(notebookId, { mode: 'optional' })).filter(source =>
+          !baselineSourceIds.has(source.id) && source.url === url);
+        if (candidates.length === 1 && candidates[0].status === SourceStatus.ERROR && candidates[0].experimentalFailureCode === 1)
+          error.pageTextFailure = { sourceId: candidates[0].id, url, rpcCode: 9, diagnostic: 1 };
+      } catch (_) { /* Preserve the original confirmed rejection. */ }
+      throw error;
+    }
     if ([400, 422].includes(error?.httpStatus) || (error?.code === 'RPC_REJECTED' && error.rpcCode === 3)) {
       error.code = 'SOURCE_IMPORT_REJECTED';
       throw error;
@@ -1074,11 +1101,11 @@ async function addUrlSource(notebookId, url) {
 /**
  * List all sources in a notebook and return their IDs + statuses.
  */
-async function listSources(notebookId) {
+async function listSources(notebookId, readOptions = {}) {
   const params = [notebookId, null, requestTemplateOptions(), null, 0];
   const result = await rpcCall(
     RPCMethod.GET_NOTEBOOK, params,
-    `/notebook/${notebookId}`
+    `/notebook/${notebookId}`, false, readOptions
   );
 
   const sources = [];
@@ -1107,7 +1134,10 @@ async function listSources(notebookId) {
           status = src[3][1];
         }
 
-        sources.push({ id: String(srcId), title, url: sourceUrl, status });
+        const settings = Array.isArray(src[3]?.[2]) ? src[3][2] : null;
+        const diagnostic = status === SourceStatus.ERROR && Array.isArray(settings?.[6]) ? settings[6][0] : null;
+        sources.push({ id: String(srcId), title, url: sourceUrl, status,
+          ...(Number.isInteger(diagnostic) && diagnostic > 0 ? { experimentalFailureCode: diagnostic } : {}) });
       }
     }
   }
@@ -1820,14 +1850,14 @@ function isMediaArtifactReady(artifact, typeCode) {
   }
 }
 
-async function listArtifactStatuses(notebookId) {
+async function listArtifactStatuses(notebookId, readOptions = {}) {
   const params = [[2], notebookId, 'NOT artifact.status = "ARTIFACT_STATUS_SUGGESTED"'];
   // A status-tagged null is a failed read, not an empty listing (notebooklm-py #2432).
   const result = await rpcCall(
     RPCMethod.LIST_ARTIFACTS, params,
     `/notebook/${notebookId}`,
     true,
-    { raiseOnNullStatus: true }
+    { raiseOnNullStatus: true, ...readOptions }
   );
 
   if (!result || !Array.isArray(result) || result.length === 0) {
@@ -1909,6 +1939,36 @@ async function getNotebookTitle(notebookId) {
 }
 
 // ES module exports for use in background.js
+// Best-effort account reads are coalesced, never cached or persisted.
+let usageRead = null;
+let usageReadStartedAt = 0;
+export async function getUsage({ after = 0 } = {}) {
+  // A popup/job-start request already in flight is not a fresh failure read.
+  // Wait for it, then coalesce failures onto one request started after them.
+  if (usageRead && usageReadStartedAt < after) await usageRead;
+  if (!usageRead) usageReadStartedAt = Date.now();
+  const startedAt = usageReadStartedAt;
+  if (!usageRead) usageRead = (async () => {
+    try {
+      const options = { mode: 'optional', raiseOnNullStatus: true };
+      const account = await rpcCall(RPCMethod.GET_ACCOUNT, [], '/', false, options);
+      if (!meterEnabled(account)) return null;
+      const snapshot = decodeUsage(await rpcCall(RPCMethod.LIST_QUOTA_SUMMARY, [null], '/', false, options));
+      return snapshot ? { ...snapshot, startedAt } : null;
+    } catch (_) { return null; }
+  })().finally(() => { usageRead = null; });
+  return usageRead;
+}
+
+export async function addTextSource(notebookId, title, content) {
+  if (typeof content !== 'string' || !content.trim() || new TextEncoder().encode(content).length > 200000) throw new Error('Invalid page text');
+  const params = [[[null, [String(title).slice(0, 300), content], null, 2, null, null, null, null, null, null, 1]], notebookId, requestTemplateOptions()];
+  const result = await rpcCall(RPCMethod.ADD_SOURCE, params, `/notebook/${notebookId}`, false, { noMutationAuthRetry: true });
+  const id = extractFirstIdFromResult(result);
+  if (!id) throw mutationUncertainError(RPCMethod.ADD_SOURCE, 'Text import returned no source ID.');
+  return { id, title };
+}
+
 export {
   fetchTokens,
   ensureTokens,

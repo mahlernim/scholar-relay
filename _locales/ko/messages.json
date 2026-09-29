@@ -1136,5 +1136,57 @@
   "ui_2a03efde": {
     "message": "이 페이지의 논문 후보 1개",
     "description": "One paper candidate on this page"
+  },
+  "ui_72c708f3": {
+    "message": "사용량 $1% · $2",
+    "description": "Usage $1% · $2"
+  },
+  "ui_d8964ad4": {
+    "message": "제한",
+    "description": "Limit"
+  },
+  "ui_fd031aad": {
+    "message": "연산 사용량 집계 구간 초기화 $1.",
+    "description": "Compute window resets $1."
+  },
+  "ui_f42db284": {
+    "message": "서버 요청으로 $1까지 대기합니다.",
+    "description": "Server wait until $1."
+  },
+  "ui_d56e7ace": {
+    "message": "페이지 본문 가져오기",
+    "description": "Import page text"
+  },
+  "ui_15d48e31": {
+    "message": "탭의 본문을 텍스트 소스로 Google에 전송합니다. 로그인 후에만 볼 수 있는 내용이 포함될 수 있습니다.",
+    "description": "Sends tab text to Google as a text source. May include sign-in-only content."
+  },
+  "ui_953fba37": {
+    "message": "이 복구 작업은 더 이상 사용할 수 없습니다.",
+    "description": "This recovery is no longer available."
+  },
+  "ui_8a77184b": {
+    "message": "본문을 가져오려면 원래 페이지를 여세요.",
+    "description": "Open the original page to import its text."
+  },
+  "ui_c85ac8d9": {
+    "message": "사이트 접근 권한이 필요합니다.",
+    "description": "Site access is required."
+  },
+  "ui_5c3eb330": {
+    "message": "페이지 본문을 읽을 수 없습니다.",
+    "description": "Page text could not be read."
+  },
+  "ui_fa291f21": {
+    "message": "페이지 본문을 가져오지 못했습니다. 기존 노트북을 확인하세요.",
+    "description": "Page text could not be imported. Check the existing notebook."
+  },
+  "ui_f90efa29": {
+    "message": "페이지 본문",
+    "description": "Page text"
+  },
+  "ui_4a3d4bfb": {
+    "message": "대기열을 재개하거나 다른 작업의 준비가 끝난 후 다시 시도하세요.",
+    "description": "Wait for the queue to resume or finish preparing another job."
   }
 }

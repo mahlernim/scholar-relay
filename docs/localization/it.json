@@ -281,5 +281,18 @@
   "Create notebook with one source": "Crea notebook con una fonte",
   "Add one paper to queue": "Aggiungi un articolo alla coda",
   "One job saved in queue": "Un’attività salvata nella coda",
-  "One paper candidate on this page": "Un possibile articolo in questa pagina"
+  "One paper candidate on this page": "Un possibile articolo in questa pagina",
+  "Usage $1% · $2": "Utilizzo $1% · $2",
+  "Limit": "Limite",
+  "Compute window resets $1.": "La finestra di calcolo si reimposta il $1.",
+  "Server wait until $1.": "Attesa richiesta dal server fino al $1.",
+  "Import page text": "Importa testo della pagina",
+  "Sends tab text to Google as a text source. May include sign-in-only content.": "Invia il testo della scheda a Google come fonte di testo. Può includere contenuti accessibili solo dopo l’accesso.",
+  "This recovery is no longer available.": "Questo recupero non è più disponibile.",
+  "Open the original page to import its text.": "Apri la pagina originale per importarne il testo.",
+  "Site access is required.": "È necessario l’accesso al sito.",
+  "Page text could not be read.": "Impossibile leggere il testo della pagina.",
+  "Page text could not be imported. Check the existing notebook.": "Impossibile importare il testo. Controlla il notebook esistente.",
+  "Page text": "Testo della pagina",
+  "Wait for the queue to resume or finish preparing another job.": "Attendi che la coda riprenda o che termini la preparazione di un altro lavoro."
 }

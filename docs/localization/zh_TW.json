@@ -281,5 +281,18 @@
   "Create notebook with one source": "以一個來源建立筆記本",
   "Add one paper to queue": "將一篇論文加入佇列",
   "One job saved in queue": "已將一項工作儲存至佇列",
-  "One paper candidate on this page": "這個頁面上有一篇候選論文"
+  "One paper candidate on this page": "這個頁面上有一篇候選論文",
+  "Usage $1% · $2": "用量 $1% · $2",
+  "Limit": "受限",
+  "Compute window resets $1.": "運算用量區間於 $1 重設。",
+  "Server wait until $1.": "依伺服器要求等候至 $1。",
+  "Import page text": "匯入網頁內文",
+  "Sends tab text to Google as a text source. May include sign-in-only content.": "將分頁內文作為文字來源傳送給 Google，可能包含僅登入後可見的內容。",
+  "This recovery is no longer available.": "此復原操作已無法使用。",
+  "Open the original page to import its text.": "請開啟原始網頁以匯入內文。",
+  "Site access is required.": "需要網站存取權限。",
+  "Page text could not be read.": "無法讀取網頁內文。",
+  "Page text could not be imported. Check the existing notebook.": "無法匯入網頁內文。請檢查現有筆記本。",
+  "Page text": "網頁內文",
+  "Wait for the queue to resume or finish preparing another job.": "請等待佇列恢復或另一項工作的準備完成。"
 }
