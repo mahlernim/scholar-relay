@@ -41,9 +41,9 @@
     "message": "工作流程已处于活动状态。在开始另一个之前检查其进度。",
     "description": "A workflow is already active. Check its progress before starting another."
   },
-  "ui_74a7ea81": {
+  "ui_a2d5ec61": {
     "message": "在Chrome扩展设置中启用允许访问文件网址，或选择上传本地PDF。",
-    "description": "Enable Allow access to file URLs in Chrome extension settings, or choose Upload Local PDF."
+    "description": "Enable Allow access to file URLs in Chrome extension settings, or choose Upload local PDF."
   },
   "ui_a788ccba": {
     "message": "直接PDF",
@@ -329,9 +329,9 @@
     "message": "指南",
     "description": "Instructions"
   },
-  "ui_28e8828a": {
-    "message": "（内置格式追加）",
-    "description": "(appended for built-in formats)"
+  "ui_7f1493ae": {
+    "message": "会附加到内置报告格式。",
+    "description": "Added to built-in report formats."
   },
   "ui_89963e82": {
     "message": "（自定义格式需要）",
@@ -509,9 +509,9 @@
     "message": "就绪后打开笔记本",
     "description": "Open notebook when ready"
   },
-  "ui_f1435584": {
-    "message": "保存设置",
-    "description": "✓ Save Settings"
+  "ui_8dd31791": {
+    "message": "完成",
+    "description": "Done"
   },
   "ui_f835ea8d": {
     "message": "正在扫描PDF页面...",
@@ -577,9 +577,9 @@
     "message": "上传并生成",
     "description": "Upload & Generate"
   },
-  "ui_b3573353": {
+  "ui_d2cac6f0": {
     "message": "选择其他PDF",
-    "description": "Choose Different PDF"
+    "description": "Choose a different PDF"
   },
   "ui_3fac81f6": {
     "message": "🎧 生成学习资料",
@@ -597,9 +597,9 @@
     "message": "导入页面并生成",
     "description": "Import Page & Generate"
   },
-  "ui_c108fead": {
+  "ui_c104ecd": {
     "message": "上传本地PDF",
-    "description": "Upload Local PDF"
+    "description": "Upload local PDF"
   },
   "ui_9388d923": {
     "message": "此文件不是有效的PDF。选择其他文件。",
@@ -669,9 +669,9 @@
     "message": "您可以关闭此弹出窗口。工作继续。",
     "description": "You can close this popup. Work continues."
   },
-  "ui_26242fbd": {
+  "ui_f4a0bac0": {
     "message": "允许下载并继续",
-    "description": "Allow Download & Continue"
+    "description": "Allow download and continue"
   },
   "ui_dd6a9d74": {
     "message": "改为上传PDF",
@@ -769,9 +769,9 @@
     "message": "Gemini Notebook就绪！",
     "description": "Gemini Notebook Ready!"
   },
-  "ui_ed59a0d6": {
+  "ui_3d2484f6": {
     "message": "打开笔记本",
-    "description": "Open Notebook"
+    "description": "Open notebook"
   },
   "ui_265915f3": {
     "message": "解散",
@@ -817,17 +817,13 @@
     "message": "停止",
     "description": "Stopped"
   },
-  "ui_cf1d1846": {
-    "message": "添加到队列",
-    "description": "Add to queue"
+  "ui_1d839782": {
+    "message": "创建笔记本",
+    "description": "Create notebook"
   },
-  "ui_1512a308": {
-    "message": "将PDF保存到队列",
-    "description": "Save PDF to queue"
-  },
-  "ui_d5809db3": {
-    "message": "添加到队列",
-    "description": "Add page to queue"
+  "ui_bb365f4d": {
+    "message": "用此页面创建笔记本",
+    "description": "Create notebook from page"
   },
   "ui_c66a1109": {
     "message": "添加另一篇论文",
@@ -861,21 +857,21 @@
     "message": "队列已暂停。作业已开始继续。",
     "description": "Queue paused. Jobs already started continue."
   },
-  "ui_c7972f4e": {
-    "message": "一次准备一篇论文。最多可以同时生成三个笔记本。",
-    "description": "Prepare one paper at a time. Up to three notebooks can generate together."
+  "ui_75e45781": {
+    "message": "论文逐篇准备。最多三个笔记本同时生成。",
+    "description": "Papers are prepared one at a time. Up to three notebooks generate at once."
   },
-  "ui_c744f96c": {
-    "message": "已保存。您可以关闭此弹出窗口。保持Chrome浏览器运行，以启动排队文件。",
-    "description": "Saved. You can close this popup. Keep Chrome running to start queued papers."
+  "ui_70762261": {
+    "message": "已排队。可以关闭此弹出窗口，但请保持 Chrome 打开。",
+    "description": "Queued. You can close this popup, but keep Chrome open."
   },
-  "ui_a6133a54": {
-    "message": "已接受请求。即使您关闭Chrome ， Gemini Notebook也将继续生成。您可以添加另一张纸。",
-    "description": "Requests accepted. Gemini Notebook will keep generating even if you close Chrome. You can add another paper."
+  "ui_70eb74c2": {
+    "message": "可以关闭 Chrome。Gemini Notebook 会继续生成。",
+    "description": "You can close Chrome. Gemini Notebook keeps generating."
   },
-  "ui_8481df34": {
-    "message": "您可以关闭此弹出窗口。在接受学习资料请求之前，保持Chrome运行。",
-    "description": "You can close this popup. Keep Chrome running until the artifact requests are accepted."
+  "ui_1591c255": {
+    "message": "可以关闭此弹出窗口，但在开始生成前请保持 Chrome 打开。",
+    "description": "You can close this popup, but keep Chrome open until generation starts."
   },
   "ui_440cb2bf": {
     "message": "这篇论文需要引起注意。其他排队论文可以继续。",
@@ -945,9 +941,9 @@
     "message": "关闭任务",
     "description": "Dismiss job"
   },
-  "ui_45c40cb9": {
+  "ui_47c21b54": {
     "message": "上传PDF并继续",
-    "description": "Upload PDF & Continue"
+    "description": "Upload PDF and continue"
   },
   "ui_38f2e1ae": {
     "message": "需要下载权限。允许访问或选择一个PDF以在此笔记本中继续。",
@@ -1021,6 +1017,10 @@
     "message": "此页面的论文",
     "description": "Papers on this page"
   },
+  "ui_8d353d4c": {
+    "message": "已选择 $1/$2",
+    "description": "$1 of $2 selected"
+  },
   "ui_6af21072": {
     "message": "全选",
     "description": "Select all"
@@ -1049,9 +1049,9 @@
     "message": "一个笔记本",
     "description": "One notebook"
   },
-  "ui_ab7db738": {
-    "message": "分别创建",
-    "description": "Separate"
+  "ui_f72c78e6": {
+    "message": "每篇一个",
+    "description": "One per paper"
   },
   "ui_340761b3": {
     "message": "包含此网页作为背景",
@@ -1065,25 +1065,17 @@
     "message": "在此网站自动检测",
     "description": "Detect automatically on this site"
   },
-  "ui_200e067f": {
-    "message": "获取论文标题",
-    "description": "Find paper titles"
-  },
-  "ui_2df60e04": {
-    "message": "一个笔记本中有 $1 个来源",
-    "description": "$1 sources in one notebook"
-  },
-  "ui_e6e47f19": {
-    "message": "$1 个独立笔记本",
-    "description": "$1 separate notebooks"
+  "ui_cf80d578": {
+    "message": "从 arXiv 获取标题",
+    "description": "Get titles from arXiv"
   },
   "ui_55c2ab3b": {
     "message": "用 $1 个来源创建笔记本",
     "description": "Create notebook with $1 sources"
   },
-  "ui_ee66925c": {
-    "message": "将 $1 篇论文加入队列",
-    "description": "Add $1 papers to queue"
+  "ui_a2bb458e": {
+    "message": "创建 $1 个笔记本",
+    "description": "Create $1 notebooks"
   },
   "ui_e24fe294": {
     "message": "已启用此网站的自动检测。",
@@ -1109,21 +1101,13 @@
     "message": "此页面有 $1 个论文候选项",
     "description": "$1 paper candidates on this page"
   },
-  "ui_f3db4860": {
-    "message": "一个笔记本中包含 1 个来源",
-    "description": "One source in one notebook"
-  },
-  "ui_958d5a41": {
-    "message": "1 个独立笔记本",
-    "description": "One separate notebook"
-  },
   "ui_8cd6f197": {
     "message": "使用 1 个来源创建笔记本",
     "description": "Create notebook with one source"
   },
-  "ui_154ddf8c": {
-    "message": "将 1 篇论文加入队列",
-    "description": "Add one paper to queue"
+  "ui_c24b9e6a": {
+    "message": "创建 1 个笔记本",
+    "description": "Create one notebook"
   },
   "ui_c67e8add": {
     "message": "已将 1 个任务保存到队列",

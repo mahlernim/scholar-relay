@@ -37,9 +37,9 @@ function handoffMessage(job) {
     if (job.status === 'queued' && queueSnapshot.serviceBlock) return t('Waiting for connection. Your paper is saved.');
     if (job.status === 'completed' && !job.tasks?.length) return t('Source imported. No artifacts requested.');
     return {
-        saved: t('Saved. You can close this popup. Keep Chrome running to start queued papers.'),
-        accepted: t('Requests accepted. Gemini Notebook will keep generating even if you close Chrome. You can add another paper.'),
-        preparing: t('You can close this popup. Keep Chrome running until the artifact requests are accepted.'),
+        saved: t('Queued. You can close this popup, but keep Chrome open.'),
+        accepted: t('You can close Chrome. Gemini Notebook keeps generating.'),
+        preparing: t('You can close this popup, but keep Chrome open until generation starts.'),
         attention: t('This paper needs attention. Other queued papers can continue.'),
         check: t('Some requests may still be running in Gemini Notebook. Check this notebook for the result.'),
         ready: t('Artifacts are ready. You can move on to another paper.'),
@@ -136,16 +136,16 @@ async function refreshQueue() {
             '<button class="job-title" data-show="' + escapeHtml(job.runId) + '">' + escapeHtml(job.sourceTitle || job.notebookTitle || job.pdfUrl || t('Source')) + '</button>' +
             queueStatusHtml(job) +
             '<p class="job-hint">' + escapeHtml(handoffMessage(job)) + '</p>' +
-            '<div class="job-actions">' + (job.notebookUrl ? '<a href="' + escapeHtml(job.notebookUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(t('Open Notebook')) + '</a>' : '') +
+            '<div class="job-actions">' + (job.notebookUrl ? '<a href="' + escapeHtml(job.notebookUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(t('Open notebook')) + '</a>' : '') +
             (job.status === 'running' && job.step === 'wait_pdf_access' ?
                 '<button data-show="' + escapeHtml(job.runId) + '">' + escapeHtml(t('Details')) + '</button>' +
-                '<button data-pdf-file="' + escapeHtml(job.runId) + '">' + escapeHtml(t('Upload PDF & Continue')) + '</button>' +
-                (pdfWaitReason(job) === 'permission' ? '<button data-pdf-permission="' + escapeHtml(job.runId) + '">' + escapeHtml(t('Allow Download & Continue')) + '</button>' : '') : '') +
+                '<button data-pdf-file="' + escapeHtml(job.runId) + '">' + escapeHtml(t('Upload PDF and continue')) + '</button>' +
+                (pdfWaitReason(job) === 'permission' ? '<button data-pdf-permission="' + escapeHtml(job.runId) + '">' + escapeHtml(t('Allow download and continue')) + '</button>' : '') : '') +
             cancellationActions(job) + '</div></article>';
     };
     const html = '<div class="queue-heading"><strong>' + escapeHtml(t('Paper queue')) + ' · ' + active.length + '</strong>' +
         '<button id="btn-pause-queue">' + escapeHtml(queue.paused ? t('Resume queue') : t('Pause queue')) + '</button></div>' +
-        '<p class="s-help">' + escapeHtml(queue.paused ? t('Queue paused. Jobs already started continue.') : t('Prepare one paper at a time. Up to three notebooks can generate together.')) + '</p>' +
+        '<p class="s-help">' + escapeHtml(queue.paused ? t('Queue paused. Jobs already started continue.') : t('Papers are prepared one at a time. Up to three notebooks generate at once.')) + '</p>' +
         (queue.serviceBlock ? '<div class="queue-connection" role="status"><p class="s-help">' + escapeHtml(errorSummary(queue.serviceBlock)) + '</p><button class="btn-secondary" id="btn-retry-connection">' + escapeHtml(t('Try connection')) + '</button></div>' : '') +
         '<div class="job-list">' + active.map(card).join('') + '</div>' +
         (finished.length ? '<details id="finished-jobs"><summary>' + escapeHtml(t('Recent jobs')) + ' · ' + finished.length + '</summary><div class="job-list">' + finished.map(card).join('') + '</div><button class="btn-secondary" id="btn-clear-jobs">' + escapeHtml(t('Clear finished jobs')) + '</button></details>' : '');
@@ -633,10 +633,10 @@ async function renderPaperSelection(data) {
             '<span data-paper-title="' + e(item.id) + '">' + e(item.sourceTitle) + '</span><small>' + e(item.supplementary ? t('Supplement') : item.arxivId || new URL(item.pdfUrl).hostname) + '</small></label>' +
             '<a target="_blank" rel="noopener" aria-label="' + e(t('Open paper')) + '" href="' + e(item.pageUrl === data.pageUrl ? item.pdfUrl : item.pageUrl) + '">↗</a></div>').join('') + '</div>' +
         '<div class="paper-mode"><span>' + e(t('Create notebooks')) + '</span><div role="radiogroup" aria-label="' + e(t('Create notebooks')) + '">' +
-        ['separate', 'one'].map(mode => '<label><input type="radio" name="paper-mode" value="' + mode + '"><span>' + e(t(mode === 'one' ? 'One notebook' : 'Separate')) + '</span></label>').join('') + '</div></div>' +
+        ['separate', 'one'].map(mode => '<label><input type="radio" name="paper-mode" value="' + mode + '"><span>' + e(t(mode === 'one' ? 'One notebook' : 'One per paper')) + '</span></label>').join('') + '</div></div>' +
         '<div id="paper-combined"><label for="paper-title">' + e(t('Notebook title')) + '</label><input id="paper-title" maxlength="300"><label><input type="checkbox" id="paper-context">' + e(t('Include this webpage as context')) + '</label></div>' +
-        '<p class="s-help" id="paper-summary"></p><button class="btn-generate" id="paper-add"></button>' + artifactSummaryHtml() + '<p id="paper-feedback" role="status"></p>' +
-        '<div class="paper-tools paper-actions"><button id="paper-webpage">' + e(t('Use this webpage')) + '</button><button id="paper-auto">' + e(t('Detect automatically on this site')) + '</button><button id="paper-titles">' + e(t('Find paper titles')) + '</button></div>';
+        '<button class="btn-generate" id="paper-add"></button>' + artifactSummaryHtml() + '<p id="paper-feedback" role="status"></p>' +
+        '<div class="paper-tools paper-actions"><button id="paper-webpage">' + e(t('Use this webpage')) + '</button><button id="paper-auto">' + e(t('Detect automatically on this site')) + '</button><button id="paper-titles">' + e(t('Get titles from arXiv')) + '</button></div>';
     contentEl.dataset.renderMode = 'papers';
     updateArtifactSummary();
     const el = id => document.getElementById(id);
@@ -650,9 +650,8 @@ async function renderPaperSelection(data) {
         contentEl.querySelectorAll('[data-candidate]').forEach(box => box.checked = selected.has(box.dataset.candidate));
         contentEl.querySelectorAll('[name="paper-mode"]').forEach(radio => radio.checked = radio.value === view.mode);
         const count = selected.size + (one && view.context ? 1 : 0);
-        el('paper-count').textContent = selected.size + ' / ' + data.candidates.length + (data.truncated ? '+' : '');
-        el('paper-summary').textContent = one ? (count === 1 ? t('One source in one notebook') : t('$1 sources in one notebook', [count])) : (selected.size === 1 ? t('One separate notebook') : t('$1 separate notebooks', [selected.size]));
-        el('paper-add').textContent = one ? (count === 1 ? t('Create notebook with one source') : t('Create notebook with $1 sources', [count])) : (selected.size === 1 ? t('Add one paper to queue') : t('Add $1 papers to queue', [selected.size]));
+        el('paper-count').textContent = t('$1 of $2 selected', [selected.size, data.candidates.length + (data.truncated ? '+' : '')]);
+        el('paper-add').textContent = one ? (count === 1 ? t('Create notebook with one source') : t('Create notebook with $1 sources', [count])) : (selected.size === 1 ? t('Create one notebook') : t('Create $1 notebooks', [selected.size]));
         el('paper-add').disabled = !!view.busy || !count || count > 20 || (one && !view.title.trim());
         save().catch(console.warn);
     };
@@ -736,9 +735,9 @@ function renderDetection(data) {
       <div class="pdf-url">${escapeHtml(truncated)}</div>
       <div class="pdf-source">${escapeHtml(t(sourceLabel))}</div>
     </div>
-    <button class="btn-generate" id="btn-upload-start">${escapeHtml(t('Save PDF to queue'))}</button>
+    <button class="btn-generate" id="btn-upload-start">${escapeHtml(t('Create notebook'))}</button>
     ${artifactSummaryHtml()}
-    <button class="btn-secondary" id="btn-upload-other">${escapeHtml(t("Choose Different PDF"))}</button>`;
+    <button class="btn-secondary" id="btn-upload-other">${escapeHtml(t("Choose a different PDF"))}</button>`;
         document.getElementById('btn-upload-start').addEventListener('click', () => startPipelineFromCurrentTabPdf(data.pageUrl || data.pdfUrl));
         document.getElementById('btn-upload-other').addEventListener('click', () => promptForPdfUpload(data.pageUrl || data.pdfUrl));
         updateArtifactSummary();
@@ -752,7 +751,7 @@ function renderDetection(data) {
       <div class="pdf-url">${escapeHtml(truncated)}</div>
       <div class="pdf-source">${escapeHtml(t(sourceLabel))}</div>
     </div>
-    <button class="btn-generate" id="btn-start">${escapeHtml(t('Add to queue'))}</button>
+    <button class="btn-generate" id="btn-start">${escapeHtml(t('Create notebook'))}</button>
     ${artifactSummaryHtml()}
     ${/^https?:\/\//i.test(data.pageUrl || '') ? `<div class="paper-tools paper-actions"><button id="single-paper-auto">${escapeHtml(t('Detect automatically on this site'))}</button></div><div id="single-paper-feedback" role="status"></div>` : ''}`;
     updateArtifactSummary();
@@ -780,9 +779,9 @@ function renderNoPdf() {
       ${escapeHtml(t("No PDF detected on this page."))}
       <span style="font-size:11px; color:var(--text-dim)">${escapeHtml(t("You can still try importing this page URL directly."))}</span>
     </div>
-    <button class="btn-generate" id="btn-start-url">${escapeHtml(t('Add page to queue'))}</button>
+    <button class="btn-generate" id="btn-start-url">${escapeHtml(t('Create notebook from page'))}</button>
     ${artifactSummaryHtml()}
-    <button class="btn-secondary" id="btn-upload-manual">${escapeHtml(t("Upload Local PDF"))}</button>`;
+    <button class="btn-secondary" id="btn-upload-manual">${escapeHtml(t("Upload local PDF"))}</button>`;
     document.getElementById('btn-start-url').addEventListener('click', startPipelineFromCurrentPageUrl);
     document.getElementById('btn-upload-manual').addEventListener('click', () => promptForPdfUpload(null));
     updateArtifactSummary();
@@ -877,8 +876,8 @@ function renderProgress(state) {
     }
     if (!generationLimitSummary(state.tasks)) bottomHtml += `<p class="handoff-note" role="status">${escapeHtml(handoffMessage(state))}</p>`;
     if (state.status === 'running' && state.step === 'wait_pdf_access') {
-        bottomHtml += `${pdfWaitReason(state) === 'permission' ? `<button class="btn-generate" id="btn-resume-pdf">${escapeHtml(t("Allow Download & Continue"))}</button>` : ''}
-          <button class="btn-secondary" id="btn-fallback-file">${escapeHtml(t("Upload PDF & Continue"))}</button>
+        bottomHtml += `${pdfWaitReason(state) === 'permission' ? `<button class="btn-generate" id="btn-resume-pdf">${escapeHtml(t("Allow download and continue"))}</button>` : ''}
+          <button class="btn-secondary" id="btn-fallback-file">${escapeHtml(t("Upload PDF and continue"))}</button>
           ${state.stepDetail ? `<details class="workflow-details"><summary>${escapeHtml(t("Download details"))}</summary><div class="step-detail">${escapeHtml(state.stepDetail)}</div></details>` : ''}`;
     }
     if (state.sources) {
@@ -1015,7 +1014,7 @@ async function startPipelineFromCurrentPageUrl() {
         await startPipeline(currentUrl, currentUrl, 'webpage', sourceTitle);
     } catch (err) {
         console.warn('[Popup] Could not start webpage URL pipeline:', err?.message || err);
-        if (btn) { btn.disabled = false; btn.textContent = t('Add page to queue'); }
+        if (btn) { btn.disabled = false; btn.textContent = t('Create notebook from page'); }
         showError(err?.message || 'Could not use current webpage URL as a source.');
     }
 }
@@ -1114,7 +1113,7 @@ function isAllowedFileSchemeAccess() {
 
 function showFileAccessHint() {
     showError(
-        'To use "Upload & Generate" for local files, enable file access.\n\n' +
+        'To create notebooks from local files, enable file access.\n\n' +
         '1) Open chrome://extensions\n' +
         '2) Find this extension\n' +
         '3) Enable "Allow access to file URLs"\n' +
@@ -1210,7 +1209,7 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
             showFileAccessHint();
             if (btn) {
                 btn.disabled = false;
-                btn.textContent = btn.id === 'btn-start' ? t('Add to queue') : t('Save PDF to queue');
+                btn.textContent = t('Create notebook');
             }
             return;
         }
@@ -1359,7 +1358,7 @@ async function startPipelineFromCurrentTabPdf(pageUrl, pdfUrl = null, detectedSo
         console.warn('[Popup] Direct local PDF read failed, falling back to file picker:', err?.message || err);
         if (btn) {
             btn.disabled = false;
-            btn.textContent = btn.id === 'btn-start' ? t('Add to queue') : t('Save PDF to queue');
+            btn.textContent = t('Create notebook');
         }
         if (['PIPELINE_ALREADY_RUNNING', 'PIPELINE_NOT_IDLE', 'PDF_TOO_LARGE'].includes(err?.code) ||
             /retain ownership/i.test(err?.message || '')) {

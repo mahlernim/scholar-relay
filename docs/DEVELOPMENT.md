@@ -564,3 +564,12 @@ Issue #98 changes popup presentation without adding strings. The start views now
 Accent, success, warning, error, and dim text colors were darkened to reach WCAG AA contrast on white, and 10px text was raised to 11px. Artifact rows in Settings use sentence case below the uppercase group titles. The duplicate Settings header was removed along with its catalog entry, leaving 282 messages. The close button uses the accent color. Queue, job, and site tool actions are outlined buttons, while selection shortcuts stay as text links.
 
 Wording changes are deferred because the catalog is keyed by English source text and every change needs translation in ten locales. The compact progress smoke now waits for the finished-jobs list instead of a fixed delay after reload. That delay failed once in CI and once locally. README and store screenshots are unchanged and should be recaptured when this ships. The local capture script did not load the unpacked extension reliably on this machine, as noted for v1.5.1.
+
+### Popup wording pass
+
+Issue #101 follows the design pass with copy changes. Start buttons name the result instead of the queue. They read Create notebook, Create notebook from page, and Create $1 notebooks, while the saved-job feedback still mentions the queue. The paper list drops the summary line that repeated the button, labels its count as selected, and offers One per paper beside One notebook. The arXiv title action now says where titles come from.
+
+Queue help describes system behavior, and the queued, preparing, and accepted hints are shorter. Buttons use sentence case, and the Settings close button reads Done because settings already save on change. Report instructions keep the Custom requirement in the label and move the built-in note to help text.
+
+The catalog has 278 messages. New and changed rows were translated from the English source for all nine other locales, reusing each catalog's existing notebook and queue terms. Case-only renames keep their previous translations. Translations are machine-assisted without native-speaker review. Product labels such as Audio Overview and Deep Dive are unchanged.
+
