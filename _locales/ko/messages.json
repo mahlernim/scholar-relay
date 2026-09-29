@@ -97,10 +97,6 @@
     "message": "설정",
     "description": "Settings"
   },
-  "ui_b62eeb9e": {
-    "message": "⚙️ 설정",
-    "description": "⚙️ Settings"
-  },
   "ui_546c8007": {
     "message": "⚠️ 아티팩트를 하나 이상 선택하세요",
     "description": "⚠️ Choose at least one artifact"

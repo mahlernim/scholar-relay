@@ -97,10 +97,6 @@
     "message": "設定",
     "description": "Settings"
   },
-  "ui_b62eeb9e": {
-    "message": "⚙️ 設定",
-    "description": "⚙️ Settings"
-  },
   "ui_546c8007": {
     "message": "⚠️ 請至少選擇一項工作室內容",
     "description": "⚠️ Choose at least one artifact"

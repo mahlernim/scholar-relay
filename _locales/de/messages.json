@@ -97,10 +97,6 @@
     "message": "Einstellungen",
     "description": "Settings"
   },
-  "ui_b62eeb9e": {
-    "message": "⚙️ Einstellungen",
-    "description": "⚙️ Settings"
-  },
   "ui_546c8007": {
     "message": "⚠️ Mindestens ein Artefakt auswählen",
     "description": "⚠️ Choose at least one artifact"
