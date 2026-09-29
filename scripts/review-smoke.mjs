@@ -67,7 +67,9 @@ export async function compactProgressSmoke({ popup, evaluate, reload, root, orig
         try {
             await evaluate(popup, `chrome.storage.local.set({jobQueue:${JSON.stringify({ version: 1, paused: true, jobs })}})`);
             await reload(popup);
-            const view = await evaluate(popup, `(() => {
+            const view = await evaluate(popup, `(async () => {
+                // The queue renders after detection, so wait for it instead of a fixed delay.
+                for (let i = 0; i < 50 && !document.getElementById('finished-jobs'); i++) await new Promise(r => setTimeout(r, 100));
                 document.getElementById('finished-jobs').open=true;
                 const phases=[...document.querySelectorAll('.job-phase')];
                 return {width:document.documentElement.scrollWidth,noPdfHeight:document.querySelector('.no-pdf')?.getBoundingClientRect().height,
