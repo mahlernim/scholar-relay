@@ -97,10 +97,6 @@
     "message": "設定",
     "description": "Settings"
   },
-  "ui_b62eeb9e": {
-    "message": "⚙️ 設定",
-    "description": "⚙️ Settings"
-  },
   "ui_546c8007": {
     "message": "⚠️ アーティファクトを1つ以上選択してください",
     "description": "⚠️ Choose at least one artifact"

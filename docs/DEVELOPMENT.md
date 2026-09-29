@@ -572,3 +572,11 @@ Validation includes deterministic API and worker tests, browser extraction check
 한국어
 
 서버 대기 시각과 준비 단계의 기한을 저장하고 세션 갱신으로 대기를 우회하지 않도록 했습니다. 연산 사용량은 기존 부제와 항목 이름에 안내용으로 표시하며 메모리에서만 유지하고 만료 시 숨깁니다. 페이지 본문 복구는 실패 원인과 소스가 확인된 경우에만 제공하며, 원래 탭의 ID와 URL, 동의, 사이트 권한을 확인합니다. 최대 200 kB의 본문을 기존 노트북에 한 번만 전송하고 실패 소스는 보존합니다. 취소와 재시작 시 중복 전송을 막습니다. 10개 언어의 좁은 화면, 브라우저 추출, 대기열과 기존 PDF 검증을 수행했습니다. 실제 계정에서는 조회만 검증했으며 업로드나 생성은 수행하지 않았습니다. 공개 및 스토어 개인정보 변경은 후속 릴리스 단계로 남습니다.
+
+### Popup design polish
+
+Issue #98 changes popup presentation without adding strings. The start views now show the requested artifacts and artifact language under the primary button, and that line opens Settings. It reads saved settings over the defaults and updates on every autosave. The single PDF view leads with a known paper title and keeps the URL as secondary text.
+
+Accent, success, warning, error, and dim text colors were darkened to reach WCAG AA contrast on white, and 10px text was raised to 11px. Artifact rows in Settings use sentence case below the uppercase group titles. The duplicate Settings header was removed along with its catalog entry, leaving 282 messages. The close button uses the accent color. Queue, job, and site tool actions are outlined buttons, while selection shortcuts stay as text links.
+
+Wording changes are deferred because the catalog is keyed by English source text and every change needs translation in ten locales. The compact progress smoke now waits for the finished-jobs list instead of a fixed delay after reload. That delay failed once in CI and once locally. README and store screenshots are unchanged and should be recaptured when this ships. The local capture script did not load the unpacked extension reliably on this machine, as noted for v1.5.1.

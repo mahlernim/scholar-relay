@@ -24,6 +24,9 @@ import { httpOriginPattern, needsOptionalPdfAccess } from './site-permissions.js
 localizeStaticDocument();
 const contentEl = document.getElementById('content');
 const queueEl = document.getElementById('job-queue');
+contentEl.addEventListener('click', event => {
+    if (event.target.closest('#artifact-summary')) document.getElementById('btn-gear').click();
+});
 let selectedRunId = new URLSearchParams(location.search).get('runId') || null;
 let lastQueueHtml = '';
 let lastProgressSignature = null;
@@ -452,7 +455,28 @@ async function saveSettings() {
     const current = ((await chrome.storage.local.get('userSettings')).userSettings) || {};
     const settings = { ...current, ...s };
     await chrome.storage.local.set({ userSettings: settings });
+    updateArtifactSummary(settings);
     return settings;
+}
+
+const ARTIFACT_SETTING_TYPES = {
+    generateAudio: 'audio', generateVideo: 'video', generateReport: 'report',
+    generateQuiz: 'quiz', generateFlashcards: 'flashcards', generateInfographic: 'infographic',
+    generateSlideDeck: 'slide_deck', generateMindMap: 'mind_map', generateDataTable: 'data_table',
+};
+
+// Shows which artifacts a new job will request, next to the start button.
+function artifactSummaryHtml() {
+    return '<button type="button" class="artifact-summary" id="artifact-summary" title="' + escapeHtml(t('Settings')) + '"></button>';
+}
+
+async function updateArtifactSummary(saved) {
+    const settings = { ...DEFAULTS, ...(saved || (await chrome.storage.local.get('userSettings')).userSettings) };
+    const button = document.getElementById('artifact-summary');
+    if (!button) return;
+    const names = Object.entries(ARTIFACT_SETTING_TYPES).filter(([key]) => settings[key]).map(([, type]) => artifactLabel(type).replace(/^[^\p{L}\p{N}]+/u, ''));
+    const language = [...document.getElementById('s-language').options].find(option => option.value === settings.language)?.textContent || settings.language;
+    button.textContent = [names.join(', '), language].filter(Boolean).join(' · ');
 }
 
 // Returns true if at least one artifact toggle is checked
@@ -670,9 +694,10 @@ async function renderPaperSelection(data) {
         '<div class="paper-mode"><span>' + e(t('Create notebooks')) + '</span><div role="radiogroup" aria-label="' + e(t('Create notebooks')) + '">' +
         ['separate', 'one'].map(mode => '<label><input type="radio" name="paper-mode" value="' + mode + '"><span>' + e(t(mode === 'one' ? 'One notebook' : 'Separate')) + '</span></label>').join('') + '</div></div>' +
         '<div id="paper-combined"><label for="paper-title">' + e(t('Notebook title')) + '</label><input id="paper-title" maxlength="300"><label><input type="checkbox" id="paper-context">' + e(t('Include this webpage as context')) + '</label></div>' +
-        '<p class="s-help" id="paper-summary"></p><button class="btn-generate" id="paper-add"></button><p id="paper-feedback" role="status"></p>' +
-        '<div class="paper-tools"><button id="paper-webpage">' + e(t('Use this webpage')) + '</button><button id="paper-auto">' + e(t('Detect automatically on this site')) + '</button><button id="paper-titles">' + e(t('Find paper titles')) + '</button></div>';
+        '<p class="s-help" id="paper-summary"></p><button class="btn-generate" id="paper-add"></button>' + artifactSummaryHtml() + '<p id="paper-feedback" role="status"></p>' +
+        '<div class="paper-tools paper-actions"><button id="paper-webpage">' + e(t('Use this webpage')) + '</button><button id="paper-auto">' + e(t('Detect automatically on this site')) + '</button><button id="paper-titles">' + e(t('Find paper titles')) + '</button></div>';
     contentEl.dataset.renderMode = 'papers';
+    updateArtifactSummary();
     const el = id => document.getElementById(id);
     el('paper-title').value = view.title;
     el('paper-context').checked = view.context;
@@ -760,29 +785,36 @@ function renderDetection(data) {
     }[data.source] || 'PDF document';
 
     const isUploadRequired = typeof data.pdfUrl === 'string' && !/^https?:\/\//i.test(data.pdfUrl);
+    const titleHtml = data.sourceTitle ? `<div class="pdf-title">${escapeHtml(data.sourceTitle)}</div>` : '';
 
     if (isUploadRequired) {
         contentEl.innerHTML = `
     <div class="pdf-info">
       <div class="label">${escapeHtml(t("Detected Local PDF"))}</div>
+      ${titleHtml}
       <div class="pdf-url">${escapeHtml(truncated)}</div>
       <div class="pdf-source">${escapeHtml(t(sourceLabel))}</div>
     </div>
     <button class="btn-generate" id="btn-upload-start">${escapeHtml(t('Save PDF to queue'))}</button>
+    ${artifactSummaryHtml()}
     <button class="btn-secondary" id="btn-upload-other">${escapeHtml(t("Choose Different PDF"))}</button>`;
         document.getElementById('btn-upload-start').addEventListener('click', () => startPipelineFromCurrentTabPdf(data.pageUrl || data.pdfUrl));
         document.getElementById('btn-upload-other').addEventListener('click', () => promptForPdfUpload(data.pageUrl || data.pdfUrl));
+        updateArtifactSummary();
         return;
     }
 
     contentEl.innerHTML = `
     <div class="pdf-info">
       <div class="label">${escapeHtml(t("Detected PDF"))}</div>
+      ${titleHtml}
       <div class="pdf-url">${escapeHtml(truncated)}</div>
       <div class="pdf-source">${escapeHtml(t(sourceLabel))}</div>
     </div>
     <button class="btn-generate" id="btn-start">${escapeHtml(t('Add to queue'))}</button>
-    ${/^https?:\/\//i.test(data.pageUrl || '') ? `<div class="paper-tools"><button id="single-paper-auto">${escapeHtml(t('Detect automatically on this site'))}</button></div><div id="single-paper-feedback" role="status"></div>` : ''}`;
+    ${artifactSummaryHtml()}
+    ${/^https?:\/\//i.test(data.pageUrl || '') ? `<div class="paper-tools paper-actions"><button id="single-paper-auto">${escapeHtml(t('Detect automatically on this site'))}</button></div><div id="single-paper-feedback" role="status"></div>` : ''}`;
+    updateArtifactSummary();
     document.getElementById('btn-start').addEventListener('click', () =>
         startPipeline(data.pdfUrl, data.pageUrl, 'pdf', data.sourceTitle, data.pdfEvidence || data.source)
             .catch(error => showError(error.message))
@@ -808,9 +840,11 @@ function renderNoPdf() {
       <span style="font-size:11px; color:var(--text-dim)">${escapeHtml(t("You can still try importing this page URL directly."))}</span>
     </div>
     <button class="btn-generate" id="btn-start-url">${escapeHtml(t('Add page to queue'))}</button>
+    ${artifactSummaryHtml()}
     <button class="btn-secondary" id="btn-upload-manual">${escapeHtml(t("Upload Local PDF"))}</button>`;
     document.getElementById('btn-start-url').addEventListener('click', startPipelineFromCurrentPageUrl);
     document.getElementById('btn-upload-manual').addEventListener('click', () => promptForPdfUpload(null));
+    updateArtifactSummary();
 }
 
 function errorHtml(detail, summary = errorSummary(detail)) {
