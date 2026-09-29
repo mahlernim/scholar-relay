@@ -74,12 +74,12 @@ export async function localizationSmoke({ popup, evaluate, reload, root, complet
                     detail:document.querySelector('.step-detail')?.textContent})`);
                 assert(view.width <= 360, `${locale} ${fixture.step} overflow`);
                 if (fixture.status === 'error') assert(view.error === expected('The result could not be confirmed. Check Gemini Notebook before starting again.'), `${locale} unsafe error guidance`);
-                if (fixture.step === 'wait_pdf_access') assert(view.resume === expected('Allow Download & Continue'), `${locale} permission action missing`);
+                if (fixture.step === 'wait_pdf_access') assert(view.resume === expected('Allow download and continue'), `${locale} permission action missing`);
                 if (fixture.step === 'wait_artifacts') assert(view.text.includes(expected('$1 of $2 artifacts ready.').replace('$1','1').replace('$2','2')), `${locale} progress not translated`);
             }
             await evaluate(popup, `__smoke.renderPaperSelection({pageUrl:'https://example.org/blog',sourceTitle:'Research overview',candidates:[{id:'a',pdfUrl:'https://example.org/a.pdf',pageUrl:'https://example.org/blog',sourceTitle:'A long research paper title with useful context',featured:true},{id:'b',pdfUrl:'https://example.org/b.pdf',pageUrl:'https://example.org/blog',sourceTitle:'A second paper with a different title'}]})`);
             await evaluate(popup, `document.getElementById('paper-clear').click();document.querySelector('[data-candidate="a"]').click();document.querySelector('[name="paper-mode"][value="separate"]').click()`);
-            assert(await evaluate(popup, `document.getElementById('paper-add').textContent`) === expected('Add one paper to queue'), `${locale} single-paper action uses a plural`);
+            assert(await evaluate(popup, `document.getElementById('paper-add').textContent`) === expected('Create one notebook'), `${locale} single-paper action uses a plural`);
             await evaluate(popup, `document.querySelector('[name="paper-mode"][value="one"]').click();document.getElementById('paper-context').click()`);
             const paperLayout=await evaluate(popup, `({width:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth,title:document.querySelector('.paper-heading strong').textContent,visible:!document.getElementById('paper-combined').hidden})`);
             assert(paperLayout.width<=paperLayout.clientWidth && paperLayout.visible && paperLayout.title===expected('Papers on this page'), `${locale} paper selection is not localized or overflows`);

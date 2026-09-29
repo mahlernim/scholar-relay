@@ -41,9 +41,9 @@
     "message": "Un flusso di lavoro è già attivo. Controlla l’avanzamento prima di avviarne un altro.",
     "description": "A workflow is already active. Check its progress before starting another."
   },
-  "ui_74a7ea81": {
+  "ui_a2d5ec61": {
     "message": "Abilita l’accesso agli URL dei file nelle impostazioni dell’estensione di Chrome oppure scegli Carica PDF locale.",
-    "description": "Enable Allow access to file URLs in Chrome extension settings, or choose Upload Local PDF."
+    "description": "Enable Allow access to file URLs in Chrome extension settings, or choose Upload local PDF."
   },
   "ui_a788ccba": {
     "message": "PDF diretto",
@@ -329,9 +329,9 @@
     "message": "Istruzioni",
     "description": "Instructions"
   },
-  "ui_28e8828a": {
-    "message": "(aggiunte ai formati predefiniti)",
-    "description": "(appended for built-in formats)"
+  "ui_7f1493ae": {
+    "message": "Aggiunte ai formati di report predefiniti.",
+    "description": "Added to built-in report formats."
   },
   "ui_89963e82": {
     "message": "(obbligatorie per il formato personalizzato)",
@@ -509,9 +509,9 @@
     "message": "Apri il notebook quando è pronto",
     "description": "Open notebook when ready"
   },
-  "ui_f1435584": {
-    "message": "✓ Salva impostazioni",
-    "description": "✓ Save Settings"
+  "ui_8dd31791": {
+    "message": "Fine",
+    "description": "Done"
   },
   "ui_f835ea8d": {
     "message": "Ricerca di PDF nella pagina...",
@@ -577,9 +577,9 @@
     "message": "Carica e genera",
     "description": "Upload & Generate"
   },
-  "ui_b3573353": {
+  "ui_d2cac6f0": {
     "message": "Scegli un altro PDF",
-    "description": "Choose Different PDF"
+    "description": "Choose a different PDF"
   },
   "ui_3fac81f6": {
     "message": "🎧 Genera contenuti",
@@ -597,9 +597,9 @@
     "message": "Importa la pagina e genera",
     "description": "Import Page & Generate"
   },
-  "ui_c108fead": {
+  "ui_c104ecd": {
     "message": "Carica PDF locale",
-    "description": "Upload Local PDF"
+    "description": "Upload local PDF"
   },
   "ui_9388d923": {
     "message": "Questo file non è un PDF valido. Scegli un altro file.",
@@ -669,9 +669,9 @@
     "message": "Puoi chiudere questa finestra. Il lavoro continua.",
     "description": "You can close this popup. Work continues."
   },
-  "ui_26242fbd": {
+  "ui_f4a0bac0": {
     "message": "Consenti il download e continua",
-    "description": "Allow Download & Continue"
+    "description": "Allow download and continue"
   },
   "ui_dd6a9d74": {
     "message": "Carica un PDF in alternativa",
@@ -769,9 +769,9 @@
     "message": "Gemini Notebook è pronto!",
     "description": "Gemini Notebook Ready!"
   },
-  "ui_ed59a0d6": {
+  "ui_3d2484f6": {
     "message": "Apri notebook",
-    "description": "Open Notebook"
+    "description": "Open notebook"
   },
   "ui_265915f3": {
     "message": "Chiudi",
@@ -817,17 +817,13 @@
     "message": "Interrotto",
     "description": "Stopped"
   },
-  "ui_cf1d1846": {
-    "message": "Aggiungi alla coda",
-    "description": "Add to queue"
+  "ui_1d839782": {
+    "message": "Crea notebook",
+    "description": "Create notebook"
   },
-  "ui_1512a308": {
-    "message": "Salva PDF nella coda",
-    "description": "Save PDF to queue"
-  },
-  "ui_d5809db3": {
-    "message": "Aggiungi pagina alla coda",
-    "description": "Add page to queue"
+  "ui_bb365f4d": {
+    "message": "Crea notebook dalla pagina",
+    "description": "Create notebook from page"
   },
   "ui_c66a1109": {
     "message": "Aggiungi un altro articolo",
@@ -861,21 +857,21 @@
     "message": "Coda in pausa. Le attività già avviate continuano.",
     "description": "Queue paused. Jobs already started continue."
   },
-  "ui_c7972f4e": {
-    "message": "Prepara un articolo alla volta. Fino a tre notebook possono generare contemporaneamente.",
-    "description": "Prepare one paper at a time. Up to three notebooks can generate together."
+  "ui_75e45781": {
+    "message": "Gli articoli vengono preparati uno alla volta. Fino a tre notebook generano contemporaneamente.",
+    "description": "Papers are prepared one at a time. Up to three notebooks generate at once."
   },
-  "ui_c744f96c": {
-    "message": "Salvato. Puoi chiudere questa finestra. Lascia Chrome aperto per avviare gli articoli in coda.",
-    "description": "Saved. You can close this popup. Keep Chrome running to start queued papers."
+  "ui_70762261": {
+    "message": "In coda. Puoi chiudere questa finestra, ma lascia Chrome aperto.",
+    "description": "Queued. You can close this popup, but keep Chrome open."
   },
-  "ui_a6133a54": {
-    "message": "Richieste accettate. Gemini Notebook continuerà a generare anche se chiudi Chrome. Puoi aggiungere un altro articolo.",
-    "description": "Requests accepted. Gemini Notebook will keep generating even if you close Chrome. You can add another paper."
+  "ui_70eb74c2": {
+    "message": "Puoi chiudere Chrome. Gemini Notebook continua a generare.",
+    "description": "You can close Chrome. Gemini Notebook keeps generating."
   },
-  "ui_8481df34": {
-    "message": "Puoi chiudere questa finestra. Lascia Chrome aperto finché le richieste di generazione non vengono accettate.",
-    "description": "You can close this popup. Keep Chrome running until the artifact requests are accepted."
+  "ui_1591c255": {
+    "message": "Puoi chiudere questa finestra, ma lascia Chrome aperto finché la generazione non inizia.",
+    "description": "You can close this popup, but keep Chrome open until generation starts."
   },
   "ui_440cb2bf": {
     "message": "Questo articolo richiede attenzione. Gli altri articoli in coda possono proseguire.",
@@ -945,9 +941,9 @@
     "message": "Rimuovi attività",
     "description": "Dismiss job"
   },
-  "ui_45c40cb9": {
+  "ui_47c21b54": {
     "message": "Carica PDF e continua",
-    "description": "Upload PDF & Continue"
+    "description": "Upload PDF and continue"
   },
   "ui_38f2e1ae": {
     "message": "Serve il permesso per il download. Consenti l’accesso o scegli un PDF per continuare in questo notebook.",
@@ -1021,6 +1017,10 @@
     "message": "Articoli in questa pagina",
     "description": "Papers on this page"
   },
+  "ui_8d353d4c": {
+    "message": "$1 di $2 selezionati",
+    "description": "$1 of $2 selected"
+  },
   "ui_6af21072": {
     "message": "Seleziona tutto",
     "description": "Select all"
@@ -1049,9 +1049,9 @@
     "message": "Un notebook",
     "description": "One notebook"
   },
-  "ui_ab7db738": {
-    "message": "Separati",
-    "description": "Separate"
+  "ui_f72c78e6": {
+    "message": "Uno per articolo",
+    "description": "One per paper"
   },
   "ui_340761b3": {
     "message": "Includi questa pagina come contesto",
@@ -1065,25 +1065,17 @@
     "message": "Rileva automaticamente su questo sito",
     "description": "Detect automatically on this site"
   },
-  "ui_200e067f": {
-    "message": "Cerca i titoli degli articoli",
-    "description": "Find paper titles"
-  },
-  "ui_2df60e04": {
-    "message": "$1 fonti in un notebook",
-    "description": "$1 sources in one notebook"
-  },
-  "ui_e6e47f19": {
-    "message": "$1 notebook separati",
-    "description": "$1 separate notebooks"
+  "ui_cf80d578": {
+    "message": "Recupera i titoli da arXiv",
+    "description": "Get titles from arXiv"
   },
   "ui_55c2ab3b": {
     "message": "Crea notebook con $1 fonti",
     "description": "Create notebook with $1 sources"
   },
-  "ui_ee66925c": {
-    "message": "Aggiungi $1 articoli alla coda",
-    "description": "Add $1 papers to queue"
+  "ui_a2bb458e": {
+    "message": "Crea $1 notebook",
+    "description": "Create $1 notebooks"
   },
   "ui_e24fe294": {
     "message": "Rilevamento automatico attivato per questo sito.",
@@ -1109,21 +1101,13 @@
     "message": "$1 possibili articoli in questa pagina",
     "description": "$1 paper candidates on this page"
   },
-  "ui_f3db4860": {
-    "message": "Una fonte in un notebook",
-    "description": "One source in one notebook"
-  },
-  "ui_958d5a41": {
-    "message": "Un notebook separato",
-    "description": "One separate notebook"
-  },
   "ui_8cd6f197": {
     "message": "Crea notebook con una fonte",
     "description": "Create notebook with one source"
   },
-  "ui_154ddf8c": {
-    "message": "Aggiungi un articolo alla coda",
-    "description": "Add one paper to queue"
+  "ui_c24b9e6a": {
+    "message": "Crea un notebook",
+    "description": "Create one notebook"
   },
   "ui_c67e8add": {
     "message": "Un’attività salvata nella coda",

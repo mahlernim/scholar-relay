@@ -104,7 +104,7 @@ export function errorSummary(detail) {
         : /already (active|running)|Stop the active pipeline|not idle/i.test(text)
         ? 'A workflow is already active. Check its progress before starting another.'
         : /file access|Allow access to file URLs|FILE_ACCESS_DISABLED/i.test(text)
-        ? 'Enable Allow access to file URLs in Chrome extension settings, or choose Upload Local PDF.'
+        ? 'Enable Allow access to file URLs in Chrome extension settings, or choose Upload local PDF.'
         : 'This workflow needs attention. Check the details before continuing.';
     return t(source);
 }
