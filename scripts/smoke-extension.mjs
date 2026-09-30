@@ -266,6 +266,8 @@ try {
     .replace("const LEGACY_BASE_URL = 'https://notebooklm.google.com';", `const LEGACY_BASE_URL = '${origin}';`));
   const workerPath = join(extensionRoot, 'background.js');
   await writeFile(workerPath, (await readFile(workerPath,'utf8')) + '\nchrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message.type!=="SMOKE_TICK")return;handlePollAlarm({name:ALARM_NAME}).then(()=>reply({ok:true}));return true;});\n');
+  // Fixture replacement must use the same serialized writer as worker callbacks.
+  await writeFile(workerPath, (await readFile(workerPath,'utf8')) + '\nchrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message.type!=="SMOKE_SET_QUEUE")return;ensureBootReconciled().then(()=>pipelineState.transact(queue=>{Object.assign(queue,message.queue);return {};})).then(()=>reply({ok:true})).catch(error=>reply({error:error.message}));return true;});\n');
   const popupPath = join(extensionRoot, 'popup.js');
   await writeFile(popupPath, `${await readFile(popupPath, 'utf8')}\nglobalThis.__smoke = { startPipelineFile, refreshQueue, renderProgress, renderPaperSelection, async setFixtureState(state, extra = {}) { await chrome.storage.local.set({ jobQueue: {version:1,paused:false,jobs:state.status==='idle'?[]:[{runId:'fixture',...state}]}, ...extra }); } };\n`);
 

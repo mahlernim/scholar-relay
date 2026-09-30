@@ -65,12 +65,16 @@ export async function compactProgressSmoke({ popup, evaluate, reload, root, orig
             globalThis.__clockNow=${fixedNow}; Date.now=()=>globalThis.__clockNow;
         ` });
         try {
-            await evaluate(popup, `chrome.storage.local.set({jobQueue:${JSON.stringify({ version: 1, paused: true, jobs })}})`);
+            const seeded = await evaluate(popup, `chrome.runtime.sendMessage({type:'SMOKE_SET_QUEUE',queue:${JSON.stringify({ version: 1, paused: true, jobs })}})`);
+            assert(seeded?.ok, `${locale} queue fixture was not committed`);
             await reload(popup);
             const view = await evaluate(popup, `(async () => {
                 // Render the stored fixture explicitly. Page detection may still
                 // be waiting on a tab and must not control this queue-only check.
                 await globalThis.__smoke.refreshQueue();
+                if (!document.getElementById('finished-jobs')) {
+                    throw new Error('Missing finished fixture after serialized seed: '+JSON.stringify(await chrome.runtime.sendMessage({type:'GET_QUEUE'})));
+                }
                 document.getElementById('finished-jobs').open=true;
                 const phases=[...document.querySelectorAll('.job-phase')];
                 return {width:document.documentElement.scrollWidth,noPdfHeight:document.querySelector('.no-pdf')?.getBoundingClientRect().height,
