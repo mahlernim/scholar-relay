@@ -2,7 +2,7 @@
   "Notebook $1 is ready with one artifact. Click to open.": "Il notebook $1 è pronto con un contenuto generato. Fai clic per aprirlo.",
   "Ready": "Pronto",
   "Failed": "Non riuscito",
-  "Generating": "Generazione in corso",
+  "Generating": "In generazione",
   "Waiting": "In attesa",
   "Artifact": "Contenuto generato",
   "Elapsed time: $1 min.": "Tempo trascorso: $1 min.",

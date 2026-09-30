@@ -61,7 +61,8 @@
     "Keep the canonical English failed-only hint exactly as requested. Its some is interpreted as an unspecified nonzero number, not proof that other requests succeeded.",
     "Keep existing compact phase labels, including French Génération, German Wird erstellt and Hindi बन रहा है. Fix Simplified Chinese Generating to 生成中.",
     "German catalog register is mixed. These edited recovery hints use informal Prüfe, consistent with existing sign-in and uncertain-result guidance. Broader register cleanup is outside scope.",
-    "After Linux CI reported the Spanish Needs checking label clipped at 320px on f96fe1b, select shorter proposal labels for Spanish, German and Brazilian Portuguese. German and Brazilian Portuguese are preventive compactness changes, not observed clipping findings. Other phase labels remain as initially adjudicated."
+    "After Linux CI reported the Spanish Needs checking label clipped at 320px on f96fe1b, select shorter proposal labels for Spanish, German and Brazilian Portuguese. German and Brazilian Portuguese are preventive compactness changes, not observed clipping findings. Other phase labels remain as initially adjudicated.",
+    "After Linux CI run 36654720695 reported Italian Generating clipped at 320px on 2a25c75, select In generazione from Gemini, also offered as an Opus rationale fallback. No other translations change in this revision."
   ],
   "decisions": [
     {
@@ -152,14 +153,13 @@
           "reason": "Both proposals agree. Correct the existing typo 展成 and explicitly express ongoing generation."
         },
         "it": {
-          "translation": "Generazione in corso",
+          "translation": "In generazione",
           "previous_translation": "Generazione in corso",
-          "changed": false,
+          "changed": true,
           "provenance": [
-            "existing-catalog",
-            "opus.json"
+            "gemini-3.8-flash.json"
           ],
-          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+          "reason": "Select the shorter Gemini proposal, also suggested as an Opus rationale fallback. In generazione preserves ongoing generation. The previous label clipped in Linux Chrome at 320px on exact head 2a25c75, with client width 128.9px and scroll width 131px."
         },
         "zh_TW": {
           "translation": "生成中",
@@ -692,7 +692,43 @@
         }
       },
       "reason": "Prefer semantically equivalent shorter independent proposals after actual cross-platform clipping evidence. Preserve all initial choices and rationales for the three revised locales in this history entry."
+    },
+    {
+      "reviewer_model": "gpt-6-astra",
+      "reviewed_at_utc": "2026-09-30T01:23:54.408059+00:00",
+      "trigger": {
+        "reported_by": "parent agent with exact-head CI results",
+        "commit": "2a25c75",
+        "run_url": "https://github.com/mahlernim/scholar-relay/actions/runs/36654720695",
+        "platform": "Linux Chrome",
+        "failure": "it 320px status-mixed status text is clipped",
+        "metrics": {
+          "client_width_px": 128.9,
+          "scroll_width_px": 131
+        },
+        "scope": "Observed Italian Generating clipping. Previous shorter labels passed through the Brazilian Portuguese locale before this failure."
+      },
+      "previous_decisions": {
+        "Generating": {
+          "it": {
+            "translation": "Generazione in corso",
+            "previous_translation": "Generazione in corso",
+            "changed": false,
+            "provenance": [
+              "existing-catalog",
+              "opus.json"
+            ],
+            "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+          }
+        }
+      },
+      "updated_translations": {
+        "Generating": {
+          "it": "In generazione"
+        }
+      },
+      "reason": "Use the independently proposed shorter equivalent after observed clipping. Preserve the initial Italian choice and rationale in this revision history entry."
     }
   ],
-  "last_reviewed_at_utc": "2026-09-30T01:20:33.708013+00:00"
+  "last_reviewed_at_utc": "2026-09-30T01:23:54.408059+00:00"
 }
