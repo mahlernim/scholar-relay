@@ -881,6 +881,10 @@
     "message": "Alcune richieste potrebbero essere ancora in corso in Gemini Notebook. Controlla il risultato in questo notebook.",
     "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
   },
+  "ui_423ddda2": {
+    "message": "Ci sono richieste non riuscite. Controlla i dettagli in questo notebook.",
+    "description": "Some requests failed. Check this notebook for details."
+  },
   "ui_314695f8": {
     "message": "I contenuti sono pronti. Puoi passare a un altro articolo.",
     "description": "Artifacts are ready. You can move on to another paper."

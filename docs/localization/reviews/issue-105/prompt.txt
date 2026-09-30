@@ -1,0 +1,27 @@
+Independently propose concise translations for ScholarRelay issue #105.
+This is an editorial task only. Do not use tools, read files, execute commands, browse, or modify files. Return your answer directly as JSON, without Markdown fences.
+
+ScholarRelay is a compact Chrome extension that imports academic papers into Gemini Notebook and requests study materials. These messages appear in existing queue rows at 320 and 360 pixels. UI language and generated-content language are independent. Keep the product name Gemini Notebook unchanged. Use natural local wording. Do not use em dashes. Do not claim native-speaker review or direct inspection of Google's interface.
+
+Canonical English strings and meaning
+
+1. "Generating"
+A running job has at least one accepted task with a known task ID and status in_progress. Other tasks may already be ready, failed, or uncertain. This label does not mean every task is progressing.
+
+2. "Needs checking"
+The available task state does not justify claiming active generation or complete success. The user should inspect the existing notebook. This is not a command to restart or retry and does not establish failure for an uncertain task.
+
+3. "Ready"
+All requested tasks have completed, or source import completed with no study materials requested. A job with known failed or uncertain tasks must not use this label.
+
+4. "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
+At least one request has an unresolved outcome. Another task may be actively generating. Preserve possibility, not certainty. Do not say that all tasks failed or guarantee that generation continues.
+
+5. "Some requests failed. Check this notebook for details."
+At least one task is confirmed failed and every other task is completed or failed. No task is known active or uncertain. Preserve successful siblings and do not imply any request is still running. Do not add automatic retry or a new notebook instruction.
+
+Locales
+en, ko, ja, es, fr, de, pt_BR, zh_CN, it, zh_TW, hi.
+For en keep the canonical source strings, but put any recommended English changes in rationale. Treat Simplified Chinese and Traditional Chinese independently. These are extension-specific status messages, not verified official product terminology. There are no placeholders in these five strings. Preserve any placeholders if you suggest further copy.
+
+Return an object with "translations" mapping each exact English source to an object of all eleven locale codes and translations. Add "rationale" with concise choices or uncertainties by source and locale, and "terminology_caveats". Do not copy another model's answer. The final reviewer will compare independent proposals for semantic accuracy, naturalness, brevity, and consistency before selecting final strings.

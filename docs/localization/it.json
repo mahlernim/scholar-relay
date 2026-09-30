@@ -218,6 +218,7 @@
   "You can close this popup, but keep Chrome open until generation starts.": "Puoi chiudere questa finestra, ma lascia Chrome aperto finché la generazione non inizia.",
   "This paper needs attention. Other queued papers can continue.": "Questo articolo richiede attenzione. Gli altri articoli in coda possono proseguire.",
   "Some requests may still be running in Gemini Notebook. Check this notebook for the result.": "Alcune richieste potrebbero essere ancora in corso in Gemini Notebook. Controlla il risultato in questo notebook.",
+  "Some requests failed. Check this notebook for details.": "Ci sono richieste non riuscite. Controlla i dettagli in questo notebook.",
   "Artifacts are ready. You can move on to another paper.": "I contenuti sono pronti. Puoi passare a un altro articolo.",
   "Saving PDF. Keep this popup open...": "Salvataggio del PDF. Lascia aperta questa finestra...",
   "Gemini Notebook is temporarily unreachable. Try connecting again later.": "Gemini Notebook è temporaneamente irraggiungibile. Riprova a connetterti più tardi.",

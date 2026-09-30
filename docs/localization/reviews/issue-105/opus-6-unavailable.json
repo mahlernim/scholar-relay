@@ -1,0 +1,15 @@
+{
+  "provider": "Anthropic Claude Code",
+  "requested_model": "claude-opus-6",
+  "response_reported_model": [],
+  "invocation_utc": "2026-09-30T01:07:20.980832+00:00",
+  "input_base_sha": "6f91784af3ea1aa2b19cf1c5c72900350d7eb3e8",
+  "prompt_file": "prompt.txt",
+  "prompt_sha256": "855eb84c644be175d63973b26f07011a7d51e237dd61d4b95370f0ccf66a85c5",
+  "independent_proposal": false,
+  "tools_policy": "Tools disabled",
+  "proposal": "There's an issue with the selected model (claude-opus-6). It may not exist or you may not have access to it. Run --model to pick a different model.",
+  "exit_code": 1,
+  "status": "provider_error",
+  "elapsed_seconds": 3.2
+}

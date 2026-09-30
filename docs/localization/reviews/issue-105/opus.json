@@ -1,0 +1,161 @@
+{
+  "provider": "Anthropic Claude Code",
+  "requested_model": "opus",
+  "response_reported_model": [
+    "claude-opus-5-5"
+  ],
+  "invocation_utc": "2026-09-30T01:08:58.144196+00:00",
+  "input_base_sha": "6f91784af3ea1aa2b19cf1c5c72900350d7eb3e8",
+  "prompt_file": "prompt.txt",
+  "prompt_sha256": "855eb84c644be175d63973b26f07011a7d51e237dd61d4b95370f0ccf66a85c5",
+  "independent_proposal": true,
+  "tools_policy": "Tools disabled, safe mode, strict MCP configuration and no session persistence",
+  "fallback_reason": "Exact claude-opus-6 invocation was rejected by the provider. The documented opus alias is used as an explicitly recorded available Opus alternative. Original failure retained in opus-6-unavailable.json.",
+  "proposal": {
+    "translations": {
+      "Generating": {
+        "en": "Generating",
+        "ko": "생성 중",
+        "ja": "生成中",
+        "es": "Generando",
+        "fr": "Génération en cours",
+        "de": "Wird generiert",
+        "pt_BR": "Gerando",
+        "zh_CN": "生成中",
+        "it": "Generazione in corso",
+        "zh_TW": "生成中",
+        "hi": "जनरेट हो रहा है"
+      },
+      "Needs checking": {
+        "en": "Needs checking",
+        "ko": "확인 필요",
+        "ja": "要確認",
+        "es": "Requiere revisión",
+        "fr": "À vérifier",
+        "de": "Prüfung nötig",
+        "pt_BR": "Requer verificação",
+        "zh_CN": "需要检查",
+        "it": "Da verificare",
+        "zh_TW": "需要檢查",
+        "hi": "जाँच ज़रूरी है"
+      },
+      "Ready": {
+        "en": "Ready",
+        "ko": "완료",
+        "ja": "完了",
+        "es": "Listo",
+        "fr": "Prêt",
+        "de": "Fertig",
+        "pt_BR": "Pronto",
+        "zh_CN": "已完成",
+        "it": "Pronto",
+        "zh_TW": "已完成",
+        "hi": "तैयार"
+      },
+      "Some requests may still be running in Gemini Notebook. Check this notebook for the result.": {
+        "en": "Some requests may still be running in Gemini Notebook. Check this notebook for the result.",
+        "ko": "일부 요청이 Gemini Notebook에서 아직 실행 중일 수 있습니다. 결과는 이 노트북에서 확인하세요.",
+        "ja": "一部のリクエストがGemini Notebookでまだ実行中の可能性があります。結果はこのノートブックで確認してください。",
+        "es": "Es posible que algunas solicitudes sigan en curso en Gemini Notebook. Consulta este cuaderno para ver el resultado.",
+        "fr": "Certaines demandes sont peut-être encore en cours dans Gemini Notebook. Consultez ce notebook pour voir le résultat.",
+        "de": "Einige Anfragen werden in Gemini Notebook möglicherweise noch ausgeführt. Das Ergebnis finden Sie in diesem Notebook.",
+        "pt_BR": "Algumas solicitações talvez ainda estejam em andamento no Gemini Notebook. Confira o resultado neste notebook.",
+        "zh_CN": "部分请求可能仍在 Gemini Notebook 中运行。请在此笔记本中查看结果。",
+        "it": "Alcune richieste potrebbero essere ancora in corso in Gemini Notebook. Controlla il risultato in questo notebook.",
+        "zh_TW": "部分要求可能仍在 Gemini Notebook 中執行。請在這個筆記本中查看結果。",
+        "hi": "हो सकता है कि कुछ अनुरोध अभी भी Gemini Notebook में चल रहे हों। नतीजे के लिए यह नोटबुक देखें।"
+      },
+      "Some requests failed. Check this notebook for details.": {
+        "en": "Some requests failed. Check this notebook for details.",
+        "ko": "일부 요청이 실패했습니다. 자세한 내용은 이 노트북에서 확인하세요.",
+        "ja": "一部のリクエストが失敗しました。詳細はこのノートブックで確認してください。",
+        "es": "Algunas solicitudes fallaron. Consulta este cuaderno para ver los detalles.",
+        "fr": "Certaines demandes ont échoué. Consultez ce notebook pour en savoir plus.",
+        "de": "Einige Anfragen sind fehlgeschlagen. Details finden Sie in diesem Notebook.",
+        "pt_BR": "Algumas solicitações falharam. Confira os detalhes neste notebook.",
+        "zh_CN": "部分请求失败。请在此笔记本中查看详情。",
+        "it": "Alcune richieste non sono riuscite. Controlla i dettagli in questo notebook.",
+        "zh_TW": "部分要求失敗。請在這個筆記本中查看詳細資料。",
+        "hi": "कुछ अनुरोध विफल रहे। जानकारी के लिए यह नोटबुक देखें।"
+      }
+    },
+    "rationale": {
+      "Generating": {
+        "en": "Keep as is. It reads as a job-level state and does not claim every task is progressing.",
+        "ko": "'생성 중' is the standard compact progress label.",
+        "ja": "'生成中' is compact and neutral about individual tasks.",
+        "es": "Gerund 'Generando' is short and common for status labels.",
+        "fr": "'Génération en cours' is natural; 'Génération…' is a shorter fallback if 320px truncates.",
+        "de": "'Wird generiert' is the usual passive status form.",
+        "pt_BR": "'Gerando' is short and natural in Brazilian UI.",
+        "zh_CN": "'生成中' is concise and common in AI product UI.",
+        "it": "'Generazione in corso' is natural; 'In generazione' is a shorter fallback.",
+        "zh_TW": "'生成中' is common for AI generation; '產生中' is an alternative but less typical for AI content.",
+        "hi": "'जनरेट हो रहा है' uses the familiar loanword; 'बन रहा है' is shorter but vaguer."
+      },
+      "Needs checking": {
+        "en": "Keep. 'Check notebook' would be more actionable but reads as a command; the current wording stays a neutral status.",
+        "ko": "'확인 필요' is a standard status label and does not imply failure or retry.",
+        "ja": "'要確認' is the idiomatic compact label for items requiring review.",
+        "es": "'Requiere revisión' is a status, not an imperative. 'Revisar' was avoided because it reads as a command.",
+        "fr": "'À vérifier' is the idiomatic short status and implies no failure.",
+        "de": "'Prüfung nötig' is short and neutral. 'Bitte prüfen' is an alternative but more imperative.",
+        "pt_BR": "'Requer verificação' stays a status. 'Verificar' alone would read as a button.",
+        "zh_CN": "'需要检查' is neutral. '待确认' was avoided because it suggests waiting for the system to confirm.",
+        "it": "'Da verificare' is the idiomatic short status label.",
+        "zh_TW": "'需要檢查' mirrors zh_CN intent with Traditional characters; '待確認' has the same caveat.",
+        "hi": "'जाँच ज़रूरी है' is a neutral status and does not imply failure."
+      },
+      "Ready": {
+        "en": "Keep. 'Done' would match several locales more closely, but 'Ready' also fits the import-only case.",
+        "ko": "'완료' was chosen over '준비됨', which sounds unnatural as a job status.",
+        "ja": "'完了' is clearer than '準備完了' for finished generation and import-only jobs.",
+        "es": "Masculine 'Listo' agrees with an implied 'trabajo'. 'Completado' is an alternative.",
+        "fr": "'Prêt' agrees with an implied masculine subject. 'Terminé' is an alternative closer to 'done'.",
+        "de": "'Fertig' is natural. 'Bereit' suggests readiness to start, so it was avoided.",
+        "pt_BR": "'Pronto' is natural. 'Concluído' is an alternative.",
+        "zh_CN": "'已完成' is clearer than '就绪', which suggests ready to start.",
+        "it": "'Pronto' is natural. 'Completato' is an alternative.",
+        "zh_TW": "'已完成' is used for the same reason as zh_CN.",
+        "hi": "'तैयार' is natural and short. 'पूरा हुआ' is an alternative."
+      },
+      "Some requests may still be running in Gemini Notebook. Check this notebook for the result.": {
+        "en": "Keep. It hedges correctly with 'may' and 'some'.",
+        "ko": "'~일 수 있습니다' preserves possibility without guaranteeing progress.",
+        "ja": "'可能性があります' keeps the uncertainty. Polite form is used for the instruction.",
+        "es": "'Es posible que… sigan' preserves possibility. Informal 'Consulta' (tú) is used, matching common Google Spanish UI.",
+        "fr": "'sont peut-être encore en cours' keeps the uncertainty. Formal 'Consultez' is used.",
+        "de": "'möglicherweise noch' hedges correctly. Formal 'Sie' is used.",
+        "pt_BR": "'talvez ainda estejam' preserves possibility. 'Confira' is natural in Brazilian UI.",
+        "zh_CN": "'可能仍在…运行' preserves possibility. '请' softens the instruction.",
+        "it": "'potrebbero essere ancora in corso' keeps the uncertainty. Informal 'Controlla' is used.",
+        "zh_TW": "'要求' is used instead of '請求' per Taiwan usage. '執行' is the Taiwan term for running.",
+        "hi": "'हो सकता है… चल रहे हों' conveys possibility with subjunctive mood."
+      },
+      "Some requests failed. Check this notebook for details.": {
+        "en": "Keep. 'Some' leaves room for successful siblings, and nothing implies ongoing work.",
+        "ko": "'일부' preserves successful siblings. No retry is implied.",
+        "ja": "'一部の' preserves successful siblings.",
+        "es": "Preterite 'fallaron' marks a completed outcome with no ongoing work.",
+        "fr": "'pour en savoir plus' is the idiomatic way to say 'for details'.",
+        "de": "'sind fehlgeschlagen' is a completed state.",
+        "pt_BR": "'falharam' is a completed state.",
+        "zh_CN": "'部分请求失败' is concise and does not imply other tasks are running.",
+        "it": "'non sono riuscite' is softer and more natural than 'sono fallite'.",
+        "zh_TW": "'詳細資料' is the common Taiwan UI term for details.",
+        "hi": "'विफल रहे' is the standard UI term for failed. 'जानकारी के लिए' keeps it short."
+      }
+    },
+    "terminology_caveats": [
+      "Gemini Notebook is kept in Latin script in every locale. Particles attach per local convention, with no space in Japanese.",
+      "The word for 'notebook' is not verified against Google's official localized terminology. 'cuaderno' (es), 'notebook' (fr, de, pt_BR, it), '노트북' (ko), 'ノートブック' (ja), '笔记本' (zh_CN), '筆記本' (zh_TW), and 'नोटबुक' (hi) are reasonable choices that should be aligned with the extension's existing glossary.",
+      "Register varies by locale convention: informal tú/tu in es and it, formal vous and Sie in fr and de, você-style 'Confira' in pt_BR. Match whatever the existing locale files already use.",
+      "'Request' is rendered as '요청', 'リクエスト', 'solicitud', 'demande', 'Anfrage', 'solicitação', '请求', 'richiesta', '要求' (zh_TW), and 'अनुरोध'. These should stay consistent with other queue strings.",
+      "The short labels ('Génération en cours', 'Generazione in corso', 'जनरेट हो रहा है') are the longest candidates and should be checked for truncation at 320px, with the shorter fallbacks noted in the rationale.",
+      "These translations have not been reviewed by native speakers and were not checked against Google's live interface."
+    ]
+  },
+  "exit_code": 0,
+  "status": "completed",
+  "elapsed_seconds": 51.0
+}

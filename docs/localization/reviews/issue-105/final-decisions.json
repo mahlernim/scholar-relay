@@ -1,0 +1,642 @@
+{
+  "issue": 105,
+  "reviewer_model": "gpt-6-astra",
+  "reviewed_at_utc": "2026-09-30T01:13:18.873928+00:00",
+  "hash_scope": "SHA-256 of UTF-8 file bytes with CRLF normalized to LF, no other transformations.",
+  "prompt": {
+    "file": "prompt.txt",
+    "sha256": "855eb84c644be175d63973b26f07011a7d51e237dd61d4b95370f0ccf66a85c5",
+    "raw_bytes_sha256": "855eb84c644be175d63973b26f07011a7d51e237dd61d4b95370f0ccf66a85c5",
+    "provider_recorded_sha256_matches_raw_bytes": true
+  },
+  "proposals": [
+    {
+      "file": "gemini-3.8-flash.json",
+      "sha256": "561b4c4d3362acb666862be6f2a7f68c9ba8de23713cdd65ab286d91de693353",
+      "requested_model": "gemini-3.8-flash-high",
+      "response_reported_model": null
+    },
+    {
+      "file": "opus.json",
+      "sha256": "31c54bd9e8163fb0e5c8111d619e216c085c9e3d2eaf3c65e7ed8491b035262e",
+      "requested_model": "opus",
+      "response_reported_model": [
+        "claude-opus-5-5"
+      ]
+    }
+  ],
+  "unavailable_requested_model": {
+    "file": "opus-6-unavailable.json",
+    "sha256": "934a1d261df8ece58d06cae136114e67907275b7bb03b878360b2d530cc57c94",
+    "requested_model": "claude-opus-6"
+  },
+  "input_catalogs": [
+    {
+      "file": "docs/localization/messages.json",
+      "sha256": "a0ab0babb33d9777b54b434ecce500177166501248a99b99f13572bdec873fd1"
+    },
+    {
+      "file": "docs/localization/zh_CN.json",
+      "sha256": "5817437f07ed3611be1d797463b289b462f5ff052b8b8c58a96fd462c8c0a763"
+    },
+    {
+      "file": "docs/localization/it.json",
+      "sha256": "a427e3e9c7289a3d0c0c53de2d313b4a166d1c2a2e7f0b57c25d9beec47f3eb6"
+    },
+    {
+      "file": "docs/localization/zh_TW.json",
+      "sha256": "f9397d54a4efd2a1f85ee4ffc19c32b4937548c854f36ad662ecdaac1f6f84a8"
+    },
+    {
+      "file": "docs/localization/hi.json",
+      "sha256": "1fe3a16843b2b0f585b7745fab6444741046a5705ee7b38ed127d79a5da780d2"
+    }
+  ],
+  "selection_policy": "Compare both independent proposals against current catalogs for meaning, naturalness, compactness and consistency. Retain suitable existing wording. Review all five sources in eleven locales. Only the failed-only hint is a new source.",
+  "semantic_findings": [
+    "Generating is allowed when at least one accepted known-ID request remains in progress. It does not mean every request is active.",
+    "Needs checking does not itself establish a failed outcome. Ready requires complete success or successful source-only import.",
+    "Uncertain hints preserve possibility. They do not promise continued generation or a successful result.",
+    "Both proposal rationales characterize the failed hint as partial failure. That rationale is rejected. The state can contain one failed request or all failed requests. Final copy does not assert successful siblings or active work.",
+    "Keep the canonical English failed-only hint exactly as requested. Its some is interpreted as an unspecified nonzero number, not proof that other requests succeeded.",
+    "Keep existing compact phase labels, including French Génération, German Wird erstellt and Hindi बन रहा है. Fix Simplified Chinese Generating to 生成中.",
+    "German catalog register is mixed. These edited recovery hints use informal Prüfe, consistent with existing sign-in and uncertain-result guidance. Broader register cleanup is outside scope."
+  ],
+  "decisions": [
+    {
+      "source": "Generating",
+      "locales": {
+        "en": {
+          "translation": "Generating",
+          "previous_translation": "Generating",
+          "changed": false,
+          "provenance": [
+            "canonical-English",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain canonical English source."
+        },
+        "ko": {
+          "translation": "생성 중",
+          "previous_translation": "생성 중",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "ja": {
+          "translation": "生成中",
+          "previous_translation": "生成中",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "es": {
+          "translation": "Generando",
+          "previous_translation": "Generando",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "fr": {
+          "translation": "Génération",
+          "previous_translation": "Génération",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "de": {
+          "translation": "Wird erstellt",
+          "previous_translation": "Wird erstellt",
+          "changed": false,
+          "provenance": [
+            "existing-catalog"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "pt_BR": {
+          "translation": "Gerando",
+          "previous_translation": "Gerando",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "zh_CN": {
+          "translation": "生成中",
+          "previous_translation": "展成",
+          "changed": true,
+          "provenance": [
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Both proposals agree. Correct the existing typo 展成 and explicitly express ongoing generation."
+        },
+        "it": {
+          "translation": "Generazione in corso",
+          "previous_translation": "Generazione in corso",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "zh_TW": {
+          "translation": "生成中",
+          "previous_translation": "生成中",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "hi": {
+          "translation": "बन रहा है",
+          "previous_translation": "बन रहा है",
+          "changed": false,
+          "provenance": [
+            "existing-catalog"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        }
+      }
+    },
+    {
+      "source": "Needs checking",
+      "locales": {
+        "en": {
+          "translation": "Needs checking",
+          "previous_translation": "Needs checking",
+          "changed": false,
+          "provenance": [
+            "canonical-English",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain canonical English source."
+        },
+        "ko": {
+          "translation": "확인 필요",
+          "previous_translation": "확인 필요",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "ja": {
+          "translation": "確認が必要",
+          "previous_translation": "確認が必要",
+          "changed": false,
+          "provenance": [
+            "existing-catalog"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "es": {
+          "translation": "Requiere comprobación",
+          "previous_translation": "Requiere comprobación",
+          "changed": false,
+          "provenance": [
+            "existing-catalog"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "fr": {
+          "translation": "À vérifier",
+          "previous_translation": "À vérifier",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "de": {
+          "translation": "Prüfung erforderlich",
+          "previous_translation": "Prüfung erforderlich",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "pt_BR": {
+          "translation": "Precisa de verificação",
+          "previous_translation": "Precisa de verificação",
+          "changed": false,
+          "provenance": [
+            "existing-catalog"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "zh_CN": {
+          "translation": "需要检查",
+          "previous_translation": "需要检查",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "it": {
+          "translation": "Da verificare",
+          "previous_translation": "Da verificare",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "zh_TW": {
+          "translation": "需要確認",
+          "previous_translation": "需要確認",
+          "changed": false,
+          "provenance": [
+            "existing-catalog"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "hi": {
+          "translation": "जाँच ज़रूरी है",
+          "previous_translation": "जाँच ज़रूरी है",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        }
+      }
+    },
+    {
+      "source": "Ready",
+      "locales": {
+        "en": {
+          "translation": "Ready",
+          "previous_translation": "Ready",
+          "changed": false,
+          "provenance": [
+            "canonical-English",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain canonical English source."
+        },
+        "ko": {
+          "translation": "완료",
+          "previous_translation": "완료",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "ja": {
+          "translation": "完了",
+          "previous_translation": "完了",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "es": {
+          "translation": "Listo",
+          "previous_translation": "Listo",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "fr": {
+          "translation": "Prêt",
+          "previous_translation": "Prêt",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "de": {
+          "translation": "Bereit",
+          "previous_translation": "Bereit",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "pt_BR": {
+          "translation": "Pronto",
+          "previous_translation": "Pronto",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "zh_CN": {
+          "translation": "就绪",
+          "previous_translation": "就绪",
+          "changed": false,
+          "provenance": [
+            "existing-catalog"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "it": {
+          "translation": "Pronto",
+          "previous_translation": "Pronto",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "zh_TW": {
+          "translation": "已就緒",
+          "previous_translation": "已就緒",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "hi": {
+          "translation": "तैयार",
+          "previous_translation": "तैयार",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        }
+      }
+    },
+    {
+      "source": "Some requests may still be running in Gemini Notebook. Check this notebook for the result.",
+      "locales": {
+        "en": {
+          "translation": "Some requests may still be running in Gemini Notebook. Check this notebook for the result.",
+          "previous_translation": "Some requests may still be running in Gemini Notebook. Check this notebook for the result.",
+          "changed": false,
+          "provenance": [
+            "canonical-English",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain canonical English source."
+        },
+        "ko": {
+          "translation": "일부 요청은 Gemini Notebook에서 계속 진행 중일 수 있습니다. 이 노트북에서 결과를 확인하세요.",
+          "previous_translation": "일부 요청은 Gemini Notebook에서 계속 진행 중일 수 있습니다. 이 노트북에서 결과를 확인하세요.",
+          "changed": false,
+          "provenance": [
+            "existing-catalog"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "ja": {
+          "translation": "一部のリクエストがGemini Notebookでまだ実行中の可能性があります。結果はこのノートブックで確認してください。",
+          "previous_translation": "一部のリクエストはGemini Notebookで続行中の可能性があります。このノートブックで結果を確認してください。",
+          "changed": true,
+          "provenance": [
+            "opus.json"
+          ],
+          "reason": "Use まだ実行中 for possibly still executing. Existing 続行中 can suggest resumption. Preserve possibility and existing notebook term."
+        },
+        "es": {
+          "translation": "Algunas solicitudes pueden seguir ejecutándose en Gemini Notebook. Consulta el resultado en este cuaderno.",
+          "previous_translation": "Algunas solicitudes pueden seguir ejecutándose en Gemini Notebook. Consulta el resultado en este cuaderno.",
+          "changed": false,
+          "provenance": [
+            "existing-catalog"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "fr": {
+          "translation": "Certaines demandes peuvent encore être en cours dans Gemini Notebook. Consultez ce notebook pour voir le résultat.",
+          "previous_translation": "Certaines demandes peuvent encore être en cours dans Gemini Notebook. Consultez ce notebook pour voir le résultat.",
+          "changed": false,
+          "provenance": [
+            "existing-catalog"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "de": {
+          "translation": "Einige Anfragen laufen möglicherweise noch in Gemini Notebook. Prüfe das Ergebnis in diesem Notebook.",
+          "previous_translation": "Einige Anfragen laufen möglicherweise noch in Gemini Notebook. Prüfen Sie das Ergebnis in diesem Notebook.",
+          "changed": true,
+          "provenance": [
+            "gpt-6-astra editorial adaptation of proposals and existing catalog"
+          ],
+          "reason": "Retain possibility wording and change the imperative to informal Prüfe, matching nearby recovery guidance. Do not promise an available result."
+        },
+        "pt_BR": {
+          "translation": "Algumas solicitações podem continuar em execução no Gemini Notebook. Confira o resultado neste notebook.",
+          "previous_translation": "Algumas solicitações podem continuar em execução no Gemini Notebook. Confira o resultado neste notebook.",
+          "changed": false,
+          "provenance": [
+            "existing-catalog"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "zh_CN": {
+          "translation": "部分请求可能仍在 Gemini Notebook 中运行。请在此笔记本中查看结果。",
+          "previous_translation": "某些请求可能仍在Gemini Notebook中运行。检查此笔记本以获取结果。",
+          "changed": true,
+          "provenance": [
+            "opus.json"
+          ],
+          "reason": "Use natural polite inspection wording and readable brand spacing. 可能 still marks uncertainty, without guaranteeing a result."
+        },
+        "it": {
+          "translation": "Alcune richieste potrebbero essere ancora in corso in Gemini Notebook. Controlla il risultato in questo notebook.",
+          "previous_translation": "Alcune richieste potrebbero essere ancora in corso in Gemini Notebook. Controlla il risultato in questo notebook.",
+          "changed": false,
+          "provenance": [
+            "existing-catalog",
+            "opus.json"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "zh_TW": {
+          "translation": "部分要求可能仍在 Gemini Notebook 中執行。請查看這個筆記本的結果。",
+          "previous_translation": "部分要求可能仍在 Gemini Notebook 中執行。請查看這個筆記本的結果。",
+          "changed": false,
+          "provenance": [
+            "existing-catalog"
+          ],
+          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+        },
+        "hi": {
+          "translation": "हो सकता है कि कुछ अनुरोध Gemini Notebook में अभी भी चल रहे हों। परिणाम के लिए इस नोटबुक को देखें।",
+          "previous_translation": "कुछ अनुरोध Gemini Notebook में अभी चल सकते हैं। परिणाम के लिए यह नोटबुक देखें।",
+          "changed": true,
+          "provenance": [
+            "gemini-3.8-flash.json"
+          ],
+          "reason": "Explicit हो सकता है and अभी भी चल रहे हों express possibly still running. Existing चल सकते हैं can suggest ability or future execution."
+        }
+      }
+    },
+    {
+      "source": "Some requests failed. Check this notebook for details.",
+      "locales": {
+        "en": {
+          "translation": "Some requests failed. Check this notebook for details.",
+          "previous_translation": "Some requests failed. Check this notebook for details.",
+          "changed": false,
+          "provenance": [
+            "canonical-English",
+            "gemini-3.8-flash.json",
+            "opus.json"
+          ],
+          "reason": "Retain canonical English source."
+        },
+        "ko": {
+          "translation": "실패한 요청이 있습니다. 자세한 내용은 이 노트북에서 확인하세요.",
+          "previous_translation": null,
+          "changed": true,
+          "provenance": [
+            "gpt-6-astra editorial adaptation of proposals and existing catalog"
+          ],
+          "reason": "Adapt proposal wording to state the existence of failed requests without asserting a successful remainder. Keep existing notebook terminology and direct inspection guidance."
+        },
+        "ja": {
+          "translation": "失敗したリクエストがあります。詳細はこのノートブックで確認してください。",
+          "previous_translation": null,
+          "changed": true,
+          "provenance": [
+            "gpt-6-astra editorial adaptation of proposals and existing catalog"
+          ],
+          "reason": "Adapt proposal wording to state the existence of failed requests without asserting a successful remainder. Keep existing notebook terminology and direct inspection guidance."
+        },
+        "es": {
+          "translation": "Hay solicitudes que fallaron. Consulta este cuaderno para ver los detalles.",
+          "previous_translation": null,
+          "changed": true,
+          "provenance": [
+            "gpt-6-astra editorial adaptation of proposals and existing catalog"
+          ],
+          "reason": "Adapt proposal wording to state the existence of failed requests without asserting a successful remainder. Keep existing notebook terminology and direct inspection guidance."
+        },
+        "fr": {
+          "translation": "Des demandes ont échoué. Consultez ce notebook pour en savoir plus.",
+          "previous_translation": null,
+          "changed": true,
+          "provenance": [
+            "gpt-6-astra editorial adaptation of proposals and existing catalog"
+          ],
+          "reason": "Adapt proposal wording to state the existence of failed requests without asserting a successful remainder. Keep existing notebook terminology and direct inspection guidance."
+        },
+        "de": {
+          "translation": "Anfragen sind fehlgeschlagen. Prüfe die Details in diesem Notebook.",
+          "previous_translation": null,
+          "changed": true,
+          "provenance": [
+            "gpt-6-astra editorial adaptation of proposals and existing catalog"
+          ],
+          "reason": "Adapt proposal wording to state the existence of failed requests without asserting a successful remainder. Keep existing notebook terminology and direct inspection guidance. Use informal Prüfe to match existing recovery guidance."
+        },
+        "pt_BR": {
+          "translation": "Há solicitações que falharam. Confira os detalhes neste notebook.",
+          "previous_translation": null,
+          "changed": true,
+          "provenance": [
+            "gpt-6-astra editorial adaptation of proposals and existing catalog"
+          ],
+          "reason": "Adapt proposal wording to state the existence of failed requests without asserting a successful remainder. Keep existing notebook terminology and direct inspection guidance."
+        },
+        "zh_CN": {
+          "translation": "有请求失败。请在此笔记本中查看详情。",
+          "previous_translation": null,
+          "changed": true,
+          "provenance": [
+            "gpt-6-astra editorial adaptation of proposals and existing catalog"
+          ],
+          "reason": "Adapt proposal wording to state the existence of failed requests without asserting a successful remainder. Keep existing notebook terminology and direct inspection guidance."
+        },
+        "it": {
+          "translation": "Ci sono richieste non riuscite. Controlla i dettagli in questo notebook.",
+          "previous_translation": null,
+          "changed": true,
+          "provenance": [
+            "gpt-6-astra editorial adaptation of proposals and existing catalog"
+          ],
+          "reason": "Adapt proposal wording to state the existence of failed requests without asserting a successful remainder. Keep existing notebook terminology and direct inspection guidance."
+        },
+        "zh_TW": {
+          "translation": "有要求失敗。請在這個筆記本中查看詳細資料。",
+          "previous_translation": null,
+          "changed": true,
+          "provenance": [
+            "gpt-6-astra editorial adaptation of proposals and existing catalog"
+          ],
+          "reason": "Adapt proposal wording to state the existence of failed requests without asserting a successful remainder. Keep existing notebook terminology and direct inspection guidance."
+        },
+        "hi": {
+          "translation": "कुछ अनुरोध विफल हो गए। विवरण के लिए इस नोटबुक को देखें।",
+          "previous_translation": null,
+          "changed": true,
+          "provenance": [
+            "gemini-3.8-flash.json"
+          ],
+          "reason": "Select Gemini wording. कुछ expresses an unspecified number of failed requests and the sentence does not assert that other requests succeeded or remain active."
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "Machine-assisted editorial adjudication, not independent native-speaker certification or direct inspection of Google localized UI.",
+    "The requested claude-opus-6 was unavailable. The available opus alias reported claude-opus-5-5, not Opus 6.",
+    "Gemini was invoked as gemini-3.8-flash-high. Its response envelope did not report an actual model identifier.",
+    "Layout and runtime status selection need separate controlled UI tests. These decisions alone do not establish live Google behavior.",
+    "These five strings have no placeholders. Existing placeholders in all other catalog messages must remain unchanged."
+  ]
+}

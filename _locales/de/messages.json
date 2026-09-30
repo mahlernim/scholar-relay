@@ -878,8 +878,12 @@
     "description": "This paper needs attention. Other queued papers can continue."
   },
   "ui_e5cfc00b": {
-    "message": "Einige Anfragen laufen möglicherweise noch in Gemini Notebook. Prüfen Sie das Ergebnis in diesem Notebook.",
+    "message": "Einige Anfragen laufen möglicherweise noch in Gemini Notebook. Prüfe das Ergebnis in diesem Notebook.",
     "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
+  },
+  "ui_423ddda2": {
+    "message": "Anfragen sind fehlgeschlagen. Prüfe die Details in diesem Notebook.",
+    "description": "Some requests failed. Check this notebook for details."
   },
   "ui_314695f8": {
     "message": "Die Ergebnisse sind fertig. Sie können mit einem weiteren Artikel fortfahren.",
