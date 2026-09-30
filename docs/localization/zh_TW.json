@@ -218,6 +218,7 @@
   "You can close this popup, but keep Chrome open until generation starts.": "你可以關閉這個彈出式視窗，但在開始生成前請保持 Chrome 開啟。",
   "This paper needs attention. Other queued papers can continue.": "這篇論文需要處理。佇列中的其他論文可以繼續進行。",
   "Some requests may still be running in Gemini Notebook. Check this notebook for the result.": "部分要求可能仍在 Gemini Notebook 中執行。請查看這個筆記本的結果。",
+  "Some requests failed. Check this notebook for details.": "有要求失敗。請在這個筆記本中查看詳細資料。",
   "Artifacts are ready. You can move on to another paper.": "工作室內容已就緒。你可以繼續處理其他論文。",
   "Saving PDF. Keep this popup open...": "正在儲存 PDF，請保持這個彈出式視窗開啟...",
   "Gemini Notebook is temporarily unreachable. Try connecting again later.": "暫時無法連線至 Gemini Notebook。請稍後再試著連線。",

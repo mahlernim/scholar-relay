@@ -881,6 +881,10 @@
     "message": "일부 요청은 Gemini Notebook에서 계속 진행 중일 수 있습니다. 이 노트북에서 결과를 확인하세요.",
     "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
   },
+  "ui_423ddda2": {
+    "message": "실패한 요청이 있습니다. 자세한 내용은 이 노트북에서 확인하세요.",
+    "description": "Some requests failed. Check this notebook for details."
+  },
   "ui_314695f8": {
     "message": "결과물이 준비되었습니다. 다른 논문으로 넘어가도 됩니다.",
     "description": "Artifacts are ready. You can move on to another paper."

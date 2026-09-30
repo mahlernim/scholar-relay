@@ -878,8 +878,12 @@
     "description": "This paper needs attention. Other queued papers can continue."
   },
   "ui_e5cfc00b": {
-    "message": "一部のリクエストはGemini Notebookで続行中の可能性があります。このノートブックで結果を確認してください。",
+    "message": "一部のリクエストがGemini Notebookでまだ実行中の可能性があります。結果はこのノートブックで確認してください。",
     "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
+  },
+  "ui_423ddda2": {
+    "message": "失敗したリクエストがあります。詳細はこのノートブックで確認してください。",
+    "description": "Some requests failed. Check this notebook for details."
   },
   "ui_314695f8": {
     "message": "成果物が完成しました。別の論文に進めます。",

@@ -14,12 +14,35 @@ export function canStartNextJob(queue) {
 
 export function jobHandoff(job) {
     if (job.status === 'queued' || job.step === 'queued_pdf') return 'saved';
-    if (job.status === 'completed') return job.tasks?.some(task => task.status !== 'completed') ? 'check' : 'ready';
     if (job.status === 'error' || job.step === 'wait_pdf_access') return 'attention';
+    const tasks = job.tasks || [];
+    if (job.status === 'completed' || job.step === 'wait_artifacts' || job.status === 'stopped') {
+        if (tasks.some(task => task.status === 'failed') &&
+            tasks.every(task => ['completed', 'failed'].includes(task.status))) return 'failed';
+        if (job.status === 'completed') return tasks.some(task => task.status !== 'completed') ? 'check' : 'ready';
+        if (job.status === 'running' && tasks.length && tasks.every(task => task.status === 'completed')) return 'ready';
+    }
     if (job.step === 'wait_artifacts' && job.tasks?.length &&
         job.tasks.every(task => task.taskId && ['in_progress', 'completed'].includes(task.status))) return 'accepted';
     if (job.step === 'wait_artifacts' || job.status === 'stopped') return 'check';
     return 'preparing';
+}
+
+export function jobPhase(job) {
+    if (job.status === 'queued' || job.step === 'queued_pdf') return 'queued';
+    if (job.status === 'completed') return jobHandoff(job) === 'ready' ? 'ready' : 'check';
+    if (job.status === 'stopped') return 'stopped';
+    if (job.step === 'wait_pdf_access' && job.status === 'running') return 'attention';
+    if (job.status === 'error') return 'check';
+    if (job.step === 'wait_artifacts') {
+        if (jobHandoff(job) === 'ready') return 'ready';
+        return hasKnownArtifactActivity(job) ? 'generating' : 'check';
+    }
+    return 'preparing';
+}
+
+function hasKnownArtifactActivity(job) {
+    return !!job.tasks?.some(task => task.taskId && task.status === 'in_progress');
 }
 
 // Presentation helpers read persisted timestamps. They never poll or write state.
@@ -41,7 +64,8 @@ export function jobReadyCount(job) {
 }
 
 export function hasJobActivity(job) {
-    return job.status === 'running' && !['wait_pdf_access', 'queued_pdf'].includes(job.step);
+    return job.status === 'running' && !['wait_pdf_access', 'queued_pdf'].includes(job.step) &&
+        (job.step !== 'wait_artifacts' || hasKnownArtifactActivity(job));
 }
 
 // One serialized writer for the whole queue. A late callback may update only
