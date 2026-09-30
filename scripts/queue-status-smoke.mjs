@@ -46,7 +46,16 @@ export async function queueStatusSmoke({ popup, evaluate, reload, root }) {
                         active:!!card.querySelector('.job-activity.is-active'),
                         phaseFits:card.querySelector('.job-phase').scrollWidth<=card.querySelector('.job-phase').clientWidth+1,
                         labelFits:card.querySelector('.job-phase-label').scrollWidth<=card.querySelector('.job-phase-label').clientWidth+1,
-                        hintFits:card.querySelector('.job-hint').scrollWidth<=card.querySelector('.job-hint').clientWidth+1
+                        hintFits:card.querySelector('.job-hint').scrollWidth<=card.querySelector('.job-hint').clientWidth+1,
+                        metrics:Object.fromEntries([
+                            ['phase','.job-phase'],['label','.job-phase-label'],['count','.job-ready-count'],
+                            ['timer','.job-elapsed'],['hint','.job-hint']
+                        ].map(([name,selector])=>{
+                            const element=card.querySelector(selector);
+                            return [name,{text:element.textContent,clientWidth:element.clientWidth,
+                                scrollWidth:element.scrollWidth,width:element.getBoundingClientRect().width,
+                                font:getComputedStyle(element).font}];
+                        }))
                     }))};
                 })()`);
                 assert(view.width <= width, `${locale} ${width}px status queue overflow`);
@@ -58,7 +67,8 @@ export async function queueStatusSmoke({ popup, evaluate, reload, root }) {
                     assert(card.active === mixed, `${locale} ${card.id} activity contradicts the task outcomes`);
                     assert(card.hint === expected(failedOnly ? failedHint : unknownHint), `${locale} ${card.id} handoff hint contradicts the task outcomes`);
                     assert(card.count === expected('$1/$2 ready', [failedOnly ? 1 : 0, 2]), `${locale} ${card.id} lost the ready count`);
-                    assert(card.phaseFits && card.labelFits && card.hintFits, `${locale} ${width}px ${card.id} status text is clipped`);
+                    assert(card.phaseFits && card.labelFits && card.hintFits,
+                        `${locale} ${width}px ${card.id} status text is clipped ${JSON.stringify(card.metrics)}`);
                 }
                 results.push({ locale, width, ...view });
                 await evaluate(popup, `document.getElementById('job-queue').scrollIntoView({block:'start'})`);

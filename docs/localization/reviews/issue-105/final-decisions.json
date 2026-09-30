@@ -60,7 +60,8 @@
     "Both proposal rationales characterize the failed hint as partial failure. That rationale is rejected. The state can contain one failed request or all failed requests. Final copy does not assert successful siblings or active work.",
     "Keep the canonical English failed-only hint exactly as requested. Its some is interpreted as an unspecified nonzero number, not proof that other requests succeeded.",
     "Keep existing compact phase labels, including French Génération, German Wird erstellt and Hindi बन रहा है. Fix Simplified Chinese Generating to 生成中.",
-    "German catalog register is mixed. These edited recovery hints use informal Prüfe, consistent with existing sign-in and uncertain-result guidance. Broader register cleanup is outside scope."
+    "German catalog register is mixed. These edited recovery hints use informal Prüfe, consistent with existing sign-in and uncertain-result guidance. Broader register cleanup is outside scope.",
+    "After Linux CI reported the Spanish Needs checking label clipped at 320px on f96fe1b, select shorter proposal labels for Spanish, German and Brazilian Portuguese. German and Brazilian Portuguese are preventive compactness changes, not observed clipping findings. Other phase labels remain as initially adjudicated."
   ],
   "decisions": [
     {
@@ -217,13 +218,14 @@
           "reason": "Retain existing concise, semantically suitable wording and locale consistency."
         },
         "es": {
-          "translation": "Requiere comprobación",
+          "translation": "Requiere revisión",
           "previous_translation": "Requiere comprobación",
-          "changed": false,
+          "changed": true,
           "provenance": [
-            "existing-catalog"
+            "gemini-3.8-flash.json",
+            "opus.json"
           ],
-          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+          "reason": "Both proposals give a shorter natural label with the same inspection-needed meaning. The previous choice clipped in Linux Chrome at 320px on exact head f96fe1b."
         },
         "fr": {
           "translation": "À vérifier",
@@ -237,23 +239,23 @@
           "reason": "Retain existing concise, semantically suitable wording and locale consistency."
         },
         "de": {
-          "translation": "Prüfung erforderlich",
+          "translation": "Prüfung nötig",
           "previous_translation": "Prüfung erforderlich",
-          "changed": false,
+          "changed": true,
           "provenance": [
-            "existing-catalog",
-            "gemini-3.8-flash.json"
+            "opus.json"
           ],
-          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+          "reason": "Select the shorter Opus proposal. It retains the inspection-needed state without implying failure or retry and reduces width pressure under platform font differences."
         },
         "pt_BR": {
-          "translation": "Precisa de verificação",
+          "translation": "Requer verificação",
           "previous_translation": "Precisa de verificação",
-          "changed": false,
+          "changed": true,
           "provenance": [
-            "existing-catalog"
+            "gemini-3.8-flash.json",
+            "opus.json"
           ],
-          "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+          "reason": "Both proposals give a shorter natural label with the same verification-needed meaning. Reduce width pressure under platform font differences without changing register or implying retry."
         },
         "zh_CN": {
           "translation": "需要检查",
@@ -638,5 +640,59 @@
     "Gemini was invoked as gemini-3.8-flash-high. Its response envelope did not report an actual model identifier.",
     "Layout and runtime status selection need separate controlled UI tests. These decisions alone do not establish live Google behavior.",
     "These five strings have no placeholders. Existing placeholders in all other catalog messages must remain unchanged."
-  ]
+  ],
+  "revision_history": [
+    {
+      "reviewer_model": "gpt-6-astra",
+      "reviewed_at_utc": "2026-09-30T01:20:33.708013+00:00",
+      "trigger": {
+        "reported_by": "parent agent with exact-head CI results",
+        "commit": "f96fe1b",
+        "platform": "Linux Chrome",
+        "failure": "es 320px status-uncertain status text is clipped",
+        "scope": "Spanish clipping is observed. German and Brazilian Portuguese width pressure is a precautionary inference, not an observed failure."
+      },
+      "previous_decisions": {
+        "Needs checking": {
+          "es": {
+            "translation": "Requiere comprobación",
+            "previous_translation": "Requiere comprobación",
+            "changed": false,
+            "provenance": [
+              "existing-catalog"
+            ],
+            "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+          },
+          "de": {
+            "translation": "Prüfung erforderlich",
+            "previous_translation": "Prüfung erforderlich",
+            "changed": false,
+            "provenance": [
+              "existing-catalog",
+              "gemini-3.8-flash.json"
+            ],
+            "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+          },
+          "pt_BR": {
+            "translation": "Precisa de verificação",
+            "previous_translation": "Precisa de verificação",
+            "changed": false,
+            "provenance": [
+              "existing-catalog"
+            ],
+            "reason": "Retain existing concise, semantically suitable wording and locale consistency."
+          }
+        }
+      },
+      "updated_translations": {
+        "Needs checking": {
+          "es": "Requiere revisión",
+          "de": "Prüfung nötig",
+          "pt_BR": "Requer verificação"
+        }
+      },
+      "reason": "Prefer semantically equivalent shorter independent proposals after actual cross-platform clipping evidence. Preserve all initial choices and rationales for the three revised locales in this history entry."
+    }
+  ],
+  "last_reviewed_at_utc": "2026-09-30T01:20:33.708013+00:00"
 }

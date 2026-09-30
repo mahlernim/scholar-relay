@@ -794,7 +794,7 @@
     "description": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open."
   },
   "ui_6fa973d2": {
-    "message": "Requiere comprobación",
+    "message": "Requiere revisión",
     "description": "Needs checking"
   },
   "ui_dccf5581": {
