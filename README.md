@@ -6,13 +6,13 @@ ScholarRelay (Scholar Relay) imports PDFs, arXiv research papers, and webpages i
 
 > ScholarRelay is an independent open-source extension and is not affiliated with, authorized by, or endorsed by Google. It uses your existing signed-in Gemini Notebook browser session and never asks for your Google password or verification code.
 
-## Next release candidate
+## Version 1.5.2
 
-The unreleased candidate preserves server-requested waits across worker restarts and defers polling without replaying uncertain writes. Available compute usage appears in the existing subtitle and artifact labels. These snapshots expire locally and do not block generation or promise when a failed request will succeed.
+Version 1.5.2 preserves server-requested waits across worker restarts and defers polling without replaying uncertain writes. Available compute usage appears in the existing subtitle and artifact labels. These snapshots expire locally and do not block generation or promise when a failed request will succeed.
 
 After a confirmed, attributable webpage import failure, Import page text can send the original tab's article text to Google as a text source in the same notebook. Confirm the inline disclosure and grant access to that specific site first. Text may include sign-in-only content. Forms, hidden content, scripts, frames and media are excluded, and the total is limited to 200 kB. Equations and embedded material may be incomplete. Article text stays in memory locally. Google's copy remains until deleted in Gemini Notebook under Google's retention policy. Clearing local history does not delete it. The failed source is kept and uncertain uploads are not repeated.
 
-다음 릴리스 후보는 작업 재시작 후에도 서버가 요청한 대기 시간을 유지하고, 결과가 불확실한 요청을 반복하지 않으며 상태 조회만 연기합니다. 제공되는 연산 사용량은 기존 부제와 아티팩트 이름에 표시합니다. 시간이 지난 정보는 숨기며 생성을 막거나 재시도 성공 시각을 보장하지 않습니다.
+1.5.2는 작업 재시작 후에도 서버가 요청한 대기 시간을 유지하고, 결과가 불확실한 요청을 반복하지 않으며 상태 조회만 연기합니다. 제공되는 연산 사용량은 기존 부제와 아티팩트 이름에 표시합니다. 시간이 지난 정보는 숨기며 생성을 막거나 재시도 성공 시각을 보장하지 않습니다.
 
 웹페이지 가져오기 실패의 원인과 소스가 확인되면 페이지 본문 가져오기로 원래 탭의 본문을 같은 노트북의 텍스트 소스로 Google에 보낼 수 있습니다. 화면 안내에 동의하고 해당 사이트 접근 권한을 허용해야 합니다. 로그인 후에만 보이는 내용이 포함될 수 있습니다. 양식, 숨겨진 내용, 스크립트, 프레임과 미디어는 제외하고 전체 크기를 200 kB로 제한합니다. 수식과 삽입 자료는 불완전할 수 있습니다. 본문은 확장 프로그램 메모리에만 임시 보관합니다. Google에 전송된 사본은 Gemini Notebook에서 삭제해야 하며 Google의 보관 정책을 따릅니다. 로컬 기록 삭제로는 원격 사본이 삭제되지 않습니다. 실패한 소스는 유지하고 결과가 불확실한 업로드는 반복하지 않습니다.
 
@@ -36,7 +36,7 @@ The compact selector remembers its notebook mode. Optional per-site detection sh
 
 ScholarRelay(Scholar Relay)는 PDF, arXiv 연구 논문, 웹페이지를 Gemini Notebook(이전 명칭 NotebookLM)으로 가져옵니다. 노트북을 정리하고 AI 오디오 오버뷰, 학습 자료 등 원하는 아티팩트를 한 번에 생성합니다.
 
-v1.5.1에서는 화면과 알림을 영어, 한국어, 일본어, 스페인어, 프랑스어, 독일어, 브라질 포르투갈어, 중국어 간체, 이탈리아어, 중국어 번체로 제공합니다. 화면 언어는 Chrome 설정을 따르며 지원하지 않는 언어에서는 영어를 사용합니다. 아티팩트 생성 언어는 별도 설정이며 기존 선택값은 유지됩니다. 기술 진단은 상세 내용에 원문으로 표시됩니다.
+v1.5.2에서는 화면과 알림을 영어, 한국어, 일본어, 스페인어, 프랑스어, 독일어, 브라질 포르투갈어, 중국어 간체, 이탈리아어, 중국어 번체, 힌디어로 제공합니다. 화면 언어는 Chrome 설정을 따르며 지원하지 않는 언어에서는 영어를 사용합니다. 아티팩트 생성 언어는 별도 설정이며 기존 선택값은 유지됩니다. 기술 진단은 상세 내용에 원문으로 표시됩니다.
 
 1.4.4는 생성 제한과 PDF 다운로드 대기를 명확히 표시하고, 논문이 아닌 페이지에서 자동화를 시작하기 전에 확인합니다. 실패하거나 중지된 ScholarRelay 노트북은 내용을 확인한 뒤 명시적으로 삭제할 수 있으며 자동 삭제는 하지 않습니다.
 
@@ -112,7 +112,7 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 
 ## English
 
-Version 1.5.1 localizes the interface and notifications in English, Korean, Japanese, Spanish, French, German, Brazilian Portuguese, Simplified Chinese, Italian, and Traditional Chinese. The interface follows Chrome's language with English fallback. Artifact output language is a separate setting and existing choices are preserved. Original technical diagnostics remain available in Details.
+Version 1.5.2 localizes the interface and notifications in English, Korean, Japanese, Spanish, French, German, Brazilian Portuguese, Simplified Chinese, Italian, Traditional Chinese, and Hindi. The interface follows Chrome's language with English fallback. Artifact output language is a separate setting and existing choices are preserved. Original technical diagnostics remain available in Details.
 
 ### Highlights
 

@@ -55,7 +55,7 @@ export async function compactProgressSmoke({ popup, evaluate, reload, root, orig
             completedAt: new Date(fixedNow - 5000).toISOString(), tasks },
     ];
     await evaluate(popup, `chrome.tabs.create({url:${JSON.stringify(origin + '/plain')},active:true})`);
-    for (const locale of ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW']) {
+    for (const locale of ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW', 'hi']) {
         const catalog = JSON.parse(await readFile(join(root, '_locales', locale, 'messages.json'), 'utf8'));
         const countText = catalog[messageKey('$1/$2 ready')].message.replace('$1', '1').replace('$2', '2');
         const { identifier } = await popup.call('Page.addScriptToEvaluateOnNewDocument', { source: `
@@ -65,12 +65,16 @@ export async function compactProgressSmoke({ popup, evaluate, reload, root, orig
             globalThis.__clockNow=${fixedNow}; Date.now=()=>globalThis.__clockNow;
         ` });
         try {
-            await evaluate(popup, `chrome.storage.local.set({jobQueue:${JSON.stringify({ version: 1, paused: true, jobs })}})`);
+            const seeded = await evaluate(popup, `chrome.runtime.sendMessage({type:'SMOKE_SET_QUEUE',queue:${JSON.stringify({ version: 1, paused: true, jobs })}})`);
+            assert(seeded?.ok, `${locale} queue fixture was not committed`);
             await reload(popup);
             const view = await evaluate(popup, `(async () => {
                 // Render the stored fixture explicitly. Page detection may still
                 // be waiting on a tab and must not control this queue-only check.
                 await globalThis.__smoke.refreshQueue();
+                if (!document.getElementById('finished-jobs')) {
+                    throw new Error('Missing finished fixture after serialized seed: '+JSON.stringify(await chrome.runtime.sendMessage({type:'GET_QUEUE'})));
+                }
                 document.getElementById('finished-jobs').open=true;
                 const phases=[...document.querySelectorAll('.job-phase')];
                 return {width:document.documentElement.scrollWidth,noPdfHeight:document.querySelector('.no-pdf')?.getBoundingClientRect().height,
@@ -106,7 +110,7 @@ export async function compactProgressSmoke({ popup, evaluate, reload, root, orig
     }
     await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'idle'})`);
     await reload(popup);
-    console.log('Compact progress smoke passed in ten locales: timers, counts, stable focus and height, reduced motion and no-PDF actions');
+    console.log('Compact progress smoke passed in eleven locales: timers, counts, stable focus and height, reduced motion and no-PDF actions');
 }
 
 export async function generationLimitSmoke({ popup, evaluate, reload, root, completedState }) {
@@ -116,7 +120,7 @@ export async function generationLimitSmoke({ popup, evaluate, reload, root, comp
     const assert = (condition, message) => { if (!condition) throw new Error(message); };
     const out = join(root, 'dist', 'generationLimitSmoke');
     await mkdir(out, { recursive: true });
-    for (const locale of ['en','ko','ja','es','fr','de','pt_BR','zh_CN','it','zh_TW']) {
+    for (const locale of ['en','ko','ja','es','fr','de','pt_BR','zh_CN','it','zh_TW', 'hi']) {
         const catalog = JSON.parse(await readFile(join(root, '_locales', locale, 'messages.json'), 'utf8'));
         const { identifier } = await popup.call('Page.addScriptToEvaluateOnNewDocument', { source:
             `const catalog=${JSON.stringify(catalog)}; chrome.i18n.getMessage=(key,values=[])=>catalog[key]?.message.replace(/\\$(\\d+)/g,(_,i)=>values[i-1]??'')||'';` });
@@ -142,7 +146,7 @@ export async function generationLimitSmoke({ popup, evaluate, reload, root, comp
             }
         } finally { await popup.call('Page.removeScriptToEvaluateOnNewDocument', { identifier }); }
     }
-    console.log('generationLimitSmoke passed in ten locales');
+    console.log('generationLimitSmoke passed in eleven locales');
 }
 
 export async function pdfWaitSmoke({ popup, evaluate, reload, root, completedState }) {
@@ -152,7 +156,7 @@ export async function pdfWaitSmoke({ popup, evaluate, reload, root, completedSta
     const assert = (condition, message) => { if (!condition) throw new Error(message); };
     const out = join(root, 'dist', 'pdfWaitSmoke');
     await mkdir(out, { recursive: true });
-    for (const locale of ['en','ko','ja','es','fr','de','pt_BR','zh_CN','it','zh_TW']) {
+    for (const locale of ['en','ko','ja','es','fr','de','pt_BR','zh_CN','it','zh_TW', 'hi']) {
         const catalog = JSON.parse(await readFile(join(root, '_locales', locale, 'messages.json'), 'utf8'));
         const { identifier } = await popup.call('Page.addScriptToEvaluateOnNewDocument', { source:
             `const catalog=${JSON.stringify(catalog)}; chrome.i18n.getMessage=(key,values=[])=>catalog[key]?.message.replace(/\\$(\\d+)/g,(_,i)=>values[i-1]??'')||'';` });
@@ -182,5 +186,5 @@ export async function pdfWaitSmoke({ popup, evaluate, reload, root, completedSta
             }
         } finally { await popup.call('Page.removeScriptToEvaluateOnNewDocument', { identifier }); }
     }
-    console.log('pdfWaitSmoke passed in ten locales');
+    console.log('pdfWaitSmoke passed in eleven locales');
 }
