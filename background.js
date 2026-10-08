@@ -979,6 +979,8 @@ async function tickSourcePollOperation(state) {
                 if (e?.code === 'PIPELINE_STALE_RUN') throw e;
                 console.warn(`[Pipeline] Failed to start ${type}:`, e.message);
                 tasks.push({ type, taskId: null,
+                    ...(type === 'mind_map' && e?.notebookId === state.notebookId && typeof e?.noteId === 'string'
+                        ? { noteId: e.noteId } : {}),
                     status: e?.code === 'TRANSIENT_MUTATION_UNCERTAIN' ? 'uncertain' : 'failed',
                     error: e.message, code: e?.code || null, failedAt: new Date().toISOString(),
                     retryAfterSeconds: e?.retryAfterSeconds ?? null, nextEligibleAt: e?.delayUnknown ? null : e?.nextEligibleAt ?? null });
