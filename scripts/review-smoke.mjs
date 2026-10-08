@@ -46,7 +46,7 @@ export async function compactProgressSmoke({ popup, evaluate, reload, root, orig
     const assert = (condition, message) => { if (!condition) throw new Error(message); };
     const fixedNow = Date.now();
     const started = new Date(fixedNow - 65000).toISOString();
-    const tasks = [{ type: 'audio', status: 'completed' }, { type: 'video', status: 'in_progress' }];
+    const tasks = [{ type: 'audio', taskId: 'clock-audio', status: 'completed' }, { type: 'video', taskId: 'clock-video', status: 'in_progress' }];
     const jobs = [
         { runId: 'clock-queued', sourceTitle: 'Queued paper', status: 'queued', step: 'queued', queuedAt: started },
         { runId: 'clock-running', sourceTitle: 'Generating paper', status: 'running', step: 'wait_artifacts', startedAt: started,

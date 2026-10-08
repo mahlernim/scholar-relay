@@ -18,7 +18,7 @@
     "description": "Failed"
   },
   "ui_71fcc075": {
-    "message": "展成",
+    "message": "生成中",
     "description": "Generating"
   },
   "ui_c9450e48": {
@@ -878,8 +878,12 @@
     "description": "This paper needs attention. Other queued papers can continue."
   },
   "ui_e5cfc00b": {
-    "message": "某些请求可能仍在Gemini Notebook中运行。检查此笔记本以获取结果。",
+    "message": "部分请求可能仍在 Gemini Notebook 中运行。请在此笔记本中查看结果。",
     "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
+  },
+  "ui_423ddda2": {
+    "message": "有请求失败。请在此笔记本中查看详情。",
+    "description": "Some requests failed. Check this notebook for details."
   },
   "ui_314695f8": {
     "message": "学习资料已准备就绪。您可以转到另一张纸。",
