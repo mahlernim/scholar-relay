@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { messageKey } from '../i18n.js';
+import { arabicRtlSmoke } from './rtl-smoke.mjs';
 
 // Deterministic locale fixtures exercise the real popup and shipped message bundles.
 // Only the isolated test page overrides Chrome's locale, never the production extension.
@@ -9,7 +10,7 @@ export async function localizationSmoke({ popup, evaluate, reload, root, complet
     const report = [];
     const out = join(root, 'dist', 'localization-qa');
     await mkdir(out, { recursive: true });
-    for (const locale of ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW', 'hi']) {
+    for (const locale of ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW', 'hi', 'ar']) {
         const catalog = JSON.parse(await readFile(join(root, '_locales', locale, 'messages.json'), 'utf8'));
         const expected = source => catalog[messageKey(source)].message;
         const { identifier } = await popup.call('Page.addScriptToEvaluateOnNewDocument', { source: `
@@ -91,7 +92,8 @@ export async function localizationSmoke({ popup, evaluate, reload, root, complet
             report.push({ locale, completedHeight: done.bottom, settingsWidth: settings.width, states: ['completed','settings','error','permission','polling'] });
         } finally { await popup.call('Page.removeScriptToEvaluateOnNewDocument', { identifier }); }
     }
+    await arabicRtlSmoke({ popup, evaluate, reload, root, completedState });
     await reload(popup);
     await writeFile(join(out, 'report.json'), JSON.stringify(report, null, 2)+'\n');
-    console.log(`Localization smoke passed for eleven locales: ${JSON.stringify(report)}`);
+    console.log(`Localization smoke passed for twelve locales: ${JSON.stringify(report)}`);
 }

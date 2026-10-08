@@ -477,9 +477,9 @@ try {
   await evaluate(popup, `globalThis.__smoke.setFixtureState(${JSON.stringify({ ...completedState, notebookTitle: quotedTitle, notebookUrl: quotedUrl, tasks: [] })})`);
   await reload(popup);
   await evaluate(popup, `document.querySelector('[data-show]')?.click()`);
-  const escaped = await evaluate(popup, `({title:document.querySelector('.nb-title').getAttribute('title'),text:document.querySelector('.nb-title').textContent,attributes:document.querySelector('.nb-title').getAttributeNames(),href:document.querySelector('.notebook-link').getAttribute('href'),rel:document.querySelector('.notebook-link').rel,summary:document.querySelector('.completed-box').innerText})`);
+  const escaped = await evaluate(popup, `({title:document.querySelector('.nb-title').getAttribute('title'),text:document.querySelector('.nb-title').textContent,attributes:document.querySelector('.nb-title').getAttributeNames(),dir:document.querySelector('.nb-title').getAttribute('dir'),href:document.querySelector('.notebook-link').getAttribute('href'),rel:document.querySelector('.notebook-link').rel,summary:document.querySelector('.completed-box').innerText})`);
   assert(escaped.title === quotedTitle && escaped.text === quotedTitle, 'Quoted notebook title was corrupted');
-  assert(escaped.attributes.length === 2 && escaped.href === quotedUrl, 'Title or URL created unexpected markup');
+  assert(JSON.stringify(escaped.attributes.sort()) === JSON.stringify(['class', 'dir', 'title']) && escaped.dir === 'auto' && escaped.href === quotedUrl, 'Title or URL created unexpected markup');
   assert(escaped.rel.includes('noopener') && escaped.rel.includes('noreferrer'), 'Notebook link lacks isolation');
   assert(escaped.summary.includes('Source imported. No artifacts requested.'), 'Empty-task completion claims artifact output');
 

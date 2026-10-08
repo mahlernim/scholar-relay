@@ -631,3 +631,15 @@ HTTP 401/403 응답을 받은 변경 요청은 다시 보내지 않고 결과 �
 
 자동 테스트 277개, 번역 카탈로그 검사, 11개 언어의 Chrome 검증과 320/360 픽셀 복구 화면, 40 MiB 전송, 저장소 사전 검사를 통과했습니다. 검증용 ZIP의 허용 파일 37개와 내장 버전, 원본 바이트, SHA-256 확인 파일을 대조했습니다. 이 ZIP은 로컬 검증용이며 스토어에 제출하지 않았습니다.
 
+
+### October 8 v1.5.3 Arabic patch release
+
+PRs #106 and #107 integrate the reviewed queue outcome wording and RPC safeguards. The patch version remains in the 1.5 series as requested. Arabic adds all 292 interface messages and localized metadata, notifications, store descriptions and screenshots, bringing the extension to twelve languages. A separate editorial review checked source meaning, placeholders and the official Arabic Help terms. This is machine-assisted review without native-speaker certification.
+
+The popup mirrors supported Arabic layouts with logical spacing and switch movement. Unsupported right-to-left browser languages retain the English fallback layout. User titles, collection names, URLs and custom prompts keep their values and use direction isolation where needed. Regression coverage includes narrow 320/360-pixel layouts, mixed text, keyboard focus and controls, saved settings, and the existing recovery and queue states. The screenshot helper uses the same explicit DevTools extension loading approach as the smoke runner and supports selecting a locale.
+
+The manifest and package version are 1.5.3. The release ZIP adds only the Arabic catalog to the runtime allowlist. English and Korean release notes describe equivalent behavior, and all twelve store descriptions use the current language count. Publication observations and the submitted package digest are retained with the [release](https://github.com/mahlernim/scholar-relay/releases/tag/v1.5.3). A store submission remains distinct from approval and public availability. Issue #66 stays open pending the required search evidence.
+
+한국어
+
+검토된 대기열 결과 문구와 RPC 안전장치를 반영하고 패치 버전 1.5.3으로 준비했습니다. 아랍어 화면 문구 292개, 메타데이터, 알림, 스토어 설명과 스크린샷을 추가하여 열두 개 언어를 지원합니다. 별도의 의미 검토와 공식 아랍어 도움말 용어 확인을 진행했으며 원어민 검수는 아닙니다. 아랍어 레이아웃과 스위치 이동을 반전하고, 지원하지 않는 언어의 영어 대체 화면은 왼쪽에서 오른쪽 방향을 유지합니다. 사용자 제목, 모음 이름, URL, 프롬프트의 원래 값은 보존합니다. 좁은 화면과 혼합 문자, 키보드 조작, 저장된 설정과 기존 복구 상태를 검증합니다. 스토어 제출과 승인, 실제 공개는 구분하여 기록하며 검색 확인이 필요한 #66은 계속 열어 둡니다.

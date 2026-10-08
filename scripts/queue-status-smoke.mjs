@@ -22,7 +22,7 @@ export async function queueStatusSmoke({ popup, evaluate, reload, root }) {
     const unknownHint = 'Some requests may still be running in Gemini Notebook. Check this notebook for the result.';
     const failedHint = 'Some requests failed. Check this notebook for details.';
     const results = [];
-    for (const locale of ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW', 'hi']) {
+    for (const locale of ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW', 'hi', 'ar']) {
         const catalog = JSON.parse(await readFile(join(root, '_locales', locale, 'messages.json'), 'utf8'));
         const expected = (source, values = []) => catalog[messageKey(source)].message.replace(/\$(\d+)/g, (_, i) => values[i - 1] ?? '');
         const { identifier } = await popup.call('Page.addScriptToEvaluateOnNewDocument', { source: `
@@ -105,5 +105,5 @@ export async function queueStatusSmoke({ popup, evaluate, reload, root }) {
     await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'idle'})`);
     await popup.call('Emulation.setDeviceMetricsOverride', { width: 360, height: 600, deviceScaleFactor: 1, mobile: false });
     await reload(popup);
-    console.log('Queue status smoke passed in eleven locales at 320/360 px with consistent phases, hints, activity, ready counts and hint priority.');
+    console.log('Queue status smoke passed in twelve locales at 320/360 px with consistent phases, hints, activity, ready counts and hint priority.');
 }
