@@ -613,3 +613,21 @@ Baseline probes reproduced Generating with animation for all-uncertain tasks and
 
 대기열의 단계와 안내 문구가 작업 결과에 맞게 표시되도록 수정했습니다. 실제로 진행 중인 작업이 확인된 경우에만 생성 중 표시와 애니메이션을 사용합니다. 결과가 불확실하거나 실패한 요청이 있으면 확인 필요로 표시하고, 확인된 실패에는 별도 안내를 제공합니다. 완료 개수와 기존 복구 안내의 우선순위는 유지합니다. Opus와 Gemini의 독립 번역 제안을 Astra가 비교한 최종 문구와 선택 이유를 저장했으며, 원어민 검수나 중국어 간체 전체 검토를 완료했다는 의미는 아닙니다.
 
+### October 8 RPC outcomes and session recovery
+
+Issue #91 closes the remaining HTTP 401/403 mutation replay path. Every sent write now retains an uncertain outcome while a shared credential refresh prepares later calls. A refresh failure cannot replace that uncertainty. URL and collection imports can still reconcile confirmed results with reads, and a failed reconciliation preserves the original outcome. Read RPCs retain one authentication replay. Cancellation during refresh preserves the notebook and prevents the next artifact request.
+
+The upstream review examined `teng-lin/notebooklm-py` at `1d8920fddb49aa6ad4b0ad4548c3047a4d0e22ce`. Its strict note-update contract and mutation rejection fixes informed explicit null-status checks for mind-map content saves and notebook deletion. Plain null acknowledgements remain valid. Deletion accepts canonical NOT_FOUND as already absent and rejects other explicit failures. A mind-map update failure preserves its accepted note ID separately from the artifact task ID through polling and restart. Failed or uncertain deletion retains the notebook link.
+
+Upstream #2465 also informed one extra homepage read after a confirmed read-RPC authentication failure returns an app page without usable tokens. The extra read uses browser-managed cookies and is shared by concurrent refresh callers, with one extra attempt across both app hosts. Ordinary discovery, access-gate redirects and the read-RPC replay budget keep their existing behavior. The regressions use simulated transport, including expired sessions, rejected saves, cancellation and restart. They do not claim a reproduced Google production incident. This is a release candidate and does not change the published v1.5.2 package.
+
+Validation passed 277 deterministic tests, locale checks, the full eleven-language Chrome smoke including 320/360 pixel recovery layouts and the 40 MiB transfer, and repository preflight. The validation ZIP contains 37 allowlisted files with matching embedded versions, source bytes and SHA-256 sidecar. It is a local test artifact, not a submitted release.
+
+한국어
+
+HTTP 401/403 응답을 받은 변경 요청은 다시 보내지 않고 결과 미확인 상태를 유지합니다. 세션 갱신은 이후 요청에만 사용하며 갱신이나 결과 조회 실패로 기존의 불확실성을 덮어쓰지 않습니다. 읽기 요청은 인증 갱신 후 한 번만 재시도하고, 갱신 중 작업을 취소하면 다음 생성을 시작하지 않습니다.
+
+마인드맵 저장과 노트북 삭제의 명시적 서버 오류를 성공으로 처리하지 않습니다. 정상적인 빈 확인 응답과 이미 없는 노트북의 삭제는 성공으로 유지합니다. 저장에 실패한 마인드맵의 노트 ID는 아티팩트 ID와 구분하여 재시작 후에도 보존하고, 삭제 실패나 결과 미확인 시 노트북 링크를 유지합니다. 읽기 요청의 인증 실패 후 토큰이 없는 앱 페이지를 받으면 공유된 세션 갱신에서 홈페이지를 한 번만 추가 조회합니다. 모의 응답으로 회귀 동작을 검증했으며 실제 Google 장애를 재현한 것은 아닙니다. 다음 릴리스 후보이며 공개된 v1.5.2 패키지는 변경하지 않습니다.
+
+자동 테스트 277개, 번역 카탈로그 검사, 11개 언어의 Chrome 검증과 320/360 픽셀 복구 화면, 40 MiB 전송, 저장소 사전 검사를 통과했습니다. 검증용 ZIP의 허용 파일 37개와 내장 버전, 원본 바이트, SHA-256 확인 파일을 대조했습니다. 이 ZIP은 로컬 검증용이며 스토어에 제출하지 않았습니다.
+

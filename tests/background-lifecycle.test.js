@@ -168,6 +168,45 @@ test('cleanup never deletes after notebook contents change or an outcome becomes
   assert.equal(w.data.pipelineState.notebookUrl, undefined);
 });
 
+for (const failure of ['rejected', 'uncertain']) {
+  test(`${failure} deletion preserves the notebook link and does not record deletion`, async () => {
+    const w = await worker();
+    const notebookUrl = 'https://notebook.google.com/notebook/notebook-owned';
+    w.data.pipelineState = { ...running(), status: 'error', step: 'error',
+      notebookId: 'notebook-owned', notebookUrl, cleanupAvailable: true };
+    w.context.listSources = async () => [];
+    w.context.listArtifactStatuses = async () => new Map();
+    w.context.deleteNotebook = api.deleteNotebook;
+    const originalFetch = globalThis.fetch;
+    const writes = [];
+    api.__testing.resetTokens();
+    try {
+      globalThis.fetch = async (url, options = {}) => {
+        let body = '"SNlM0e":"csrf-token","FdrFJe":"session-id"';
+        if (options.method === 'POST') {
+          const method = new URL(url).searchParams.get('rpcids');
+          writes.push(method);
+          if (failure === 'uncertain') throw new TypeError('Connection lost after deletion');
+          body = `)]}'\n${JSON.stringify([['wrb.fr', method, null, null, null, [7]]])}`;
+        }
+        return { ok: true, status: 200, url: 'https://notebook.google.com/',
+          headers: new Headers(), async text() { return body; } };
+      };
+      const check = await w.inspectNotebookCleanup('old');
+      await assert.rejects(w.deleteJobNotebook({ runId: 'old', snapshot: check.snapshot }),
+        error => error.code === (failure === 'rejected' ? 'RPC_NULL_STATUS' : 'TRANSIENT_MUTATION_UNCERTAIN'));
+      assert.deepEqual(writes, [api.__testing.RPCMethod.DELETE_NOTEBOOK]);
+      assert.equal(w.data.pipelineState.cleanupStatus, failure === 'rejected' ? 'failed' : 'unknown');
+      assert.equal(w.data.pipelineState.notebookDeletedAt, undefined);
+      assert.equal(w.data.pipelineState.notebookId, 'notebook-owned');
+      assert.equal(w.data.pipelineState.notebookUrl, notebookUrl);
+    } finally {
+      globalThis.fetch = originalFetch;
+      api.__testing.resetTokens();
+    }
+  });
+}
+
 test('boot preserves PDF wait diagnostics and sends only one recovery notification', async () => {
   const job = { ...running(), step: 'wait_pdf_access', pdfWaitReason: 'publisher',
     stepDetail: 'HTTP 403 while downloading source PDF', attentionSince: '2026-09-08T00:00:00Z',
@@ -291,6 +330,43 @@ test('uncertain generation preserves inspection guidance and never adopts an unr
   assert.equal(w.data.pipelineState.tasks[0].taskId, null);
   assert.equal(mutations, 1);
 });
+
+for (const failure of ['rejected', 'uncertain']) {
+  test(`${failure} mind map update preserves its note ID across polling and restart`, async () => {
+    const w = await worker();
+    Object.assign(w.data.userSettings, { generateAudio: false, generateInfographic: false, generateMindMap: true });
+    const notebookUrl = 'https://notebook.google.com/notebook/notebook';
+    w.data.pipelineState = { ...running(), step: 'wait_source', sourceId: 'source', notebookUrl };
+    w.context.listSources = async () => [{ id: 'source', status: api.SourceStatus.READY }];
+    w.context.getNotebookTitle = async () => 'Paper';
+    let mutations = 0;
+    w.context.generateMindMap = async () => {
+      mutations++;
+      throw Object.assign(new Error('Mind map update did not complete'), {
+        code: failure === 'rejected' ? 'RPC_NULL_STATUS' : 'TRANSIENT_MUTATION_UNCERTAIN',
+        rpcCode: failure === 'rejected' ? 7 : undefined,
+        notebookId: 'notebook', noteId: 'partial-mind-map-note',
+      });
+    };
+    w.context.listArtifactStatuses = async () => new Map([
+      ['partial-mind-map-note', { taskId: 'partial-mind-map-note', status: 'completed' }],
+      ['unrelated-artifact', { taskId: 'unrelated-artifact', status: 'completed' }],
+    ]);
+    await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+    assert.equal(w.data.pipelineState.tasks[0].status, failure === 'rejected' ? 'failed' : 'uncertain');
+    assert.equal(w.data.pipelineState.tasks[0].taskId, null);
+    assert.equal(w.data.pipelineState.tasks[0].noteId, 'partial-mind-map-note');
+    await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+    assert.equal(w.data.pipelineState.status, 'error');
+    assert.equal(w.data.pipelineState.notebookUrl, notebookUrl);
+    assert.equal(mutations, 1);
+    const restarted = await worker({ initialQueue: w.data.jobQueue });
+    assert.equal(restarted.data.pipelineState.tasks[0].taskId, null);
+    assert.equal(restarted.data.pipelineState.tasks[0].noteId, 'partial-mind-map-note');
+    assert.equal(restarted.data.pipelineState.tasks[0].status, failure === 'rejected' ? 'failed' : 'uncertain');
+    assert.equal(restarted.data.pipelineState.notebookUrl, notebookUrl);
+  });
+}
 
 test('unknown ingestion status does not start generation', async () => {
   const w = await worker();
@@ -707,6 +783,53 @@ test('cancelling during artifact generation prevents the next artifact request',
   assert.equal(w.data.jobQueue.jobs[0].status, 'stopped');
   assert.equal(writes.filter(item => item.kind === 'infographic').length, 0);
 });
+
+for (const httpStatus of [401, 403]) {
+  test(`cancellation during HTTP ${httpStatus} credential refresh never repeats generation`, async () => {
+    const w = await worker();
+    const serviceWrites = installQueueService(w);
+    const request = await w.startPipelineRequest({ pdfUrl: 'https://example.org/a.pdf' });
+    const job = () => w.data.jobQueue.jobs.find(item => item.runId === request.runId);
+    await settleUntil(() => job().step === 'wait_source');
+    const notebookId = job().notebookId;
+    const notebookUrl = job().notebookUrl;
+    w.context.generateAudio = api.generateAudio;
+    const originalFetch = globalThis.fetch;
+    const mutationPosts = [];
+    let homepages = 0;
+    let releaseRefresh;
+    const tokenResponse = () => ({ ok: true, status: 200, url: 'https://notebook.google.com/',
+      headers: new Headers(), async text() { return '"SNlM0e":"csrf-token","FdrFJe":"session-id"'; } });
+    api.__testing.resetTokens();
+    try {
+      globalThis.fetch = async (url, options = {}) => {
+        if (options.method === 'POST') {
+          mutationPosts.push(new URL(url).searchParams.get('rpcids'));
+          return { ok: false, status: httpStatus, statusText: 'Auth rejected', headers: new Headers() };
+        }
+        homepages++;
+        if (homepages === 1) return tokenResponse();
+        return new Promise(resolve => { releaseRefresh = () => resolve(tokenResponse()); });
+      };
+      const poll = w.tickSourcePoll(job());
+      await settleUntil(() => !!releaseRefresh);
+      await w.stopPipelineRequest(request.runId, 'keep');
+      assert.equal(job().status, 'stopping');
+      releaseRefresh();
+      await poll;
+      assert.equal(job().status, 'stopped');
+      assert.equal(job().notebookId, notebookId);
+      assert.equal(job().notebookUrl, notebookUrl);
+      assert.equal(homepages, 2);
+      assert.deepEqual(mutationPosts, [api.__testing.RPCMethod.CREATE_ARTIFACT]);
+      assert.equal(serviceWrites.filter(item => item.kind === 'infographic').length, 0);
+    } finally {
+      releaseRefresh?.();
+      globalThis.fetch = originalFetch;
+      api.__testing.resetTokens();
+    }
+  });
+}
 
 test('combined notebook imports only selected sources and generates once with every ready ID', async () => {
   const w = await worker();

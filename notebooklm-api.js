@@ -176,6 +176,7 @@ const SourceStatus = {
 let _csrfToken = null;
 let _sessionId = null;
 let _tokenFetchPromise = null;
+let _tokenFetchRecovery = null;
 let _retrySleep = sleep;
 let _mutationTimeoutMs = 15000;
 let _readTimeoutMs = 15000;
@@ -223,18 +224,26 @@ function collectionRequestOptions() {
  * Since we're in a Chrome extension, browser cookies are sent automatically.
  */
 // Every forced refresh, including queued setup and RPC recovery, joins this promise.
-function fetchTokens() {
+function fetchTokens({ recoverMissingTokens = false } = {}) {
   if (!_tokenFetchPromise) {
-    _tokenFetchPromise = discoverTokens().finally(() => { _tokenFetchPromise = null; });
+    _tokenFetchRecovery = { enabled: recoverMissingTokens, retried: false };
+    _tokenFetchPromise = discoverTokens(_tokenFetchRecovery).finally(() => {
+      _tokenFetchPromise = null;
+      _tokenFetchRecovery = null;
+    });
+  } else if (recoverMissingTokens) {
+    // A rejected read can join an ordinary refresh already in flight.
+    _tokenFetchRecovery.enabled = true;
   }
   return _tokenFetchPromise;
 }
 
-async function discoverTokens() {
+async function discoverTokens(recovery) {
   const candidates = [_baseUrl, ...PERSONAL_BASE_URLS.filter(url => url !== _baseUrl)];
   const failures = [];
 
-  for (const baseUrl of candidates) {
+  for (let index = 0; index < candidates.length; index++) {
+    const baseUrl = candidates[index];
     const homepageUrl = `${baseUrl}/`;
     const host = new URL(baseUrl).hostname;
     try {
@@ -264,6 +273,13 @@ async function discoverTokens() {
       const sessionMatch = html.match(/"FdrFJe"\s*:\s*"([^"]+)"/);
       if (!csrfMatch || !sessionMatch) {
         failures.push({ host, kind: 'format' });
+        // After a read RPC rejects auth, a tokenless app response may have
+        // rotated browser-managed cookies. Retry this homepage once per shared
+        // refresh, without inspecting cookies or extending RPC replay limits.
+        if (recovery.enabled && !recovery.retried) {
+          recovery.retried = true;
+          candidates.splice(index + 1, 0, baseUrl);
+        }
         continue;
       }
 
@@ -613,9 +629,10 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false, { 
     if (_csrfToken === csrfToken && _sessionId === sessionId) {
       _csrfToken = null;
       _sessionId = null;
-      await fetchTokens();
+      await fetchTokens({ recoverMissingTokens: isReadOnly });
     } else {
-      await ensureTokens();
+      if (_tokenFetchPromise || !_csrfToken || !_sessionId) await fetchTokens({ recoverMissingTokens: isReadOnly });
+      else await ensureTokens();
     }
   }
 
@@ -710,7 +727,15 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false, { 
     }
 
     if (response.status === 401 || response.status === 403) {
-      if (readOptions.noMutationAuthRetry && !isReadOnly) throw mutationUncertainError(methodId, 'Authentication response after sending text.');
+      if (!isReadOnly) {
+        const error = Object.assign(mutationUncertainError(methodId,
+          `Gemini Notebook returned HTTP ${response.status} after the request was sent.`), { httpStatus: response.status });
+        // Refresh only for later calls. Neither refresh success nor failure
+        // establishes whether the sent mutation committed.
+        try { await refreshAfterAuthFailure(csrfToken, sessionId); }
+        catch (_) { /* Keep the original mutation outcome uncertain. */ }
+        throw error;
+      }
       await refreshAfterAuthFailure(csrfToken, sessionId);
       continue;
     }
@@ -748,7 +773,7 @@ async function rpcCall(methodId, params, sourcePath = '/', allowNull = false, { 
         await refreshAfterAuthFailure(csrfToken, sessionId);
         continue;
       }
-      if (!isReadOnly && !['RPC_REJECTED', 'RATE_LIMITED'].includes(error?.code)) {
+      if (!isReadOnly && !['RPC_REJECTED', 'RPC_NULL_STATUS', 'RATE_LIMITED'].includes(error?.code)) {
         throw mutationUncertainError(methodId, 'The mutation response could not be decoded.');
       }
       throw error;
@@ -789,7 +814,13 @@ async function createNotebook(title = '') {
  */
 async function deleteNotebook(notebookId) {
   const params = [[notebookId], [2]];
-  await rpcCall(RPCMethod.DELETE_NOTEBOOK, params, '/', true);
+  try {
+    await rpcCall(RPCMethod.DELETE_NOTEBOOK, params, '/', true, { raiseOnNullStatus: true });
+  } catch (error) {
+    // A confirmed absent target already satisfies deletion. Other explicit
+    // rejections and uncertain outcomes must preserve the notebook link.
+    if (!['RPC_NULL_STATUS', 'RPC_REJECTED'].includes(error?.code) || error.rpcCode !== 5) throw error;
+  }
   console.log(`[NotebookLM API] Deleted notebook: ${notebookId}`);
   return { ok: true };
 }
@@ -864,7 +895,10 @@ async function addNotebookToCollection(collectionId, notebookId) {
     await rpcCall(RPCMethod.UPDATE_LABEL, params, '/', true);
   } catch (error) {
     if (error?.code !== 'TRANSIENT_MUTATION_UNCERTAIN') throw error;
-    const reconciled = (await listCollections()).find(collection => collection.id === collectionId);
+    let reconciled;
+    try {
+      reconciled = (await listCollections()).find(collection => collection.id === collectionId);
+    } catch (_) { /* A failed read cannot resolve the sent mutation. */ }
     if (reconciled?.notebookIds.includes(notebookId)) {
       console.warn('[NotebookLM API] Collection mutation response was incomplete; recovered the committed membership.');
       return { ...reconciled, recovered: true };
@@ -1172,12 +1206,18 @@ async function createNote(notebookId, title = 'New Note', content = '') {
     String(noteId),
     [[[String(content || ''), String(title || ''), [], 0]]],
   ];
-  await rpcCall(
-    RPCMethod.UPDATE_NOTE,
-    updateParams,
-    `/notebook/${notebookId}`,
-    true
-  );
+  try {
+    await rpcCall(
+      RPCMethod.UPDATE_NOTE,
+      updateParams,
+      `/notebook/${notebookId}`,
+      true,
+      { raiseOnNullStatus: true }
+    );
+  } catch (error) {
+    // Creation succeeded even when the subsequent content save did not.
+    throw Object.assign(error, { notebookId, noteId: String(noteId) });
+  }
 
   return { id: String(noteId), title: String(title || '') };
 }
@@ -1963,7 +2003,7 @@ export async function getUsage({ after = 0 } = {}) {
 export async function addTextSource(notebookId, title, content) {
   if (typeof content !== 'string' || !content.trim() || new TextEncoder().encode(content).length > 200000) throw new Error('Invalid page text');
   const params = [[[null, [String(title).slice(0, 300), content], null, 2, null, null, null, null, null, null, 1]], notebookId, requestTemplateOptions()];
-  const result = await rpcCall(RPCMethod.ADD_SOURCE, params, `/notebook/${notebookId}`, false, { noMutationAuthRetry: true });
+  const result = await rpcCall(RPCMethod.ADD_SOURCE, params, `/notebook/${notebookId}`);
   const id = extractFirstIdFromResult(result);
   if (!id) throw mutationUncertainError(RPCMethod.ADD_SOURCE, 'Text import returned no source ID.');
   return { id, title };
@@ -2021,6 +2061,7 @@ export const __testing = {
     _csrfToken = null;
     _sessionId = null;
     _tokenFetchPromise = null;
+    _tokenFetchRecovery = null;
     _baseUrl = DEFAULT_BASE_URL;
   },
   getBaseUrl() {
