@@ -188,7 +188,7 @@ async function refreshQueue() {
     const finished = queue.jobs.filter(job => !isUnfinishedJob(job)).reverse();
     const card = job => {
         return '<article class="job-card" data-job="' + escapeHtml(job.runId) + '">' +
-            '<button class="job-title" data-show="' + escapeHtml(job.runId) + '">' + escapeHtml(job.sourceTitle || job.notebookTitle || job.pdfUrl || t('Source')) + '</button>' +
+            '<button class="job-title" dir="auto" data-show="' + escapeHtml(job.runId) + '">' + escapeHtml(job.sourceTitle || job.notebookTitle || job.pdfUrl || t('Source')) + '</button>' +
             queueStatusHtml(job) +
             '<p class="job-hint">' + escapeHtml(handoffMessage(job)) + '</p>' +
             '<div class="job-actions">' + (job.notebookUrl ? '<a href="' + escapeHtml(job.notebookUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(t('Open notebook')) + '</a>' : '') +
@@ -397,7 +397,9 @@ async function refreshCollections() {
         for (const collection of response.collections || []) {
             const emoji = collection.emoji ? `${collection.emoji} ` : '';
             const count = Array.isArray(collection.notebookIds) ? collection.notebookIds.length : 0;
-            select.add(new Option(`${emoji}${collection.name} (${count})`, collection.id));
+            const option = new Option(`${emoji}${collection.name} (${count})`, collection.id);
+            option.dir = 'auto';
+            select.add(option);
         }
 
         if (selectedId && !Array.from(select.options).some(opt => opt.value === selectedId)) {
@@ -689,11 +691,11 @@ async function renderPaperSelection(data) {
         '<div class="paper-tools"><button id="paper-all">' + e(t('Select all')) + '</button><button id="paper-clear">' + e(t('Clear')) + '</button></div>' +
         '<div class="paper-list">' + data.candidates.map(item => '<div class="paper-row"><input type="checkbox" id="candidate-' + e(item.id) + '" data-candidate="' + e(item.id) + '"><label for="candidate-' + e(item.id) + '">' +
             (item.featured && primary.length === 1 ? '<small>' + e(t('Featured paper')) + '</small>' : '') +
-            '<span data-paper-title="' + e(item.id) + '">' + e(item.sourceTitle) + '</span><small>' + e(item.supplementary ? t('Supplement') : item.arxivId || new URL(item.pdfUrl).hostname) + '</small></label>' +
+            '<bdi dir="auto" data-paper-title="' + e(item.id) + '">' + e(item.sourceTitle) + '</bdi><small dir="auto">' + e(item.supplementary ? t('Supplement') : item.arxivId || new URL(item.pdfUrl).hostname) + '</small></label>' +
             '<a target="_blank" rel="noopener" aria-label="' + e(t('Open paper')) + '" href="' + e(item.pageUrl === data.pageUrl ? item.pdfUrl : item.pageUrl) + '">↗</a></div>').join('') + '</div>' +
         '<div class="paper-mode"><span>' + e(t('Create notebooks')) + '</span><div role="radiogroup" aria-label="' + e(t('Create notebooks')) + '">' +
         ['separate', 'one'].map(mode => '<label><input type="radio" name="paper-mode" value="' + mode + '"><span>' + e(t(mode === 'one' ? 'One notebook' : 'One per paper')) + '</span></label>').join('') + '</div></div>' +
-        '<div id="paper-combined"><label for="paper-title">' + e(t('Notebook title')) + '</label><input id="paper-title" maxlength="300"><label><input type="checkbox" id="paper-context">' + e(t('Include this webpage as context')) + '</label></div>' +
+        '<div id="paper-combined"><label for="paper-title">' + e(t('Notebook title')) + '</label><input id="paper-title" dir="auto" maxlength="300"><label><input type="checkbox" id="paper-context">' + e(t('Include this webpage as context')) + '</label></div>' +
         '<button class="btn-generate" id="paper-add"></button>' + artifactSummaryHtml() + '<p id="paper-feedback" role="status"></p>' +
         '<div class="paper-tools paper-actions"><button id="paper-webpage">' + e(t('Use this webpage')) + '</button><button id="paper-auto">' + e(t('Detect automatically on this site')) + '</button><button id="paper-titles">' + e(t('Get titles from arXiv')) + '</button></div>';
     contentEl.dataset.renderMode = 'papers';
@@ -784,7 +786,7 @@ function renderDetection(data) {
     }[data.source] || 'PDF document';
 
     const isUploadRequired = typeof data.pdfUrl === 'string' && !/^https?:\/\//i.test(data.pdfUrl);
-    const titleHtml = data.sourceTitle ? `<div class="pdf-title">${escapeHtml(data.sourceTitle)}</div>` : '';
+    const titleHtml = data.sourceTitle ? `<div class="pdf-title" dir="auto">${escapeHtml(data.sourceTitle)}</div>` : '';
 
     if (isUploadRequired) {
         contentEl.innerHTML = `
@@ -888,13 +890,16 @@ function renderProgress(state) {
       <span class="nb-icon">📓</span>
       <div>
         <div class="nb-label">${escapeHtml(t("Notebook title"))}</div>
-        <div class="nb-title" title="${escapeHtml(state.notebookTitle)}">${escapeHtml(state.notebookTitle)}</div>
+        <div class="nb-title" dir="auto" title="${escapeHtml(state.notebookTitle)}">${escapeHtml(state.notebookTitle)}</div>
       </div>
     </div>` : '';
 
     const collection = state.collectionAssignment;
+    const collectionStatus = collection?.status === 'completed'
+        ? escapeHtml(t('Added to $1', ['$1'])).replace('$1', () => `<bdi dir="auto">${escapeHtml(collection.name || t('collection'))}</bdi>`)
+        : '';
     const collectionHtml = collection?.status === 'completed' ? `
-    <div class="collection-status success">🗂 ${escapeHtml(t('Added to $1', [collection.name || t('collection')]))}</div>`
+    <div class="collection-status success">🗂 ${collectionStatus}</div>`
         : collection?.status === 'failed' ? `
     <div class="collection-status warning">⚠️ ${escapeHtml(t('Collection assignment failed.'))}${collection.error ? `<details><summary>${escapeHtml(t('Details'))}</summary>${escapeHtml(collection.error)}</details>` : ''}</div>`
             : '';
@@ -940,7 +945,7 @@ function renderProgress(state) {
           ${state.stepDetail ? `<details class="workflow-details"><summary>${escapeHtml(t("Download details"))}</summary><div class="step-detail">${escapeHtml(state.stepDetail)}</div></details>` : ''}`;
     }
     if (state.sources) {
-        bottomHtml += '<details class="workflow-details"><summary>' + escapeHtml(t('Selected sources')) + '</summary>' + state.sources.map(item => '<div class="step-detail">' + escapeHtml(item.sourceTitle || item.pdfUrl) + ' · ' + escapeHtml(t(item.status === 'ready' ? 'Ready' : item.status === 'skipped' ? 'Skipped' : item.status === 'failed' ? 'Failed' : 'Waiting')) + '</div>').join('') + '</details>';
+        bottomHtml += '<details class="workflow-details"><summary>' + escapeHtml(t('Selected sources')) + '</summary>' + state.sources.map(item => '<div class="step-detail"><bdi dir="auto">' + escapeHtml(item.sourceTitle || item.pdfUrl) + '</bdi> · ' + escapeHtml(t(item.status === 'ready' ? 'Ready' : item.status === 'skipped' ? 'Skipped' : item.status === 'failed' ? 'Failed' : 'Waiting')) + '</div>').join('') + '</details>';
         if (['wait_source_choice', 'wait_pdf_access'].includes(state.step)) bottomHtml += '<button class="btn-secondary" id="skip-source">' + escapeHtml(t('Skip this source and continue')) + '</button>';
     }
     bottomHtml += '<div class="job-actions">' + pageTextActions(state) + cancellationActions(state) + '</div>';

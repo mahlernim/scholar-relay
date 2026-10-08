@@ -1,0 +1,1176 @@
+{
+  "extensionName": {
+    "message": "Scholar Relay - أتمتة Gemini Notebook (NotebookLM)"
+  },
+  "extensionDescription": {
+    "message": "استورد PDF وأبحاث arXiv وصفحات الويب إلى Gemini Notebook (NotebookLM). أنشئ ملخّصات صوتية ومواد دراسية."
+  },
+  "ui_6440add9": {
+    "message": "دفتر الملاحظات $1 جاهز وفيه ناتج واحد. انقر لفتحه.",
+    "description": "Notebook $1 is ready with one artifact. Click to open."
+  },
+  "ui_bca3294": {
+    "message": "جاهز",
+    "description": "Ready"
+  },
+  "ui_5579c3d4": {
+    "message": "فشل",
+    "description": "Failed"
+  },
+  "ui_71fcc075": {
+    "message": "جارٍ الإنشاء",
+    "description": "Generating"
+  },
+  "ui_c9450e48": {
+    "message": "انتظار",
+    "description": "Waiting"
+  },
+  "ui_ce74e943": {
+    "message": "ناتج",
+    "description": "Artifact"
+  },
+  "ui_85cc8e29": {
+    "message": "الوقت المنقضي $1 دقيقة.",
+    "description": "Elapsed time: $1 min."
+  },
+  "ui_5495106b": {
+    "message": "اختر ناتجًا واحدًا على الأقل في الإعدادات قبل البدء.",
+    "description": "Choose at least one artifact in Settings before starting."
+  },
+  "ui_af966070": {
+    "message": "هناك عملية قيد التنفيذ. تحقّق من تقدّمها قبل بدء أخرى.",
+    "description": "A workflow is already active. Check its progress before starting another."
+  },
+  "ui_a2d5ec61": {
+    "message": "فعّل السماح بالوصول إلى عناوين URL للملفات في إعدادات إضافة Chrome، أو اختر رفع PDF محلي.",
+    "description": "Enable Allow access to file URLs in Chrome extension settings, or choose Upload local PDF."
+  },
+  "ui_a788ccba": {
+    "message": "PDF مباشر",
+    "description": "Direct PDF"
+  },
+  "ui_8212a19a": {
+    "message": "مستند PDF",
+    "description": "PDF document"
+  },
+  "ui_86fe33ed": {
+    "message": "PDF من الناشر",
+    "description": "Publisher PDF"
+  },
+  "ui_fd7e7e2b": {
+    "message": "PDF للمقال",
+    "description": "Article PDF"
+  },
+  "ui_9a142465": {
+    "message": "عارض PDF مضمّن",
+    "description": "Embedded PDF viewer"
+  },
+  "ui_be4342c0": {
+    "message": "صفحة ملخّص في arXiv",
+    "description": "arXiv abstract page"
+  },
+  "ui_1ae2ab63": {
+    "message": "PDF من arXiv",
+    "description": "arXiv PDF"
+  },
+  "ui_5a02480d": {
+    "message": "رابط PDF في arXiv",
+    "description": "arXiv PDF link"
+  },
+  "ui_fbb8c667": {
+    "message": "رابط PDF في الصفحة",
+    "description": "PDF link on page"
+  },
+  "ui_747f5a5f": {
+    "message": "عنوان URL مباشر لملف PDF",
+    "description": "Direct PDF URL"
+  },
+  "ui_e4668cae": {
+    "message": "ملف محلي",
+    "description": "Local file"
+  },
+  "ui_102eb56b": {
+    "message": "إرسال الأبحاث إلى Gemini Notebook",
+    "description": "Send papers to Gemini Notebook"
+  },
+  "ui_4b058728": {
+    "message": "الإعدادات",
+    "description": "Settings"
+  },
+  "ui_546c8007": {
+    "message": "⚠️ اختر ناتجًا واحدًا على الأقل",
+    "description": "⚠️ Choose at least one artifact"
+  },
+  "ui_fd3f8fe8": {
+    "message": "📓 إعدادات دفتر الملاحظات",
+    "description": "📓 Notebook Settings"
+  },
+  "ui_e0ab2da5": {
+    "message": "إضافة الدفاتر الجديدة إلى",
+    "description": "Add new notebooks to"
+  },
+  "ui_7ed65126": {
+    "message": "بلا مجموعة",
+    "description": "No collection"
+  },
+  "ui_5cdf8229": {
+    "message": "تحديث المجموعات",
+    "description": "Refresh collections"
+  },
+  "ui_655bdb8c": {
+    "message": "تُحمّل المجموعات من حساب Gemini Notebook الذي سجّلت الدخول إليه.",
+    "description": "Collections load from your signed-in Gemini Notebook account."
+  },
+  "ui_2775c98c": {
+    "message": "استخدام عنوان البحث للدفتر",
+    "description": "Use paper title for notebook"
+  },
+  "ui_23c94c30": {
+    "message": "عند إيقافه أو عدم العثور على عنوان، يسمّي Gemini Notebook الدفتر.",
+    "description": "If off or no title is found, Gemini Notebook names it."
+  },
+  "ui_e46cfd94": {
+    "message": "🎨 إعدادات النواتج",
+    "description": "🎨 Artifact Settings"
+  },
+  "ui_68dc958f": {
+    "message": "لغة النواتج",
+    "description": "Artifact language"
+  },
+  "ui_1b9ae0bb": {
+    "message": "الإنجليزية",
+    "description": "English"
+  },
+  "ui_ad70bf21": {
+    "message": "الكورية",
+    "description": "Korean"
+  },
+  "ui_940c2e0a": {
+    "message": "اليابانية",
+    "description": "Japanese"
+  },
+  "ui_b819825b": {
+    "message": "الإسبانية",
+    "description": "Spanish"
+  },
+  "ui_7cbd6ca5": {
+    "message": "الفرنسية",
+    "description": "French"
+  },
+  "ui_11100833": {
+    "message": "الألمانية",
+    "description": "German"
+  },
+  "ui_e6d67d5c": {
+    "message": "البرتغالية",
+    "description": "Portuguese"
+  },
+  "ui_5ecc8eb6": {
+    "message": "تنطبق على الصوت والفيديو والتقارير والمخطّطات البيانية ومجموعات الشرائح وجداول البيانات.",
+    "description": "Applies to audio, video, reports, infographics, slide decks, and data tables."
+  },
+  "ui_b7a1a59b": {
+    "message": "تتبع الواجهة لغة Chrome. لغة النواتج مستقلة عنها.",
+    "description": "The interface follows Chrome's language. Artifact language is independent."
+  },
+  "ui_63435037": {
+    "message": "🎧 ملخّص صوتي",
+    "description": "🎧 Audio Overview"
+  },
+  "ui_5e4b9b33": {
+    "message": "🎬 ملخّص فيديو",
+    "description": "🎬 Video Overview"
+  },
+  "ui_1c876167": {
+    "message": "📄 تقرير",
+    "description": "📄 Report"
+  },
+  "ui_a742b583": {
+    "message": "❓ اختبار",
+    "description": "❓ Quiz"
+  },
+  "ui_13be9b37": {
+    "message": "🃏 بطاقات تعليمية",
+    "description": "🃏 Flashcards"
+  },
+  "ui_853abe6f": {
+    "message": "🖼 مخطّط بياني",
+    "description": "🖼 Infographic"
+  },
+  "ui_871b8541": {
+    "message": "📊 مجموعة شرائح",
+    "description": "📊 Slide Deck"
+  },
+  "ui_768c9843": {
+    "message": "🧠 خريطة ذهنية",
+    "description": "🧠 Mind Map"
+  },
+  "ui_c1a0dcce": {
+    "message": "📋 جدول بيانات",
+    "description": "📋 Data Table"
+  },
+  "ui_ffb0ff72": {
+    "message": "التنسيق",
+    "description": "Format"
+  },
+  "ui_fff5af1f": {
+    "message": "نظرة متعمّقة",
+    "description": "Deep Dive"
+  },
+  "ui_b3c47c3f": {
+    "message": "موجز",
+    "description": "Brief"
+  },
+  "ui_78edea29": {
+    "message": "التعقيب",
+    "description": "Critique"
+  },
+  "ui_61a5d5c0": {
+    "message": "النقاش",
+    "description": "Debate"
+  },
+  "ui_cc5e1935": {
+    "message": "المدة",
+    "description": "Length"
+  },
+  "ui_5fdddd75": {
+    "message": "قصير",
+    "description": "Short"
+  },
+  "ui_19dc307e": {
+    "message": "تلقائي",
+    "description": "Default"
+  },
+  "ui_45939473": {
+    "message": "طويل",
+    "description": "Long"
+  },
+  "ui_cda1cf1f": {
+    "message": "تعليمات مخصّصة",
+    "description": "Custom instructions"
+  },
+  "ui_c75093e": {
+    "message": "مثلاً، ركّز على المنهجية ولخّص النتائج الرئيسية ببساطة.",
+    "description": "e.g. Focus on methodology and summarize key findings simply."
+  },
+  "ui_1c96f10b": {
+    "message": "توضيحي",
+    "description": "Explainer"
+  },
+  "ui_d3110b7c": {
+    "message": "النمط المرئي",
+    "description": "Visual style"
+  },
+  "ui_76422ffa": {
+    "message": "اختيار تلقائي",
+    "description": "Auto Select"
+  },
+  "ui_9525b78e": {
+    "message": "مخصّص",
+    "description": "Custom"
+  },
+  "ui_7b47b1f3": {
+    "message": "كلاسيكي",
+    "description": "Classic"
+  },
+  "ui_29db3ade": {
+    "message": "لوح المعلومات",
+    "description": "Whiteboard"
+  },
+  "ui_642fd4b": {
+    "message": "تصميم ظريف",
+    "description": "Kawaii"
+  },
+  "ui_3e234f0f": {
+    "message": "أنمي",
+    "description": "Anime"
+  },
+  "ui_9f0aff47": {
+    "message": "ألوان مائية",
+    "description": "Watercolor"
+  },
+  "ui_1a272890": {
+    "message": "نمط ريترو",
+    "description": "Retro Print"
+  },
+  "ui_838b5730": {
+    "message": "التراث",
+    "description": "Heritage"
+  },
+  "ui_4b4de48f": {
+    "message": "فن الورق",
+    "description": "Paper Craft"
+  },
+  "ui_ecf7487f": {
+    "message": "مثلاً، استخدم أسلوبًا وثائقيًا يركّز على المرئيات.",
+    "description": "e.g. Use a documentary style with emphasis on visuals."
+  },
+  "ui_45bb4d7b": {
+    "message": "وصف النمط المرئي المخصّص",
+    "description": "Custom visual style prompt"
+  },
+  "ui_f1d64ff0": {
+    "message": "يُستخدم عند اختيار نمط مرئي مخصّص.",
+    "description": "Used when Visual style is Custom."
+  },
+  "ui_4d9b6fff": {
+    "message": "مستند موجز",
+    "description": "Briefing Doc"
+  },
+  "ui_82cda65a": {
+    "message": "دليل دراسة",
+    "description": "Study Guide"
+  },
+  "ui_540782c5": {
+    "message": "تدوينة",
+    "description": "Blog Post"
+  },
+  "ui_48d33564": {
+    "message": "التعليمات",
+    "description": "Instructions"
+  },
+  "ui_7f1493ae": {
+    "message": "تُضاف إلى تنسيقات التقارير الجاهزة.",
+    "description": "Added to built-in report formats."
+  },
+  "ui_89963e82": {
+    "message": "(مطلوبة للتنسيق المخصّص)",
+    "description": "(required for Custom format)"
+  },
+  "ui_23b244d3": {
+    "message": "مثلاً، اكتب ملخّصًا سريريًا للأطباء غير المتخصّصين.",
+    "description": "e.g. Write a clinical summary for non-specialist physicians."
+  },
+  "ui_2bf732f8": {
+    "message": "العدد",
+    "description": "Quantity"
+  },
+  "ui_8bca10b2": {
+    "message": "أقل",
+    "description": "Fewer"
+  },
+  "ui_16ab68": {
+    "message": "عادي",
+    "description": "Standard"
+  },
+  "ui_4f34d900": {
+    "message": "أكثر",
+    "description": "More"
+  },
+  "ui_8520a210": {
+    "message": "الصعوبة",
+    "description": "Difficulty"
+  },
+  "ui_6c33113b": {
+    "message": "سهل",
+    "description": "Easy"
+  },
+  "ui_9be5f96": {
+    "message": "متوسط",
+    "description": "Medium"
+  },
+  "ui_64efa7fc": {
+    "message": "صعب",
+    "description": "Hard"
+  },
+  "ui_23c5022f": {
+    "message": "مثلاً، ركّز على الاستدلال السريري لطلاب الطب.",
+    "description": "e.g. Focus on clinical reasoning for medical students."
+  },
+  "ui_a5dcb66a": {
+    "message": "مثلاً، أبرز المصطلحات والتعريفات الرئيسية.",
+    "description": "e.g. Emphasize key terms and definitions."
+  },
+  "ui_c551d9c1": {
+    "message": "الاتجاه",
+    "description": "Orientation"
+  },
+  "ui_2bfbe892": {
+    "message": "أفقي",
+    "description": "Landscape"
+  },
+  "ui_29092ffa": {
+    "message": "عمودي",
+    "description": "Portrait"
+  },
+  "ui_fac98c66": {
+    "message": "مربّع",
+    "description": "Square"
+  },
+  "ui_344473b4": {
+    "message": "التفصيل",
+    "description": "Detail"
+  },
+  "ui_ae1f484f": {
+    "message": "موجز",
+    "description": "Concise"
+  },
+  "ui_60e7b825": {
+    "message": "مفصّل",
+    "description": "Detailed"
+  },
+  "ui_27129566": {
+    "message": "تخطيط جاهز",
+    "description": "Layout preset"
+  },
+  "ui_126befb6": {
+    "message": "تلقائي",
+    "description": "Auto"
+  },
+  "ui_4d7b957e": {
+    "message": "تحريري",
+    "description": "Editorial"
+  },
+  "ui_3953c530": {
+    "message": "بسيط",
+    "description": "Minimal"
+  },
+  "ui_6f955d7e": {
+    "message": "كثيف البيانات",
+    "description": "Data Dense"
+  },
+  "ui_c7131496": {
+    "message": "مرح",
+    "description": "Playful"
+  },
+  "ui_772d3068": {
+    "message": "تقني",
+    "description": "Technical"
+  },
+  "ui_30d783f6": {
+    "message": "خط زمني",
+    "description": "Timeline"
+  },
+  "ui_ed6bcd64": {
+    "message": "مقارنة",
+    "description": "Comparison"
+  },
+  "ui_78f9b63c": {
+    "message": "ملصق",
+    "description": "Poster"
+  },
+  "ui_4c4c7c4b": {
+    "message": "ملاحظات مصوّرة",
+    "description": "Sketch Note"
+  },
+  "ui_f838ade2": {
+    "message": "احترافي",
+    "description": "Professional"
+  },
+  "ui_2f33ced9": {
+    "message": "شبكة بنتو",
+    "description": "Bento Grid"
+  },
+  "ui_d0a9d3e2": {
+    "message": "تعليمي",
+    "description": "Instructional"
+  },
+  "ui_d0670c2b": {
+    "message": "مكعّبات",
+    "description": "Bricks"
+  },
+  "ui_ca5154a8": {
+    "message": "صلصال",
+    "description": "Clay"
+  },
+  "ui_e2a4f948": {
+    "message": "علمي",
+    "description": "Scientific"
+  },
+  "ui_872f8bff": {
+    "message": "مثلاً، استخدم خطًا زمنيًا أفقيًا بأيقونات كبيرة.",
+    "description": "e.g. Use a horizontal timeline layout with large icons."
+  },
+  "ui_2b961f3b": {
+    "message": "للمقدّم",
+    "description": "Presenter"
+  },
+  "ui_d5672d4e": {
+    "message": "مثلاً، صمّم عرضًا لمؤتمر مدته 15 دقيقة.",
+    "description": "e.g. Design for a 15-minute conference presentation."
+  },
+  "ui_ebce5073": {
+    "message": "مثلاً، استخرج جميع النتائج الرقمية في جدول مقارنة.",
+    "description": "e.g. Extract all numerical results into a comparison table."
+  },
+  "ui_beebc079": {
+    "message": "✨ التجربة",
+    "description": "✨ Experience"
+  },
+  "ui_4aa812c3": {
+    "message": "إشعارات سطح المكتب",
+    "description": "Desktop notifications"
+  },
+  "ui_d13e25a7": {
+    "message": "نغمة عند الاكتمال",
+    "description": "Completion chime"
+  },
+  "ui_204fd6fd": {
+    "message": "فتح الدفتر عند جاهزيته",
+    "description": "Open notebook when ready"
+  },
+  "ui_8dd31791": {
+    "message": "تم",
+    "description": "Done"
+  },
+  "ui_f835ea8d": {
+    "message": "جارٍ البحث عن ملفات PDF في الصفحة...",
+    "description": "Scanning page for PDFs..."
+  },
+  "ui_837a3d6": {
+    "message": "الإعداد",
+    "description": "Setup"
+  },
+  "ui_f3ddb69": {
+    "message": "إضافة مصدر",
+    "description": "Add Source"
+  },
+  "ui_f0bfd7ef": {
+    "message": "معالجة المصدر",
+    "description": "Processing Source"
+  },
+  "ui_1a359bf5": {
+    "message": "إنشاء النواتج",
+    "description": "Generate Artifacts"
+  },
+  "ui_628ea1a2": {
+    "message": "اكتمل",
+    "description": "Complete"
+  },
+  "ui_74b6158": {
+    "message": "المجموعة المحدّدة سابقًا",
+    "description": "Previously selected collection"
+  },
+  "ui_caa12099": {
+    "message": "المجموعة المحدّدة سابقًا (غير متاحة)",
+    "description": "Previously selected collection (unavailable)"
+  },
+  "ui_9cd3026e": {
+    "message": "المجموعة المحدّدة سابقًا (تعذّر تحديثها)",
+    "description": "Previously selected collection (could not refresh)"
+  },
+  "ui_9fde4674": {
+    "message": "جارٍ تحميل المجموعات...",
+    "description": "Loading collections..."
+  },
+  "ui_ad9295c6": {
+    "message": "المجموعات المتاحة $1.",
+    "description": "Collections available: $1."
+  },
+  "ui_71b89b88": {
+    "message": "لم يُعثر على مجموعات. أنشئ مجموعة في Gemini Notebook أولاً.",
+    "description": "No collections found. Create one in Gemini Notebook first."
+  },
+  "ui_3417b8bd": {
+    "message": "تعذّر تحميل المجموعات. افتح Gemini Notebook وتحقّق من تسجيل الدخول.",
+    "description": "Could not load collections. Open Gemini Notebook and check your sign-in."
+  },
+  "ui_46a25e8a": {
+    "message": "تم العثور على PDF محلي",
+    "description": "Detected Local PDF"
+  },
+  "ui_96195221": {
+    "message": "تم العثور على PDF",
+    "description": "Detected PDF"
+  },
+  "ui_f142f1c5": {
+    "message": "رفع وإنشاء",
+    "description": "Upload & Generate"
+  },
+  "ui_d2cac6f0": {
+    "message": "اختيار PDF آخر",
+    "description": "Choose a different PDF"
+  },
+  "ui_3fac81f6": {
+    "message": "🎧 إنشاء النواتج",
+    "description": "🎧 Generate Artifacts"
+  },
+  "ui_c277b27a": {
+    "message": "لم يُعثر على PDF في هذه الصفحة.",
+    "description": "No PDF detected on this page."
+  },
+  "ui_f9bbdfd0": {
+    "message": "لا يزال بإمكانك تجربة استيراد عنوان هذه الصفحة مباشرةً.",
+    "description": "You can still try importing this page URL directly."
+  },
+  "ui_f544e784": {
+    "message": "استيراد الصفحة والإنشاء",
+    "description": "Import Page & Generate"
+  },
+  "ui_c104ecd": {
+    "message": "رفع PDF محلي",
+    "description": "Upload local PDF"
+  },
+  "ui_9388d923": {
+    "message": "هذا الملف ليس PDF صالحًا. اختر ملفًا آخر.",
+    "description": "This file isn't a valid PDF. Choose another file."
+  },
+  "ui_b06fbcc0": {
+    "message": "تعذّر تأكيد النتيجة. تحقّق من Gemini Notebook قبل البدء مجددًا.",
+    "description": "The result could not be confirmed. Check Gemini Notebook before starting again."
+  },
+  "ui_97c517c8": {
+    "message": "يتجاوز هذا الملف حد الرفع. ارفعه مباشرةً في Gemini Notebook.",
+    "description": "This PDF exceeds the upload limit. Upload it directly in Gemini Notebook."
+  },
+  "ui_3f0f4b44": {
+    "message": "سجّل الدخول إلى Gemini Notebook، ثم أعد فتح هذه النافذة.",
+    "description": "Sign in to Gemini Notebook, then reopen this popup."
+  },
+  "ui_e5c255ed": {
+    "message": "بلغ Gemini Notebook حد الاستخدام. انتظر قبل بدء مزيد من العمل.",
+    "description": "Gemini Notebook has reached a limit. Wait before starting more work."
+  },
+  "ui_1c310fdf": {
+    "message": "تحتاج هذه العملية إلى انتباهك. تحقّق من التفاصيل قبل المتابعة.",
+    "description": "This workflow needs attention. Check the details before continuing."
+  },
+  "ui_ec24245": {
+    "message": "التفاصيل",
+    "description": "Details"
+  },
+  "ui_811b0256": {
+    "message": "عنوان دفتر الملاحظات",
+    "description": "Notebook title"
+  },
+  "ui_d9259b7d": {
+    "message": "أُضيف إلى $1",
+    "description": "Added to $1"
+  },
+  "ui_9cebccf3": {
+    "message": "تعذّرت الإضافة إلى المجموعة.",
+    "description": "Collection assignment failed."
+  },
+  "ui_7fad8491": {
+    "message": "مجموعة",
+    "description": "collection"
+  },
+  "ui_c4a69ed0": {
+    "message": "فتح في Gemini Notebook",
+    "description": "Open in Gemini Notebook"
+  },
+  "ui_285dfd14": {
+    "message": "تم استيراد المصدر دون طلب نواتج.",
+    "description": "Source imported. No artifacts requested."
+  },
+  "ui_e65751d2": {
+    "message": "$1 من $2 نواتج جاهزة (فشل $3).",
+    "description": "$1/$2 artifacts ready ($3 failed)."
+  },
+  "ui_f59ae8c5": {
+    "message": "النواتج الجاهزة $1!",
+    "description": "Artifacts ready: $1!"
+  },
+  "ui_1aadce96": {
+    "message": "اسمح بالتنزيل أو اختر PDF للمتابعة في هذا الدفتر.",
+    "description": "Allow the download or choose a PDF to continue in this notebook."
+  },
+  "ui_f5943c95": {
+    "message": "يمكنك إغلاق هذه النافذة. يستمر العمل.",
+    "description": "You can close this popup. Work continues."
+  },
+  "ui_f4a0bac0": {
+    "message": "السماح بالتنزيل والمتابعة",
+    "description": "Allow download and continue"
+  },
+  "ui_dd6a9d74": {
+    "message": "رفع PDF بدلاً من ذلك",
+    "description": "Upload PDF Instead"
+  },
+  "ui_9d9a1d5b": {
+    "message": "تفاصيل التنزيل",
+    "description": "Download details"
+  },
+  "ui_92de1569": {
+    "message": "إيقاف المتابعة",
+    "description": "Stop Monitoring"
+  },
+  "ui_59ba73c4": {
+    "message": "يوقف هذه العملية. قد يستمر العمل الذي بدأ في Gemini Notebook.",
+    "description": "Stops this workflow. Work already started in Gemini Notebook may continue."
+  },
+  "ui_a455e487": {
+    "message": "البدء من جديد",
+    "description": "Start Over"
+  },
+  "ui_61e2a3f8": {
+    "message": "المصدر",
+    "description": "Source"
+  },
+  "ui_d87cff14": {
+    "message": "استبدال المصدر",
+    "description": "Source replacement"
+  },
+  "ui_18b524fa": {
+    "message": "يُرفع الملف البديل إلى هذا الدفتر. يُحتفظ بمصدر الرابط الذي فشل، وتُنشأ النواتج من ملف PDF البديل.",
+    "description": "Upload fallback uses this notebook. The failed URL source is kept. Artifacts use the replacement PDF."
+  },
+  "ui_79f5dd9e": {
+    "message": "تفاصيل العملية",
+    "description": "Workflow details"
+  },
+  "ui_6cac833d": {
+    "message": "جارٍ البدء...",
+    "description": "Starting..."
+  },
+  "ui_25185cf8": {
+    "message": "⏳ جارٍ البدء...",
+    "description": "⏳ Starting..."
+  },
+  "ui_dfcc9e32": {
+    "message": "جارٍ الرفع...",
+    "description": "Uploading..."
+  },
+  "ui_1fb8851e": {
+    "message": "جارٍ قراءة ملف PDF الحالي...",
+    "description": "Reading current PDF..."
+  },
+  "ui_435bb9d2": {
+    "message": "جارٍ الاتصال بـ Gemini Notebook...",
+    "description": "Connecting to Gemini Notebook..."
+  },
+  "ui_8022dbaf": {
+    "message": "جارٍ إنشاء دفتر الملاحظات...",
+    "description": "Creating notebook..."
+  },
+  "ui_357652bd": {
+    "message": "جارٍ إضافة المصدر...",
+    "description": "Adding source..."
+  },
+  "ui_d2697109": {
+    "message": "جارٍ تنزيل PDF...",
+    "description": "Downloading PDF..."
+  },
+  "ui_36e593a8": {
+    "message": "جارٍ رفع PDF...",
+    "description": "Uploading PDF..."
+  },
+  "ui_a5712967": {
+    "message": "بانتظار معالجة المصدر. يُفحص التقدّم كل 30 ثانية تقريبًا.",
+    "description": "Waiting for source processing. Checking about every 30 seconds."
+  },
+  "ui_a31472dd": {
+    "message": "جارٍ طلب النواتج...",
+    "description": "Requesting artifacts..."
+  },
+  "ui_864fcfa3": {
+    "message": "اكتملت العملية.",
+    "description": "Workflow complete."
+  },
+  "ui_5549811c": {
+    "message": "العمل جارٍ...",
+    "description": "Work in progress..."
+  },
+  "ui_70571b43": {
+    "message": "$1 من $2 نواتج جاهزة.",
+    "description": "$1 of $2 artifacts ready."
+  },
+  "ui_cf65f42b": {
+    "message": "Gemini Notebook جاهز!",
+    "description": "Gemini Notebook Ready!"
+  },
+  "ui_3d2484f6": {
+    "message": "فتح الدفتر",
+    "description": "Open notebook"
+  },
+  "ui_265915f3": {
+    "message": "إغلاق",
+    "description": "Dismiss"
+  },
+  "ui_10c52774": {
+    "message": "خطأ في ScholarRelay",
+    "description": "ScholarRelay Error"
+  },
+  "ui_5a963259": {
+    "message": "دفتر الملاحظات $1 جاهز. تم استيراد المصدر دون نواتج. انقر لفتحه.",
+    "description": "Notebook $1 is ready. Source imported without artifacts. Click to open."
+  },
+  "ui_1290e46e": {
+    "message": "دفتر الملاحظات $1 جاهز وفيه $2 نواتج. انقر لفتحه.",
+    "description": "Notebook $1 is ready with $2 artifacts. Click to open."
+  },
+  "ui_67fd3b38": {
+    "message": "دفتر الملاحظات $1 جاهز جزئيًا. $2 من $3 نواتج جاهزة، وفشل $4. انقر لفتحه.",
+    "description": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open."
+  },
+  "ui_6fa973d2": {
+    "message": "يحتاج إلى تحقّق",
+    "description": "Needs checking"
+  },
+  "ui_dccf5581": {
+    "message": "تفاصيل النواتج",
+    "description": "Artifact details"
+  },
+  "ui_e46778ea": {
+    "message": "قائمة انتظار الأبحاث",
+    "description": "Paper queue"
+  },
+  "ui_9e437c74": {
+    "message": "في قائمة الانتظار",
+    "description": "Queued"
+  },
+  "ui_98bfff6f": {
+    "message": "جارٍ التحضير",
+    "description": "Preparing"
+  },
+  "ui_863f19ee": {
+    "message": "متوقف",
+    "description": "Stopped"
+  },
+  "ui_1d839782": {
+    "message": "إنشاء دفتر",
+    "description": "Create notebook"
+  },
+  "ui_bb365f4d": {
+    "message": "إنشاء دفتر من الصفحة",
+    "description": "Create notebook from page"
+  },
+  "ui_c66a1109": {
+    "message": "إضافة بحث آخر",
+    "description": "Add another paper"
+  },
+  "ui_fc5bf3cc": {
+    "message": "إزالة من قائمة الانتظار",
+    "description": "Remove from queue"
+  },
+  "ui_6810ced4": {
+    "message": "إيقاف هذه المهمة",
+    "description": "Stop this job"
+  },
+  "ui_acc12e9e": {
+    "message": "إيقاف القائمة مؤقتًا",
+    "description": "Pause queue"
+  },
+  "ui_ab9aefe9": {
+    "message": "استئناف القائمة",
+    "description": "Resume queue"
+  },
+  "ui_13e397ca": {
+    "message": "المهام الأخيرة",
+    "description": "Recent jobs"
+  },
+  "ui_7b37dc98": {
+    "message": "مسح المهام المنتهية",
+    "description": "Clear finished jobs"
+  },
+  "ui_caf6d280": {
+    "message": "القائمة متوقفة مؤقتًا. تستمر المهام التي بدأت بالفعل.",
+    "description": "Queue paused. Jobs already started continue."
+  },
+  "ui_75e45781": {
+    "message": "تُحضّر الأبحاث واحدًا تلو الآخر. يمكن إنشاء النواتج في ثلاثة دفاتر في الوقت نفسه.",
+    "description": "Papers are prepared one at a time. Up to three notebooks generate at once."
+  },
+  "ui_70762261": {
+    "message": "أُضيف إلى قائمة الانتظار. يمكنك إغلاق هذه النافذة، مع إبقاء Chrome مفتوحًا.",
+    "description": "Queued. You can close this popup, but keep Chrome open."
+  },
+  "ui_70eb74c2": {
+    "message": "يمكنك إغلاق Chrome. يواصل Gemini Notebook إنشاء النواتج.",
+    "description": "You can close Chrome. Gemini Notebook keeps generating."
+  },
+  "ui_1591c255": {
+    "message": "يمكنك إغلاق هذه النافذة، لكن أبقِ Chrome مفتوحًا حتى يبدأ الإنشاء.",
+    "description": "You can close this popup, but keep Chrome open until generation starts."
+  },
+  "ui_440cb2bf": {
+    "message": "يحتاج هذا البحث إلى انتباهك. يمكن متابعة الأبحاث الأخرى في القائمة.",
+    "description": "This paper needs attention. Other queued papers can continue."
+  },
+  "ui_e5cfc00b": {
+    "message": "قد تظل بعض الطلبات قيد التنفيذ في Gemini Notebook. تحقّق من النتيجة في هذا الدفتر.",
+    "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
+  },
+  "ui_423ddda2": {
+    "message": "فشلت بعض الطلبات. تحقّق من التفاصيل في هذا الدفتر.",
+    "description": "Some requests failed. Check this notebook for details."
+  },
+  "ui_314695f8": {
+    "message": "النواتج جاهزة. يمكنك الانتقال إلى بحث آخر.",
+    "description": "Artifacts are ready. You can move on to another paper."
+  },
+  "ui_232cd7e": {
+    "message": "جارٍ حفظ PDF. أبقِ هذه النافذة مفتوحة...",
+    "description": "Saving PDF. Keep this popup open..."
+  },
+  "ui_7ff14708": {
+    "message": "يتعذّر الوصول إلى Gemini Notebook مؤقتًا. حاول الاتصال لاحقًا.",
+    "description": "Gemini Notebook is temporarily unreachable. Try connecting again later."
+  },
+  "ui_77e33d8c": {
+    "message": "تعذّر التعرّف على جلسة Gemini Notebook. افتحه وتحقّق من التفاصيل.",
+    "description": "Could not recognize the Gemini Notebook session. Open Gemini Notebook and check the details."
+  },
+  "ui_959074fd": {
+    "message": "بانتظار الاتصال. تم حفظ بحثك.",
+    "description": "Waiting for connection. Your paper is saved."
+  },
+  "ui_dc5fc1be": {
+    "message": "يلزم الاتصال",
+    "description": "Connection needed"
+  },
+  "ui_19f575ce": {
+    "message": "محاولة الاتصال",
+    "description": "Try connection"
+  },
+  "ui_244aa556": {
+    "message": "$1 من $2 جاهز",
+    "description": "$1/$2 ready"
+  },
+  "ui_b78d0565": {
+    "message": "مدة الانتظار",
+    "description": "Time queued"
+  },
+  "ui_faff56b8": {
+    "message": "الوقت المنقضي",
+    "description": "Elapsed time"
+  },
+  "ui_c6bbc618": {
+    "message": "إنشاء $1 محدود حاليًا. حاول لاحقًا في الدفتر الحالي.",
+    "description": "Generation is limited for $1. Try again later in the existing notebook."
+  },
+  "ui_72bb088c": {
+    "message": "يلزم اتخاذ إجراء",
+    "description": "Action needed"
+  },
+  "ui_4a78a7bf": {
+    "message": "انتظار $1",
+    "description": "Waiting $1"
+  },
+  "ui_e8233afc": {
+    "message": "بانتظارك",
+    "description": "Waiting for you"
+  },
+  "ui_f7066e40": {
+    "message": "إزالة المهمة",
+    "description": "Dismiss job"
+  },
+  "ui_47c21b54": {
+    "message": "رفع PDF والمتابعة",
+    "description": "Upload PDF and continue"
+  },
+  "ui_38f2e1ae": {
+    "message": "يلزم إذن التنزيل. اسمح بالوصول أو اختر PDF للمتابعة في هذا الدفتر.",
+    "description": "Download permission is needed. Allow access or select a PDF to continue in this notebook."
+  },
+  "ui_e431d4b": {
+    "message": "حظر الناشر تنزيل PDF. اختر ملف PDF نزّلته للمتابعة في هذا الدفتر.",
+    "description": "The publisher blocked the PDF download. Select a downloaded PDF to continue in this notebook."
+  },
+  "ui_56d74e8d": {
+    "message": "تعذّر تنزيل PDF. اختر ملف PDF للمتابعة في هذا الدفتر.",
+    "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
+  },
+  "ui_9dab64e9": {
+    "message": "حذف الدفتر غير المستخدم",
+    "description": "Delete unused notebook"
+  },
+  "ui_97612a43": {
+    "message": "حُذف الدفتر من Gemini Notebook.",
+    "description": "Notebook deleted from Gemini Notebook."
+  },
+  "ui_52c919ec": {
+    "message": "يحتوي هذا الدفتر على $1 من المصادر و$2 من النواتج الفاشلة.",
+    "description": "This notebook has $1 source(s) and $2 failed artifact(s)."
+  },
+  "ui_2c26929": {
+    "message": "هل تريد حذف هذا الدفتر من Gemini Notebook؟ لا يمكن التراجع عن ذلك.",
+    "description": "Delete this notebook from Gemini Notebook? This cannot be undone."
+  },
+  "ui_efd1bd2d": {
+    "message": "لم يُعثر على بحث. هل تريد إنشاء دفتر وبدء الأتمتة المحدّدة رغم ذلك؟",
+    "description": "No paper was detected. Create a notebook and start the selected automation anyway?"
+  },
+  "ui_35afca3b": {
+    "message": "إلغاء",
+    "description": "Cancel"
+  },
+  "ui_c2954bc2": {
+    "message": "رجوع",
+    "description": "Back"
+  },
+  "ui_4408e966": {
+    "message": "إيقاف مع إبقاء الدفتر",
+    "description": "Stop and keep notebook"
+  },
+  "ui_66613304": {
+    "message": "إيقاف مع حذف الدفتر",
+    "description": "Stop and delete notebook"
+  },
+  "ui_9b369a0f": {
+    "message": "حذف الدفتر",
+    "description": "Delete notebook"
+  },
+  "ui_e100f46d": {
+    "message": "جارٍ الإيقاف...",
+    "description": "Stopping..."
+  },
+  "ui_32be65e1": {
+    "message": "جارٍ الحذف...",
+    "description": "Deleting..."
+  },
+  "ui_134d554a": {
+    "message": "يلزم التحقّق من الحذف",
+    "description": "Deletion needs checking"
+  },
+  "ui_d3d1dd4b": {
+    "message": "يحذف هذا الدفتر وجميع مصادره ونتائجه.",
+    "description": "Deletes this notebook and all its sources and results."
+  },
+  "ui_b28f5ccc": {
+    "message": "الأبحاث في هذه الصفحة",
+    "description": "Papers on this page"
+  },
+  "ui_8d353d4c": {
+    "message": "تم تحديد $1 من $2",
+    "description": "$1 of $2 selected"
+  },
+  "ui_6af21072": {
+    "message": "تحديد الكل",
+    "description": "Select all"
+  },
+  "ui_4a57fc2": {
+    "message": "إلغاء التحديد",
+    "description": "Clear"
+  },
+  "ui_e8a27655": {
+    "message": "بحث مميّز",
+    "description": "Featured paper"
+  },
+  "ui_da557f42": {
+    "message": "ملحق",
+    "description": "Supplement"
+  },
+  "ui_40b804c7": {
+    "message": "فتح البحث",
+    "description": "Open paper"
+  },
+  "ui_67283063": {
+    "message": "إنشاء دفاتر",
+    "description": "Create notebooks"
+  },
+  "ui_10e895e8": {
+    "message": "دفتر واحد",
+    "description": "One notebook"
+  },
+  "ui_f72c78e6": {
+    "message": "دفتر لكل بحث",
+    "description": "One per paper"
+  },
+  "ui_340761b3": {
+    "message": "إضافة هذه الصفحة كمادة سياقية",
+    "description": "Include this webpage as context"
+  },
+  "ui_894e2575": {
+    "message": "استخدام هذه الصفحة",
+    "description": "Use this webpage"
+  },
+  "ui_373b446b": {
+    "message": "الكشف التلقائي في هذا الموقع",
+    "description": "Detect automatically on this site"
+  },
+  "ui_cf80d578": {
+    "message": "جلب العناوين من arXiv",
+    "description": "Get titles from arXiv"
+  },
+  "ui_55c2ab3b": {
+    "message": "إنشاء دفتر يضم $1 من المصادر",
+    "description": "Create notebook with $1 sources"
+  },
+  "ui_a2bb458e": {
+    "message": "إنشاء $1 من الدفاتر",
+    "description": "Create $1 notebooks"
+  },
+  "ui_e24fe294": {
+    "message": "تم تفعيل الكشف التلقائي لهذا الموقع.",
+    "description": "Automatic detection enabled for this site."
+  },
+  "ui_721b8d43": {
+    "message": "تم حفظ $1 من المهام في قائمة الانتظار",
+    "description": "$1 jobs saved in queue"
+  },
+  "ui_d483e2ce": {
+    "message": "المصادر المحدّدة",
+    "description": "Selected sources"
+  },
+  "ui_32d7a557": {
+    "message": "تم تخطّيه",
+    "description": "Skipped"
+  },
+  "ui_70a589eb": {
+    "message": "تخطّي هذا المصدر والمتابعة",
+    "description": "Skip this source and continue"
+  },
+  "ui_76aff97c": {
+    "message": "$1 من الأبحاث المرشّحة في هذه الصفحة",
+    "description": "$1 paper candidates on this page"
+  },
+  "ui_8cd6f197": {
+    "message": "إنشاء دفتر بمصدر واحد",
+    "description": "Create notebook with one source"
+  },
+  "ui_c24b9e6a": {
+    "message": "إنشاء دفتر واحد",
+    "description": "Create one notebook"
+  },
+  "ui_c67e8add": {
+    "message": "تم حفظ مهمة واحدة في قائمة الانتظار",
+    "description": "One job saved in queue"
+  },
+  "ui_2a03efde": {
+    "message": "بحث مرشّح واحد في هذه الصفحة",
+    "description": "One paper candidate on this page"
+  },
+  "ui_72c708f3": {
+    "message": "الاستخدام $1% · $2",
+    "description": "Usage $1% · $2"
+  },
+  "ui_d8964ad4": {
+    "message": "الحد",
+    "description": "Limit"
+  },
+  "ui_fd031aad": {
+    "message": "تُعاد تهيئة فترة الاستخدام الحاسوبي $1.",
+    "description": "Compute window resets $1."
+  },
+  "ui_f42db284": {
+    "message": "انتظار الخادم حتى $1.",
+    "description": "Server wait until $1."
+  },
+  "ui_d56e7ace": {
+    "message": "استيراد نص الصفحة",
+    "description": "Import page text"
+  },
+  "ui_15d48e31": {
+    "message": "يرسل نص علامة التبويب إلى Google كمصدر نصي. قد يتضمّن محتوى يتطلّب تسجيل الدخول.",
+    "description": "Sends tab text to Google as a text source. May include sign-in-only content."
+  },
+  "ui_953fba37": {
+    "message": "لم يعد خيار الاسترداد هذا متاحًا.",
+    "description": "This recovery is no longer available."
+  },
+  "ui_8a77184b": {
+    "message": "افتح الصفحة الأصلية لاستيراد نصها.",
+    "description": "Open the original page to import its text."
+  },
+  "ui_c85ac8d9": {
+    "message": "يلزم إذن الوصول إلى الموقع.",
+    "description": "Site access is required."
+  },
+  "ui_5c3eb330": {
+    "message": "تعذّرت قراءة نص الصفحة.",
+    "description": "Page text could not be read."
+  },
+  "ui_fa291f21": {
+    "message": "تعذّر استيراد نص الصفحة. تحقّق من الدفتر الحالي.",
+    "description": "Page text could not be imported. Check the existing notebook."
+  },
+  "ui_f90efa29": {
+    "message": "نص الصفحة",
+    "description": "Page text"
+  },
+  "ui_4a3d4bfb": {
+    "message": "انتظر استئناف القائمة أو انتهاء تحضير مهمة أخرى.",
+    "description": "Wait for the queue to resume or finish preparing another job."
+  }
+}

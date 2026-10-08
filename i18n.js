@@ -19,7 +19,11 @@ export function t(source, substitutions = []) {
 // Only run before dynamic/user content is inserted. Never translate document titles,
 // collection names, URLs, prompts, protocol values or diagnostic strings by guessing.
 export function localizeStaticDocument(doc = document) {
-    doc.documentElement.lang = globalThis.chrome?.i18n?.getUILanguage() || 'en';
+    const language = globalThis.chrome?.i18n?.getUILanguage() || 'en';
+    doc.documentElement.lang = language;
+    // Arabic is the shipped RTL catalog. Other RTL browser locales fall back
+    // to English, so the browser's @@bidi_dir alone cannot select our layout.
+    doc.documentElement.dir = /^ar(?:[-_]|$)/i.test(language) ? 'rtl' : 'ltr';
     const walker = doc.createTreeWalker(doc.body, 4);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
         if (node.parentElement.closest('script, style')) continue;

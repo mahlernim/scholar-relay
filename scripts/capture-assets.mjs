@@ -6,6 +6,9 @@ import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 
 const extensionRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const requestedLocales = process.env.CAPTURE_LOCALES
+  ? new Set(process.env.CAPTURE_LOCALES.split(',').map(locale => locale.trim()).filter(Boolean)) : null;
+const captureLocale = locale => !requestedLocales || requestedLocales.has(locale);
 const chromePath = await resolveCaptureBrowser();
 const profileDir = await mkdtemp(join(tmpdir(), 'scholar-relay-capture-'));
 
@@ -37,96 +40,115 @@ async function resolveCaptureBrowser() {
 const chrome = spawn(chromePath, [
   '--disable-gpu',
   '--lang=en',
+  '--enable-unsafe-extension-debugging',
   '--no-first-run',
   '--no-default-browser-check',
   '--window-position=-32000,-32000',
   '--window-size=400,700',
-  '--remote-debugging-port=0',
+  '--remote-debugging-pipe',
   `--user-data-dir=${profileDir}`,
-  `--disable-extensions-except=${extensionRoot}`,
-  `--load-extension=${extensionRoot}`,
-], { windowsHide: true, stdio: 'ignore' });
+], { windowsHide: true, stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });
 
 const delay = ms => new Promise(resolveDelay => setTimeout(resolveDelay, ms));
 
-async function waitForDevToolsPort() {
-  const portFile = join(profileDir, 'DevToolsActivePort');
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    try {
-      const [port] = (await readFile(portFile, 'utf8')).trim().split(/\r?\n/);
-      if (port) return Number(port);
-    } catch {}
-    await delay(100);
-  }
-  throw new Error('Chrome DevTools port did not become available.');
-}
-
-class CdpSession {
-  constructor(url) {
-    this.socket = new WebSocket(url);
+class PipeConnection {
+  constructor(readable, writable) {
+    this.readable = readable;
+    this.writable = writable;
     this.nextId = 1;
     this.pending = new Map();
+    this.buffer = Buffer.alloc(0);
+    readable.on('data', chunk => this.receive(chunk));
+    readable.on('error', error => this.fail(error));
+    readable.on('end', () => this.fail(new Error('Chromium closed the DevTools pipe.')));
   }
 
-  async open() {
-    await new Promise((resolveOpen, rejectOpen) => {
-      this.socket.addEventListener('open', resolveOpen, { once: true });
-      this.socket.addEventListener('error', rejectOpen, { once: true });
-    });
-    this.socket.addEventListener('message', event => {
-      const message = JSON.parse(event.data);
-      if (!message.id || !this.pending.has(message.id)) return;
-      const { resolve: resolveCall, reject } = this.pending.get(message.id);
+  receive(chunk) {
+    this.buffer = Buffer.concat([this.buffer, chunk]);
+    for (let separator = this.buffer.indexOf(0); separator !== -1; separator = this.buffer.indexOf(0)) {
+      const packet = this.buffer.subarray(0, separator);
+      this.buffer = this.buffer.subarray(separator + 1);
+      if (!packet.length) continue;
+      const message = JSON.parse(packet.toString('utf8'));
+      if (!message.id || !this.pending.has(message.id)) continue;
+      const pending = this.pending.get(message.id);
       this.pending.delete(message.id);
-      if (message.error) reject(new Error(message.error.message));
-      else resolveCall(message.result);
+      clearTimeout(pending.timeout);
+      if (message.error) pending.reject(new Error(message.error.message));
+      else pending.resolve(message.result);
+    }
+  }
+
+  call(method, params = {}, sessionId) {
+    const id = this.nextId++;
+    const message = { id, method, params };
+    if (sessionId) message.sessionId = sessionId;
+    return new Promise((resolveCall, reject) => {
+      const timeout = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`${method} timed out on the Chromium DevTools pipe.`));
+      }, 15000);
+      this.pending.set(id, { resolve: resolveCall, reject, timeout });
+      this.writable.write(`${JSON.stringify(message)}\0`, error => {
+        if (!error) return;
+        clearTimeout(timeout);
+        this.pending.delete(id);
+        reject(error);
+      });
     });
   }
 
-  call(method, params = {}) {
-    const id = this.nextId++;
-    const promise = new Promise((resolveCall, reject) => this.pending.set(id, { resolve: resolveCall, reject }));
-    this.socket.send(JSON.stringify({ id, method, params }));
-    return promise;
+  fail(error) {
+    for (const pending of this.pending.values()) {
+      clearTimeout(pending.timeout);
+      pending.reject(error);
+    }
+    this.pending.clear();
   }
 
   close() {
-    this.socket.close();
+    this.writable.end();
+    this.readable.destroy();
   }
 }
 
-async function json(port, path, options) {
-  const response = await fetch(`http://127.0.0.1:${port}${path}`, options);
-  if (!response.ok) throw new Error(`${path} returned HTTP ${response.status}`);
-  return response.json();
-}
-
-async function findExtensionId(port) {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    const targets = await json(port, '/json');
-    const target = targets.find(item => item.type === 'service_worker' && item.url?.endsWith('/background.js'));
-    const match = target?.url?.match(/^chrome-extension:\/\/([^/]+)/);
-    if (match) return match[1];
-    try {
-      const preferences = JSON.parse(await readFile(join(profileDir, 'Default', 'Preferences'), 'utf8'));
-      const settings = preferences.extensions?.settings || {};
-      for (const [id, value] of Object.entries(settings)) {
-        if (value?.path && resolve(value.path) === extensionRoot) return id;
-        if (value?.manifest?.name === 'ScholarRelay') return id;
-      }
-    } catch {}
-    await delay(100);
+class TargetSession {
+  constructor(connection, sessionId, targetId) {
+    this.connection = connection;
+    this.sessionId = sessionId;
+    this.targetId = targetId;
+    this.closed = false;
   }
-  throw new Error('Loaded extension target was not found.');
+
+  call(method, params = {}) {
+    return this.connection.call(method, params, this.sessionId);
+  }
+
+  async close() {
+    if (this.closed) return;
+    this.closed = true;
+    await this.connection.call('Target.closeTarget', { targetId: this.targetId }).catch(() => {});
+  }
 }
 
-async function openTarget(port, url) {
-  const target = await json(port, `/json/new?${encodeURIComponent(url)}`, { method: 'PUT' });
-  const session = new CdpSession(target.webSocketDebuggerUrl);
-  await session.open();
-  await session.call('Page.enable');
-  await session.call('Runtime.enable');
-  return session;
+async function loadUnpackedExtension(connection, path) {
+  const result = await connection.call('Extensions.loadUnpacked', { path });
+  if (!result?.id) throw new Error('Chromium did not return an extension ID.');
+  return result.id;
+}
+
+async function openTarget(connection, url) {
+  const { targetId } = await connection.call('Target.createTarget', { url });
+  const { sessionId } = await connection.call('Target.attachToTarget', { targetId, flatten: true });
+  const session = new TargetSession(connection, sessionId, targetId);
+  try {
+    await session.call('Page.enable');
+    await session.call('Runtime.enable');
+    return session;
+  } catch (error) {
+    await session.close();
+    throw error;
+  }
 }
 
 async function evaluate(session, expression, awaitPromise = true) {
@@ -159,14 +181,14 @@ async function hidePageScrollbars(session) {
   await evaluate(session, `(() => { const style=document.createElement('style'); style.textContent='html,body{overflow:hidden!important}'; document.head.appendChild(style); })()`);
 }
 
-async function capturePopup(port, extensionId, locale = 'en') {
+async function capturePopup(connection, extensionId, locale = 'en') {
   const output = join(extensionRoot, 'docs', 'screenshots', ...(locale === 'en' ? [] : [locale]));
   await mkdir(output, { recursive: true });
   const catalog = JSON.parse(await readFile(join(extensionRoot, '_locales', locale, 'messages.json'), 'utf8'));
   const translated = (source, values = []) => catalog[messageKey(source)]?.message.replace(/\$(\d+)/g, (_, index) => values[index - 1]) || source;
   const localeScript = `chrome.i18n.getUILanguage=()=>${JSON.stringify(locale.replace('_', '-'))};
     chrome.i18n.getMessage=(key,values=[])=>(${JSON.stringify(catalog)})[key]?.message.replace(/\\$(\\d+)/g,(_,index)=>values[index-1]??'')||'';`;
-  const setup = await openTarget(port, `chrome-extension://${extensionId}/popup.html`);
+  const setup = await openTarget(connection, `chrome-extension://${extensionId}/popup.html`);
   await setup.call('Page.addScriptToEvaluateOnNewDocument', { source: localeScript });
   await delay(400);
   const queueFixture = { version:1, paused:false, jobs:[
@@ -183,10 +205,10 @@ async function capturePopup(port, extensionId, locale = 'en') {
   `});
   await sessionReload(setup);
   await hidePageScrollbars(setup);
-  await capture(setup, join(output, 'workflow.png'), 360, 550);
-  setup.close();
+  await capture(setup, join(output, 'workflow.png'), 360, locale === 'ar' ? 600 : 550);
+  await setup.close();
 
-  const settings = await openTarget(port, `chrome-extension://${extensionId}/popup.html`);
+  const settings = await openTarget(connection, `chrome-extension://${extensionId}/popup.html`);
   await settings.call('Page.addScriptToEvaluateOnNewDocument', { source: localeScript });
   await delay(400);
   await evaluate(settings, `chrome.storage.local.set({jobQueue:{version:1,paused:false,jobs:[]},userSettings:{generateAudio:true,audioLength:'long',language:'en',generateInfographic:true,useSourceTitleForNotebook:true,notificationEnabled:true,chimeEnabled:true,autoOpenNotebook:false,collectionId:'research-papers'}})`);
@@ -198,7 +220,7 @@ async function capturePopup(port, extensionId, locale = 'en') {
   await evaluate(settings, `(() => { const pane=document.querySelector('.settings-inner'); pane.scrollTop+=document.querySelector('.settings-group-artifacts').getBoundingClientRect().top-pane.getBoundingClientRect().top; })()`);
   await hidePageScrollbars(settings);
   await capture(settings, join(output, 'settings.png'), 360, 480);
-  settings.close();
+  await settings.close();
 }
 
 async function sessionReload(session) {
@@ -206,9 +228,12 @@ async function sessionReload(session) {
   await delay(500);
 }
 
-async function captureStoreAsset(port, relativeSource, relativeOutput, width, height, localized = null) {
+async function captureStoreAsset(connection, relativeSource, relativeOutput, width, height, localized = null) {
   const url = pathToFileURL(join(extensionRoot, relativeSource)).href;
-  const session = await openTarget(port, url);
+  const session = await openTarget(connection, url);
+  // RTL fixed-width pages anchor to the viewport's right edge. Measure using
+  // the output viewport, rather than the small popup window used previously.
+  await session.call('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
   await delay(500);
   if (!relativeSource.endsWith('promo.html')) {
     await evaluate(session, `(() => {
@@ -221,6 +246,7 @@ async function captureStoreAsset(port, relativeSource, relativeOutput, width, he
     await evaluate(session, `(() => {
       const {locale,kind,copy}=${JSON.stringify(localized)};
       document.documentElement.lang=locale.replace('_','-');
+      document.documentElement.dir=locale==='ar'?'rtl':'ltr';
       document.querySelector('.shot img').src='../../screenshots/'+locale+'/'+kind+'.png';
       document.querySelector('.kicker').textContent=copy[0];
       document.querySelector('.copy h1').textContent=copy[1];
@@ -243,40 +269,50 @@ async function captureStoreAsset(port, relativeSource, relativeOutput, width, he
     if(clipped.length) throw new Error('Store asset overflow '+relativeOutput+': '+clipped.join(', '));
   }
   await capture(session, join(extensionRoot, relativeOutput), width, height);
-  session.close();
+  await session.close();
 }
 
+const browserConnection = new PipeConnection(chrome.stdio[4], chrome.stdio[3]);
 try {
-  const port = await waitForDevToolsPort();
-  const extensionId = await findExtensionId(port);
-  await capturePopup(port, extensionId);
-  await captureStoreAsset(port, 'docs/store-assets/source/workflow.html', 'docs/store-assets/screenshot-workflow-1280x800.png', 1280, 800);
-  await captureStoreAsset(port, 'docs/store-assets/source/settings.html', 'docs/store-assets/screenshot-settings-1280x800.png', 1280, 800);
-  await captureStoreAsset(port, 'docs/store-assets/source/promo.html', 'docs/store-assets/small-promo-440x280.png', 440, 280);
+  const connection = browserConnection;
+  await browserConnection.call('Browser.getVersion');
+  const extensionId = await loadUnpackedExtension(browserConnection, extensionRoot);
   const localizedCopy = JSON.parse(await readFile(join(extensionRoot, 'docs', 'localization', 'asset-copy.json'), 'utf8'));
+  if (requestedLocales && [...requestedLocales].some(locale => locale !== 'en' && !Object.hasOwn(localizedCopy, locale))) {
+    throw new Error('CAPTURE_LOCALES contains a locale without store-asset copy.');
+  }
+  if (captureLocale('en')) {
+    await capturePopup(connection, extensionId);
+    await captureStoreAsset(connection, 'docs/store-assets/source/workflow.html', 'docs/store-assets/screenshot-workflow-1280x800.png', 1280, 800);
+    await captureStoreAsset(connection, 'docs/store-assets/source/settings.html', 'docs/store-assets/screenshot-settings-1280x800.png', 1280, 800);
+    await captureStoreAsset(connection, 'docs/store-assets/source/promo.html', 'docs/store-assets/small-promo-440x280.png', 440, 280);
+  }
   for (const [locale, copy] of Object.entries(localizedCopy)) {
-    await capturePopup(port, extensionId, locale);
+    if (!captureLocale(locale)) continue;
+    await capturePopup(connection, extensionId, locale);
     await mkdir(join(extensionRoot, 'docs', 'store-assets', locale), { recursive: true });
     for (const kind of ['workflow', 'settings']) {
-      await captureStoreAsset(port, `docs/store-assets/source/${kind}.html`,
+      await captureStoreAsset(connection, `docs/store-assets/source/${kind}.html`,
         `docs/store-assets/${locale}/screenshot-${kind}-1280x800.png`, 1280, 800, {locale,kind,copy:copy[kind]});
     }
   }
   // Use the real selector captured by smoke:chrome, with localized store framing.
   for (const locale of ['en', ...Object.keys(localizedCopy)]) {
+    if (!captureLocale(locale)) continue;
     const catalog = JSON.parse(await readFile(join(extensionRoot, '_locales', locale, 'messages.json'), 'utf8'));
     const label = key => catalog[messageKey(key)].message;
     const folder = join(extensionRoot, 'docs', 'screenshots', locale);
     await mkdir(folder, { recursive: true });
     await writeFile(join(folder, 'papers.png'), await readFile(join(extensionRoot, 'dist', 'localization-qa', `${locale}-papers.png`)));
     await mkdir(join(extensionRoot, 'docs', 'store-assets', locale), { recursive: true });
-    await captureStoreAsset(port, 'docs/store-assets/source/workflow.html',
+    await captureStoreAsset(connection, 'docs/store-assets/source/workflow.html',
       `docs/store-assets/${locale}/screenshot-papers-1280x800.png`, 1280, 800,
       {locale, kind:'papers', copy:[label('Create notebooks'), label('Papers on this page'),
         label('Include this webpage as context'), label('One per paper'), label('One notebook'), label('Get titles from arXiv')]});
   }
   console.log('Captured ScholarRelay README and Chrome Web Store assets.');
 } finally {
+  browserConnection.close();
   chrome.kill();
   if (chrome.exitCode === null) {
     await Promise.race([
@@ -289,5 +325,9 @@ try {
   if (!resolvedProfile.startsWith(`${safeTempRoot}\\`) || !resolvedProfile.includes('scholar-relay-capture-')) {
     throw new Error(`Refusing to remove unexpected profile path: ${resolvedProfile}`);
   }
-  await rm(resolvedProfile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  if (process.env.CAPTURE_KEEP_PROFILE === '1') {
+    console.log(`Capture profile retained at ${resolvedProfile}`);
+  } else {
+    await rm(resolvedProfile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  }
 }

@@ -9,5 +9,6 @@
   "zh_CN": ["Scholar Relay - Gemini Notebook (NotebookLM) 自动化","将 PDF、arXiv 论文和网页导入 Gemini Notebook (NotebookLM)，自动生成音频概览和学习资料。"],
   "it": ["Scholar Relay - Automazione di Gemini Notebook (NotebookLM)","Importa PDF, articoli arXiv e pagine web in Gemini Notebook (NotebookLM). Genera panoramiche audio e materiali di studio."],
   "zh_TW": ["Scholar Relay - Gemini Notebook (NotebookLM) 自動化","將 PDF、arXiv 論文和網頁匯入 Gemini Notebook (NotebookLM)，自動生成語音摘要和學習資料。"],
-  "hi": ["Scholar Relay - Gemini Notebook (NotebookLM) स्वचालन","PDF, arXiv शोधपत्र और वेबपृष्ठ Gemini Notebook (NotebookLM) में लाएँ। ऑडियो अवलोकन और अध्ययन सामग्री बनाएँ।"]
+  "hi": ["Scholar Relay - Gemini Notebook (NotebookLM) स्वचालन","PDF, arXiv शोधपत्र और वेबपृष्ठ Gemini Notebook (NotebookLM) में लाएँ। ऑडियो अवलोकन और अध्ययन सामग्री बनाएँ।"],
+  "ar": ["Scholar Relay - أتمتة Gemini Notebook (NotebookLM)","استورد PDF وأبحاث arXiv وصفحات الويب إلى Gemini Notebook (NotebookLM). أنشئ ملخّصات صوتية ومواد دراسية."]
 }

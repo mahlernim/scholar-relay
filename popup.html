@@ -105,6 +105,9 @@
     }
 
     .pdf-url {
+      direction: ltr;
+      unicode-bidi: isolate;
+      text-align: start;
       font-size: 12px;
       word-break: break-all;
       line-height: 1.4;
@@ -142,7 +145,7 @@
       font: inherit;
       font-size: 11px;
       line-height: 1.4;
-      text-align: left;
+      text-align: start;
       cursor: pointer;
       overflow-wrap: anywhere;
     }
@@ -156,7 +159,7 @@
     }
 
     .no-pdf {
-      text-align: left;
+      text-align: start;
       padding: 6px 0;
       color: var(--text-dim);
       font-size: 12px;
@@ -317,6 +320,7 @@
     }
 
     .step-detail {
+      unicode-bidi: plaintext;
       white-space: pre-line;
       overflow-wrap: anywhere;
       font-size: 11px;
@@ -511,7 +515,7 @@
 
     /*
      * Header row: [title]  [toggle]  [arrow]
-     * The toggle and arrow are grouped on the right.
+     * The toggle and arrow are grouped at the inline end.
      * Only the non-toggle part of the header triggers expand/collapse.
      */
     .s-section-header {
@@ -583,7 +587,7 @@
       content: '';
       position: absolute;
       top: 2px;
-      left: 2px;
+      inset-inline-start: 2px;
       width: 15px;
       height: 15px;
       border-radius: 50%;
@@ -598,6 +602,15 @@
 
     input:checked+.toggle-track::after {
       transform: translateX(15px);
+    }
+
+    :dir(rtl) input:checked+.toggle-track::after {
+      transform: translateX(-15px);
+    }
+
+    .toggle-switch:has(input:focus-visible) .toggle-track {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
 
     /* The toggle inside the header -- clicking it does NOT expand/collapse */
@@ -737,10 +750,12 @@
     .btn-generate, .btn-secondary, .btn-save-close { white-space: normal; overflow-wrap: anywhere; }
     :lang(ko) .settings-group-title, :lang(ja) .settings-group-title,
     :lang(ko) .label, :lang(ja) .label { letter-spacing: normal; }
+    :lang(ar) .settings-group-title, :lang(ar) .label,
+    :lang(ar) .btn-generate { letter-spacing: normal; }
     #job-queue { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px; }
     .queue-heading, .job-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
     .queue-heading { font-size: 13px; }
-    .job-title { border: 0; background: transparent; color: var(--text); font: inherit; cursor: pointer; text-align: left; }
+    .job-title { border: 0; background: transparent; color: var(--text); font: inherit; cursor: pointer; text-align: start; }
     .queue-heading button, .job-actions button, .paper-tools.paper-actions button { padding: 3px 8px; border: 1px solid color-mix(in srgb, var(--text-dim) 45%, transparent); border-radius: var(--radius); background: var(--surface); color: var(--text); font: inherit; font-size: 11px; cursor: pointer; }
     .queue-heading button:hover, .job-actions button:hover, .paper-tools.paper-actions button:hover { background: var(--surface-alt); border-color: var(--text-dim); }
     .queue-heading button:disabled, .job-actions button:disabled, .paper-tools.paper-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -754,7 +769,7 @@
     .job-phase { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
     .job-phase-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .job-ready-count { flex: 0 0 auto; }
-    .job-elapsed { flex: 0 0 auto; min-width: 8ch; margin-left: auto; text-align: right; font-variant-numeric: tabular-nums; }
+    .job-elapsed { flex: 0 0 auto; min-width: 8ch; margin-inline-start: auto; text-align: end; unicode-bidi: plaintext; font-variant-numeric: tabular-nums; }
     .job-activity { width: 8px; height: 8px; flex: 0 0 8px; border: 1px solid currentColor; border-radius: 50%; }
     .job-activity.is-active { border-top-color: transparent; animation: job-spin 0.9s linear infinite; }
     @keyframes job-spin { to { transform: rotate(360deg); } }
@@ -873,7 +888,7 @@
 
           <div class="s-field">
             <span class="s-label">Custom instructions</span>
-            <textarea id="s-audioPrompt" class="s-textarea"
+            <textarea id="s-audioPrompt" class="s-textarea" dir="auto"
               placeholder="e.g. Focus on methodology and summarize key findings simply."></textarea>
           </div>
         </div>
@@ -916,12 +931,12 @@
           </div>
           <div class="s-field">
             <span class="s-label">Custom instructions</span>
-            <textarea id="s-videoPrompt" class="s-textarea"
+            <textarea id="s-videoPrompt" class="s-textarea" dir="auto"
               placeholder="e.g. Use a documentary style with emphasis on visuals."></textarea>
           </div>
           <div class="s-field">
             <span class="s-label">Custom visual style prompt</span>
-            <textarea id="s-videoStylePrompt" class="s-textarea"
+            <textarea id="s-videoStylePrompt" class="s-textarea" dir="auto"
               placeholder="Used when Visual style is Custom."></textarea>
           </div>
         </div>
@@ -954,7 +969,7 @@
           <div class="s-field">
             <span class="s-label">Instructions <span id="report-prompt-required"
                 style="color:var(--warning);display:none">(required for Custom format)</span></span>
-            <textarea id="s-reportPrompt" class="s-textarea"
+            <textarea id="s-reportPrompt" class="s-textarea" dir="auto"
               placeholder="e.g. Write a clinical summary for non-specialist physicians."></textarea>
             <div class="s-help">Added to built-in report formats.</div>
           </div>
@@ -996,7 +1011,7 @@
           </div>
           <div class="s-field">
             <span class="s-label">Custom instructions</span>
-            <textarea id="s-quizPrompt" class="s-textarea"
+            <textarea id="s-quizPrompt" class="s-textarea" dir="auto"
               placeholder="e.g. Focus on clinical reasoning for medical students."></textarea>
           </div>
         </div>
@@ -1037,7 +1052,7 @@
           </div>
           <div class="s-field">
             <span class="s-label">Custom instructions</span>
-            <textarea id="s-flashcardsPrompt" class="s-textarea"
+            <textarea id="s-flashcardsPrompt" class="s-textarea" dir="auto"
               placeholder="e.g. Emphasize key terms and definitions."></textarea>
           </div>
         </div>
@@ -1108,7 +1123,7 @@
           </div>
           <div class="s-field">
             <span class="s-label">Custom instructions</span>
-            <textarea id="s-infographicPrompt" class="s-textarea"
+            <textarea id="s-infographicPrompt" class="s-textarea" dir="auto"
               placeholder="e.g. Use a horizontal timeline layout with large icons."></textarea>
           </div>
         </div>
@@ -1145,7 +1160,7 @@
           </div>
           <div class="s-field">
             <span class="s-label">Custom instructions</span>
-            <textarea id="s-slideDeckPrompt" class="s-textarea"
+            <textarea id="s-slideDeckPrompt" class="s-textarea" dir="auto"
               placeholder="e.g. Design for a 15-minute conference presentation."></textarea>
           </div>
         </div>
@@ -1178,7 +1193,7 @@
         <div class="s-section-content">
           <div class="s-field">
             <span class="s-label">Custom instructions</span>
-            <textarea id="s-dataTablePrompt" class="s-textarea"
+            <textarea id="s-dataTablePrompt" class="s-textarea" dir="auto"
               placeholder="e.g. Extract all numerical results into a comparison table."></textarea>
           </div>
         </div>
