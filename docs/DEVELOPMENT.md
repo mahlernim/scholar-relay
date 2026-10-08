@@ -601,6 +601,18 @@ Queue help describes system behavior, and the queued, preparing, and accepted hi
 
 The catalog has 278 messages. New and changed rows were translated from the English source for all nine other locales, reusing each catalog's existing notebook and queue terms. Case-only renames keep their previous translations. Translations are machine-assisted without native-speaker review. Product labels such as Audio Overview and Deep Dive are unchanged.
 
+### September 30 queue outcome wording
+
+Issue #105 aligns queue phases, hints and animation with task outcomes. Generating requires a known task ID with an in-progress status. Unresolved-only jobs show Needs checking without activity animation. Confirmed failed requests use a failure-specific hint, while uncertain outcomes keep inspection guidance. Ready is reserved for completed results or a completed source-only import. Existing counts and the priority of permission, generation-limit and server-wait guidance remain intact. These are presentation changes and do not alter mutations, polling, ownership or cancellation.
+
+The [wording review](localization/reviews/issue-105/README.md) retains a shared semantic prompt, independent Opus and Gemini proposals, model provenance and Astra's final choices. The requested Opus 6 model was unavailable. Claude's supported `opus` selection reported `claude-opus-5-5`. The Gemini client selected `gemini-3.8-flash-high` but did not return a served model ID. An explicitly selected `gpt-6-astra` reviewer compared both proposals and the existing catalogs. This narrow review does not complete the full Simplified Chinese audit in #87 or constitute native-speaker validation.
+
+Baseline probes reproduced Generating with animation for all-uncertain tasks and Ready for completed jobs containing failures. Focused regression fixtures cover those cases, mixed active and uncertain tasks, all-completed polling, source-only completion and hint priority. The real popup smoke includes all eleven locales at 320 and 360 pixels. Release versions, published packages and store materials are not changed by this PR.
+
+한국어
+
+대기열의 단계와 안내 문구가 작업 결과에 맞게 표시되도록 수정했습니다. 실제로 진행 중인 작업이 확인된 경우에만 생성 중 표시와 애니메이션을 사용합니다. 결과가 불확실하거나 실패한 요청이 있으면 확인 필요로 표시하고, 확인된 실패에는 별도 안내를 제공합니다. 완료 개수와 기존 복구 안내의 우선순위는 유지합니다. Opus와 Gemini의 독립 번역 제안을 Astra가 비교한 최종 문구와 선택 이유를 저장했으며, 원어민 검수나 중국어 간체 전체 검토를 완료했다는 의미는 아닙니다.
+
 ### October 8 RPC outcomes and session recovery
 
 Issue #91 closes the remaining HTTP 401/403 mutation replay path. Every sent write now retains an uncertain outcome while a shared credential refresh prepares later calls. A refresh failure cannot replace that uncertainty. URL and collection imports can still reconcile confirmed results with reads, and a failed reconciliation preserves the original outcome. Read RPCs retain one authentication replay. Cancellation during refresh preserves the notebook and prevents the next artifact request.

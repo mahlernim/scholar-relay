@@ -794,7 +794,7 @@
     "description": "Notebook $1 is partially ready. $2/$3 artifacts ready, $4 failed. Click to open."
   },
   "ui_6fa973d2": {
-    "message": "Requiere comprobación",
+    "message": "Requiere revisión",
     "description": "Needs checking"
   },
   "ui_dccf5581": {
@@ -880,6 +880,10 @@
   "ui_e5cfc00b": {
     "message": "Algunas solicitudes pueden seguir ejecutándose en Gemini Notebook. Consulta el resultado en este cuaderno.",
     "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
+  },
+  "ui_423ddda2": {
+    "message": "Hay solicitudes que fallaron. Consulta este cuaderno para ver los detalles.",
+    "description": "Some requests failed. Check this notebook for details."
   },
   "ui_314695f8": {
     "message": "Los resultados están listos. Puedes pasar a otro artículo.",

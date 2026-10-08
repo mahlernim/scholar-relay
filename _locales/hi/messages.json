@@ -878,8 +878,12 @@
     "description": "This paper needs attention. Other queued papers can continue."
   },
   "ui_e5cfc00b": {
-    "message": "कुछ अनुरोध Gemini Notebook में अभी चल सकते हैं। परिणाम के लिए यह नोटबुक देखें।",
+    "message": "हो सकता है कि कुछ अनुरोध Gemini Notebook में अभी भी चल रहे हों। परिणाम के लिए इस नोटबुक को देखें।",
     "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
+  },
+  "ui_423ddda2": {
+    "message": "कुछ अनुरोध विफल हो गए। विवरण के लिए इस नोटबुक को देखें।",
+    "description": "Some requests failed. Check this notebook for details."
   },
   "ui_314695f8": {
     "message": "सामग्री तैयार है। आप अगले शोधपत्र पर जा सकते हैं।",

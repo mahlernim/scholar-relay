@@ -27,6 +27,12 @@ The audio articles also expose localized links to video, infographic, and slide-
 
 Hindi is an editorial translation. Placeholder and layout checks do not constitute independent native-speaker review.
 
+## Independent wording review
+
+For issue #105, Opus and Gemini received the same English strings and queue-state context independently. Astra compared both proposals with the existing catalogs and saved the selected wording and reasons in the [review record](reviews/issue-105/README.md). The record includes model provenance and the unavailable Opus 6 attempt. It does not represent native-speaker review or direct inspection of Google's localized interface.
+
+Use this process for the separate full Simplified Chinese audit in #87. Supply verified `hl=zh-CN` interface terms as evidence, retain both proposals, and save Astra's decisions in `reviews/issue-87/` with the implementation PR. Product UI evidence takes precedence over model agreement. Preserve placeholders, regenerate catalogs and check the affected interface before closing the issue.
+
 ## Validation
 
 The isolated Chrome smoke uses the real popup with shipped catalogs under deterministic locale fixtures. It checks eleven locales, expanded settings overflow at 360 pixels, translated completion, permission and uncertain-result states, saved output language with audio disabled, unchanged user prompts and titles, and accessible toggle labels. Its screenshots and machine-readable report go to ignored `dist/localization-qa/`. This is controlled UI validation, not live Google generation in eleven languages or independent native-speaker certification.

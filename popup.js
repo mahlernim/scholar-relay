@@ -1,7 +1,7 @@
 import { pdfWaitReason } from './source-import.js';
 import { canRecoverPageText } from './page-text.js';
 import { activeUsage, actionLimited, formatReset } from './usage.js';
-import { jobHandoff, isUnfinishedJob, jobElapsedText, jobReadyCount, hasJobActivity } from './job-queue.js';
+import { jobHandoff, jobPhase, isUnfinishedJob, jobElapsedText, jobReadyCount, hasJobActivity } from './job-queue.js';
 import { DEFAULT_SETTINGS as DEFAULTS } from './settings.js';
 import { t, localizeStaticDocument, progressDetail, errorSummary, generationLimitSummary, pdfWaitSummary, artifactLabel, artifactStatusLabel } from './i18n.js';
 import { inspectPaperPage } from './content.js';
@@ -96,18 +96,18 @@ function handoffMessage(job) {
         preparing: t('You can close this popup, but keep Chrome open until generation starts.'),
         attention: t('This paper needs attention. Other queued papers can continue.'),
         check: t('Some requests may still be running in Gemini Notebook. Check this notebook for the result.'),
+        failed: t('Some requests failed. Check this notebook for details.'),
         ready: t('Artifacts are ready. You can move on to another paper.'),
     }[jobHandoff(job)];
 }
 
 function queuePhase(job) {
     if (job.status === 'queued' && queueSnapshot.serviceBlock) return t('Connection needed');
-    if (job.status === 'queued' || job.step === 'queued_pdf') return t('Queued');
-    if (job.status === 'completed') return t('Ready');
-    if (job.status === 'stopped') return t('Stopped');
-    if (job.step === 'wait_pdf_access' && job.status === 'running') return t('Action needed');
-    if (job.status === 'error') return t('Needs checking');
-    return job.step === 'wait_artifacts' ? t('Generating') : t('Preparing');
+    return {
+        queued: t('Queued'), ready: t('Ready'), stopped: t('Stopped'),
+        attention: t('Action needed'), check: t('Needs checking'),
+        generating: t('Generating'), preparing: t('Preparing'),
+    }[jobPhase(job)];
 }
 
 function queueStatusHtml(job) {

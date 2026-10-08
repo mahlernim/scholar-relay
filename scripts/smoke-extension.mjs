@@ -8,6 +8,7 @@ import { createHash } from 'node:crypto';
 import { localizationSmoke } from './localization-smoke.mjs';
 import { usageRecoverySmoke } from './usage-recovery-smoke.mjs';
 import { recoverySmoke, compactProgressSmoke, generationLimitSmoke, pdfWaitSmoke } from './review-smoke.mjs';
+import { queueStatusSmoke } from './queue-status-smoke.mjs';
 
 const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const tempRoot = await mkdtemp(join(tmpdir(), 'scholar-relay-smoke-'));
@@ -485,6 +486,7 @@ try {
   await localizationSmoke({ popup, evaluate, reload, root: sourceRoot, completedState });
   await recoverySmoke({ popup, evaluate, reload, completedState });
   await compactProgressSmoke({ popup, evaluate, reload, root: sourceRoot, origin });
+  await queueStatusSmoke({ popup, evaluate, reload, root: sourceRoot });
   await generationLimitSmoke({ popup, evaluate, reload, root: sourceRoot, completedState });
   await pdfWaitSmoke({ popup, evaluate, reload, root: sourceRoot, completedState });
   await usageRecoverySmoke({ popup, evaluate, reload, root: sourceRoot, origin });

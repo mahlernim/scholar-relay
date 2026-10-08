@@ -881,6 +881,10 @@
     "message": "部分要求可能仍在 Gemini Notebook 中執行。請查看這個筆記本的結果。",
     "description": "Some requests may still be running in Gemini Notebook. Check this notebook for the result."
   },
+  "ui_423ddda2": {
+    "message": "有要求失敗。請在這個筆記本中查看詳細資料。",
+    "description": "Some requests failed. Check this notebook for details."
+  },
   "ui_314695f8": {
     "message": "工作室內容已就緒。你可以繼續處理其他論文。",
     "description": "Artifacts are ready. You can move on to another paper."
