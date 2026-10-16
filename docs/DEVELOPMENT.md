@@ -664,3 +664,18 @@ Validation passed 290 automated tests, thirteen-language Chrome smoke at 320/360
 기존 조회에서 제공되는 재생 시간과 개수를 상세 행에 표시하고 부분 응답에서도 기존 정보를 보존합니다. 오디오의 요청 및 반환 설정은 작업과 함께 로컬에 보관하며 시작 전 요약에 선택한 길이를 표시합니다. 25분 11초 사례는 사용자 설정과 서버 모두 기본 길이로 확인되어 #109를 수정 없이 종료했습니다. 요청 형식 변경이나 자동 재생성은 추가하지 않았습니다.
 
 자동 테스트 290개, 13개 언어의 320/360 픽셀 화면, 대기열과 복구, 저장된 오디오 길이, 아랍어 레이아웃과 40 MiB 전송을 검증했습니다. 네덜란드어와 중국어 스토어 스크린샷을 확인했습니다. 버전은 패치 1.5.4이며 허용된 런타임 파일은 39개입니다. PR과 병합된 main의 CI를 확인한 뒤 초안 릴리스를 준비하며 공개와 스토어 제출은 진행하지 않습니다.
+
+
+### October 16 v1.5.4 publication and store submission
+
+The user authorized publication and store submission after the draft preparation. [v1.5.4](https://github.com/mahlernim/scholar-relay/releases/tag/v1.5.4) is published from commit `a4ff399bf595735a4d938a6ef75983bd79bb555d`. Exact PR-head CI run 38863317383 and merged-main CI run 38863757658 passed. The public release download matches the verified ZIP, with 39 allowlisted entries and 222659 bytes.
+
+SHA-256 `f919696afb1b62b3dbd92355104e74723e4623a0e4d2de053234616f2a2aae5f`
+
+The same ZIP was uploaded once to existing Chrome Web Store item `epopghhfmpokhbalmnfcopmplffphdbb`. Upload returned SUCCEEDED for 1.5.4. The dashboard saved all thirteen descriptions, the new Dutch listing and three Dutch screenshots, and three replacement Simplified Chinese screenshots. Readback matched each description after line-ending normalization. Both localized screenshot sets were visually verified. The dashboard submission succeeded with automatic publication after approval enabled. A subsequent API read confirmed submitted 1.5.4 as PENDING_REVIEW and published 1.5.3 at 100%, with neither warning nor takedown flags. Pending review is not public store availability. Issue #66 stays open for post-publication search evidence, and #95 retains its live video and slide metadata validation follow-up.
+
+한국어
+
+초안 준비 후 사용자의 공개 및 제출 승인을 받아 커밋 `a4ff399bf595735a4d938a6ef75983bd79bb555d`의 v1.5.4를 GitHub에 공개했습니다. PR 최종 커밋과 병합된 main의 CI가 통과했습니다. 공개 다운로드의 허용 파일 39개, 크기 222659바이트와 위 SHA-256이 검증한 ZIP과 일치합니다.
+
+같은 ZIP을 기존 Chrome 웹 스토어 항목에 한 번 업로드하여 1.5.4의 SUCCEEDED 응답을 확인했습니다. 13개 언어 설명, 네덜란드어 목록과 스크린샷 3개, 교체한 중국어 간체 스크린샷 3개를 저장하고 대조했습니다. 승인 후 자동 공개를 설정하여 제출했으며 후속 API 조회에서 1.5.4는 PENDING_REVIEW, 공개 버전은 1.5.3의 100% 배포로 확인했습니다. 경고나 게시 중단 표시는 없습니다. 심사 대기는 스토어 공개 완료가 아닙니다. #66의 공개 후 검색 확인과 #95의 실제 동영상 및 슬라이드 메타데이터 검증은 계속 열어 둡니다.
