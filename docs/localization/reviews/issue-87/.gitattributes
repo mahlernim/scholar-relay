@@ -1,0 +1,10 @@
+# Preserve exact bytes covered by the frozen SHA-256 evidence record.
+input-zh_CN.json -text
+prompt.txt -text
+supplement-prompt.txt -text
+terminology-evidence.txt -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+opus-raw.json -text
+gemini-raw.json -text
+opus-supplement-raw.json -text
+gemini-supplement-raw.json -text
+final-decisions.json -text

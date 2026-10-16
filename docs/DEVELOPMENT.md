@@ -647,3 +647,20 @@ The manifest and package version are 1.5.3. The release ZIP adds only the Arabic
 ### October 16 status message trim
 
 The source-processing step reads Waiting for source processing... like the other step labels. The polling interval does not help users act and is no longer shown. The artifact step drops its rounded elapsed-minutes line because the queue card already shows a live elapsed clock. Fourteen catalog rows left from removed controls are deleted from every locale. Remaining translations are unchanged, and the shortened wait label reuses each locale's existing first sentence.
+
+
+### October 16 v1.5.4 draft patch
+
+PR #111 removes redundant polling and elapsed-minute text and unused catalog rows. Its merged changes are reconciled with the full Simplified Chinese audit, retaining the frozen independent proposals and a separate reconciliation record for the 279 active keys. Dutch adds a complete catalog, notifications, metadata, store copy and three screenshots, bringing support to thirteen interface languages. The output-language selector and protocol values remain unchanged.
+
+Artifact details now show available duration and counts from existing reads. Partial polling preserves earlier metadata. Compact submitted and returned audio options remain local with each task. The start summary includes the selected audio length. The reported 25:11 case was confirmed as Default by both returned configuration and the user. Issue #109 closed without a fix. No wire-format change or automatic regeneration was added. Live coverage and synthetic-only video and slide coverage are recorded in [artifact evidence](releases/v1.5.4-artifact-evidence.md).
+
+Validation passed 290 automated tests, thirteen-language Chrome smoke at 320/360 pixels, queue and recovery checks, saved audio lengths, Arabic layout and the exact 40 MiB transfer. Dutch and Chinese store screenshots were visually inspected. This is a patch candidate with aligned manifest and package version 1.5.4, a 39-file package allowlist, and equivalent [English and Korean release notes](releases/v1.5.4.md). Exact-head and merged-main CI gate the draft release. Public release and Chrome Web Store submission are not authorized in this preparation task.
+
+한국어
+
+중복된 조회 주기와 경과 분 안내, 사용하지 않는 번역 항목을 제거한 PR #111을 중국어 간체 전체 검토 결과와 통합했습니다. 네덜란드어 화면, 알림, 메타데이터, 스토어 설명과 스크린샷을 추가하여 13개 화면 언어를 지원합니다. 결과물 언어 선택과 통신 값은 유지합니다.
+
+기존 조회에서 제공되는 재생 시간과 개수를 상세 행에 표시하고 부분 응답에서도 기존 정보를 보존합니다. 오디오의 요청 및 반환 설정은 작업과 함께 로컬에 보관하며 시작 전 요약에 선택한 길이를 표시합니다. 25분 11초 사례는 사용자 설정과 서버 모두 기본 길이로 확인되어 #109를 수정 없이 종료했습니다. 요청 형식 변경이나 자동 재생성은 추가하지 않았습니다.
+
+자동 테스트 290개, 13개 언어의 320/360 픽셀 화면, 대기열과 복구, 저장된 오디오 길이, 아랍어 레이아웃과 40 MiB 전송을 검증했습니다. 네덜란드어와 중국어 스토어 스크린샷을 확인했습니다. 버전은 패치 1.5.4이며 허용된 런타임 파일은 39개입니다. PR과 병합된 main의 CI를 확인한 뒤 초안 릴리스를 준비하며 공개와 스토어 제출은 진행하지 않습니다.
