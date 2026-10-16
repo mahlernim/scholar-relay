@@ -29,10 +29,6 @@
     "message": "아티팩트",
     "description": "Artifact"
   },
-  "ui_85cc8e29": {
-    "message": "경과 시간 $1분.",
-    "description": "Elapsed time: $1 min."
-  },
   "ui_5495106b": {
     "message": "시작 전에 설정에서 아티팩트를 하나 이상 선택하세요.",
     "description": "Choose at least one artifact in Settings before starting."
@@ -573,17 +569,9 @@
     "message": "PDF 감지됨",
     "description": "Detected PDF"
   },
-  "ui_f142f1c5": {
-    "message": "업로드 후 생성",
-    "description": "Upload & Generate"
-  },
   "ui_d2cac6f0": {
     "message": "다른 PDF 선택",
     "description": "Choose a different PDF"
-  },
-  "ui_3fac81f6": {
-    "message": "🎧 아티팩트 생성",
-    "description": "🎧 Generate Artifacts"
   },
   "ui_c277b27a": {
     "message": "이 페이지에서 PDF를 찾지 못했습니다.",
@@ -592,10 +580,6 @@
   "ui_f9bbdfd0": {
     "message": "이 페이지 URL을 직접 가져올 수 있습니다.",
     "description": "You can still try importing this page URL directly."
-  },
-  "ui_f544e784": {
-    "message": "페이지 가져오기 후 생성",
-    "description": "Import Page & Generate"
   },
   "ui_c104ecd": {
     "message": "로컬 PDF 업로드",
@@ -661,37 +645,13 @@
     "message": "아티팩트 $1개 완료!",
     "description": "Artifacts ready: $1!"
   },
-  "ui_1aadce96": {
-    "message": "이 노트북에서 계속하려면 다운로드를 허용하거나 PDF를 선택하세요.",
-    "description": "Allow the download or choose a PDF to continue in this notebook."
-  },
-  "ui_f5943c95": {
-    "message": "팝업을 닫아도 작업은 계속됩니다.",
-    "description": "You can close this popup. Work continues."
-  },
   "ui_f4a0bac0": {
     "message": "다운로드 허용 후 계속",
     "description": "Allow download and continue"
   },
-  "ui_dd6a9d74": {
-    "message": "대신 PDF 업로드",
-    "description": "Upload PDF Instead"
-  },
   "ui_9d9a1d5b": {
     "message": "다운로드 상세 내용",
     "description": "Download details"
-  },
-  "ui_92de1569": {
-    "message": "모니터링 중지",
-    "description": "Stop Monitoring"
-  },
-  "ui_59ba73c4": {
-    "message": "이 워크플로를 중지합니다. Gemini Notebook에서 이미 시작한 작업은 계속될 수 있습니다.",
-    "description": "Stops this workflow. Work already started in Gemini Notebook may continue."
-  },
-  "ui_a455e487": {
-    "message": "다시 시작",
-    "description": "Start Over"
   },
   "ui_61e2a3f8": {
     "message": "소스",
@@ -717,10 +677,6 @@
     "message": "⏳ 시작 중...",
     "description": "⏳ Starting..."
   },
-  "ui_dfcc9e32": {
-    "message": "업로드 중...",
-    "description": "Uploading..."
-  },
   "ui_1fb8851e": {
     "message": "현재 PDF 읽는 중...",
     "description": "Reading current PDF..."
@@ -745,9 +701,9 @@
     "message": "PDF 업로드 중...",
     "description": "Uploading PDF..."
   },
-  "ui_a5712967": {
-    "message": "소스 처리 대기 중. 약 30초마다 확인합니다.",
-    "description": "Waiting for source processing. Checking about every 30 seconds."
+  "ui_1f7dbb47": {
+    "message": "소스 처리 대기 중...",
+    "description": "Waiting for source processing..."
   },
   "ui_a31472dd": {
     "message": "아티팩트 요청 중...",
@@ -828,14 +784,6 @@
   "ui_c66a1109": {
     "message": "다른 논문 추가",
     "description": "Add another paper"
-  },
-  "ui_fc5bf3cc": {
-    "message": "대기열에서 제거",
-    "description": "Remove from queue"
-  },
-  "ui_6810ced4": {
-    "message": "이 작업 중지",
-    "description": "Stop this job"
   },
   "ui_acc12e9e": {
     "message": "대기열 일시정지",
@@ -941,10 +889,6 @@
     "message": "사용자 조치 대기",
     "description": "Waiting for you"
   },
-  "ui_f7066e40": {
-    "message": "작업 종료",
-    "description": "Dismiss job"
-  },
   "ui_47c21b54": {
     "message": "PDF 업로드하고 계속",
     "description": "Upload PDF and continue"
@@ -960,10 +904,6 @@
   "ui_56d74e8d": {
     "message": "PDF를 다운로드하지 못했습니다. PDF를 선택하면 기존 노트북에서 계속 진행합니다.",
     "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
-  },
-  "ui_9dab64e9": {
-    "message": "사용하지 않는 노트북 삭제",
-    "description": "Delete unused notebook"
   },
   "ui_97612a43": {
     "message": "Gemini Notebook에서 노트북을 삭제했습니다.",

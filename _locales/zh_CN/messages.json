@@ -29,10 +29,6 @@
     "message": "纹章",
     "description": "Artifact"
   },
-  "ui_85cc8e29": {
-    "message": "运行时间： $1 min.",
-    "description": "Elapsed time: $1 min."
-  },
   "ui_5495106b": {
     "message": "在开始之前，请在“设置”中至少选择一个学习资料。",
     "description": "Choose at least one artifact in Settings before starting."
@@ -573,17 +569,9 @@
     "message": "检测到PDF",
     "description": "Detected PDF"
   },
-  "ui_f142f1c5": {
-    "message": "上传并生成",
-    "description": "Upload & Generate"
-  },
   "ui_d2cac6f0": {
     "message": "选择其他PDF",
     "description": "Choose a different PDF"
-  },
-  "ui_3fac81f6": {
-    "message": "🎧 生成学习资料",
-    "description": "🎧 Generate Artifacts"
   },
   "ui_c277b27a": {
     "message": "在此页面上未检测到PDF。",
@@ -592,10 +580,6 @@
   "ui_f9bbdfd0": {
     "message": "您仍然可以尝试直接导入此页面网址。",
     "description": "You can still try importing this page URL directly."
-  },
-  "ui_f544e784": {
-    "message": "导入页面并生成",
-    "description": "Import Page & Generate"
   },
   "ui_c104ecd": {
     "message": "上传本地PDF",
@@ -661,37 +645,13 @@
     "message": "学习资料准备就绪： $1 ！",
     "description": "Artifacts ready: $1!"
   },
-  "ui_1aadce96": {
-    "message": "允许下载或选择PDF以在此笔记本中继续。",
-    "description": "Allow the download or choose a PDF to continue in this notebook."
-  },
-  "ui_f5943c95": {
-    "message": "您可以关闭此弹出窗口。工作继续。",
-    "description": "You can close this popup. Work continues."
-  },
   "ui_f4a0bac0": {
     "message": "允许下载并继续",
     "description": "Allow download and continue"
   },
-  "ui_dd6a9d74": {
-    "message": "改为上传PDF",
-    "description": "Upload PDF Instead"
-  },
   "ui_9d9a1d5b": {
     "message": "下载详情",
     "description": "Download details"
-  },
-  "ui_92de1569": {
-    "message": "停止监测",
-    "description": "Stop Monitoring"
-  },
-  "ui_59ba73c4": {
-    "message": "停止此工作流程。已在Gemini Notebook中启动的工作可能会继续。",
-    "description": "Stops this workflow. Work already started in Gemini Notebook may continue."
-  },
-  "ui_a455e487": {
-    "message": "重新开始",
-    "description": "Start Over"
   },
   "ui_61e2a3f8": {
     "message": "来源",
@@ -717,10 +677,6 @@
     "message": "开始...",
     "description": "⏳ Starting..."
   },
-  "ui_dfcc9e32": {
-    "message": "正在上传...",
-    "description": "Uploading..."
-  },
   "ui_1fb8851e": {
     "message": "正在读取当前PDF...",
     "description": "Reading current PDF..."
@@ -745,9 +701,9 @@
     "message": "正在上传PDF...",
     "description": "Uploading PDF..."
   },
-  "ui_a5712967": {
-    "message": "正在等待源处理。大约每30秒检查一次。",
-    "description": "Waiting for source processing. Checking about every 30 seconds."
+  "ui_1f7dbb47": {
+    "message": "正在等待源处理...",
+    "description": "Waiting for source processing..."
   },
   "ui_a31472dd": {
     "message": "正在请求学习资料...",
@@ -828,14 +784,6 @@
   "ui_c66a1109": {
     "message": "添加另一篇论文",
     "description": "Add another paper"
-  },
-  "ui_fc5bf3cc": {
-    "message": "从队列中删除",
-    "description": "Remove from queue"
-  },
-  "ui_6810ced4": {
-    "message": "停止此作业",
-    "description": "Stop this job"
   },
   "ui_acc12e9e": {
     "message": "暂停队列",
@@ -941,10 +889,6 @@
     "message": "等你",
     "description": "Waiting for you"
   },
-  "ui_f7066e40": {
-    "message": "关闭任务",
-    "description": "Dismiss job"
-  },
   "ui_47c21b54": {
     "message": "上传PDF并继续",
     "description": "Upload PDF and continue"
@@ -960,10 +904,6 @@
   "ui_56d74e8d": {
     "message": "无法下载PDF。选择一个PDF以在此笔记本中继续。",
     "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
-  },
-  "ui_9dab64e9": {
-    "message": "删除未使用的笔记本",
-    "description": "Delete unused notebook"
   },
   "ui_97612a43": {
     "message": "笔记本已从Gemini Notebook中删除。",

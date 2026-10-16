@@ -29,10 +29,6 @@
     "message": "Artifact",
     "description": "Artifact"
   },
-  "ui_85cc8e29": {
-    "message": "Elapsed time: $1 min.",
-    "description": "Elapsed time: $1 min."
-  },
   "ui_5495106b": {
     "message": "Choose at least one artifact in Settings before starting.",
     "description": "Choose at least one artifact in Settings before starting."
@@ -573,17 +569,9 @@
     "message": "Detected PDF",
     "description": "Detected PDF"
   },
-  "ui_f142f1c5": {
-    "message": "Upload & Generate",
-    "description": "Upload & Generate"
-  },
   "ui_d2cac6f0": {
     "message": "Choose a different PDF",
     "description": "Choose a different PDF"
-  },
-  "ui_3fac81f6": {
-    "message": "🎧 Generate Artifacts",
-    "description": "🎧 Generate Artifacts"
   },
   "ui_c277b27a": {
     "message": "No PDF detected on this page.",
@@ -592,10 +580,6 @@
   "ui_f9bbdfd0": {
     "message": "You can still try importing this page URL directly.",
     "description": "You can still try importing this page URL directly."
-  },
-  "ui_f544e784": {
-    "message": "Import Page & Generate",
-    "description": "Import Page & Generate"
   },
   "ui_c104ecd": {
     "message": "Upload local PDF",
@@ -661,37 +645,13 @@
     "message": "Artifacts ready: $1!",
     "description": "Artifacts ready: $1!"
   },
-  "ui_1aadce96": {
-    "message": "Allow the download or choose a PDF to continue in this notebook.",
-    "description": "Allow the download or choose a PDF to continue in this notebook."
-  },
-  "ui_f5943c95": {
-    "message": "You can close this popup. Work continues.",
-    "description": "You can close this popup. Work continues."
-  },
   "ui_f4a0bac0": {
     "message": "Allow download and continue",
     "description": "Allow download and continue"
   },
-  "ui_dd6a9d74": {
-    "message": "Upload PDF Instead",
-    "description": "Upload PDF Instead"
-  },
   "ui_9d9a1d5b": {
     "message": "Download details",
     "description": "Download details"
-  },
-  "ui_92de1569": {
-    "message": "Stop Monitoring",
-    "description": "Stop Monitoring"
-  },
-  "ui_59ba73c4": {
-    "message": "Stops this workflow. Work already started in Gemini Notebook may continue.",
-    "description": "Stops this workflow. Work already started in Gemini Notebook may continue."
-  },
-  "ui_a455e487": {
-    "message": "Start Over",
-    "description": "Start Over"
   },
   "ui_61e2a3f8": {
     "message": "Source",
@@ -717,10 +677,6 @@
     "message": "⏳ Starting...",
     "description": "⏳ Starting..."
   },
-  "ui_dfcc9e32": {
-    "message": "Uploading...",
-    "description": "Uploading..."
-  },
   "ui_1fb8851e": {
     "message": "Reading current PDF...",
     "description": "Reading current PDF..."
@@ -745,9 +701,9 @@
     "message": "Uploading PDF...",
     "description": "Uploading PDF..."
   },
-  "ui_a5712967": {
-    "message": "Waiting for source processing. Checking about every 30 seconds.",
-    "description": "Waiting for source processing. Checking about every 30 seconds."
+  "ui_1f7dbb47": {
+    "message": "Waiting for source processing...",
+    "description": "Waiting for source processing..."
   },
   "ui_a31472dd": {
     "message": "Requesting artifacts...",
@@ -828,14 +784,6 @@
   "ui_c66a1109": {
     "message": "Add another paper",
     "description": "Add another paper"
-  },
-  "ui_fc5bf3cc": {
-    "message": "Remove from queue",
-    "description": "Remove from queue"
-  },
-  "ui_6810ced4": {
-    "message": "Stop this job",
-    "description": "Stop this job"
   },
   "ui_acc12e9e": {
     "message": "Pause queue",
@@ -941,10 +889,6 @@
     "message": "Waiting for you",
     "description": "Waiting for you"
   },
-  "ui_f7066e40": {
-    "message": "Dismiss job",
-    "description": "Dismiss job"
-  },
   "ui_47c21b54": {
     "message": "Upload PDF and continue",
     "description": "Upload PDF and continue"
@@ -960,10 +904,6 @@
   "ui_56d74e8d": {
     "message": "The PDF could not be downloaded. Select a PDF to continue in this notebook.",
     "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
-  },
-  "ui_9dab64e9": {
-    "message": "Delete unused notebook",
-    "description": "Delete unused notebook"
   },
   "ui_97612a43": {
     "message": "Notebook deleted from Gemini Notebook.",
