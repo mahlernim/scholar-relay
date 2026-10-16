@@ -63,8 +63,6 @@ export function progressDetail(state) {
         const tasks = state.tasks || [];
         const summary = t('$1 of $2 artifacts ready.', [tasks.filter(task => task.status === 'completed').length, tasks.length]);
         const details = tasks.map(task => `${artifactLabel(task.type)} · ${artifactStatusLabel(task.status)}`);
-        const started = Date.parse(state.stepStartedAt);
-        if (Number.isFinite(started)) details.push(t('Elapsed time: $1 min.', [Math.max(0, Math.round((Date.now() - started) / 60000))]));
         return [summary, ...details].join('\n');
     }
     return t({
@@ -73,7 +71,7 @@ export function progressDetail(state) {
         add_source: 'Adding source...',
         download_pdf: 'Downloading PDF...',
         upload_pdf: 'Uploading PDF...',
-        wait_source: 'Waiting for source processing. Checking about every 30 seconds.',
+        wait_source: 'Waiting for source processing...',
         generate_artifacts: 'Requesting artifacts...',
         done: 'Workflow complete.',
     }[state.step] || 'Work in progress...');

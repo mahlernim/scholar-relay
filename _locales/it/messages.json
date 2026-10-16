@@ -29,10 +29,6 @@
     "message": "Contenuto generato",
     "description": "Artifact"
   },
-  "ui_85cc8e29": {
-    "message": "Tempo trascorso: $1 min.",
-    "description": "Elapsed time: $1 min."
-  },
   "ui_5495106b": {
     "message": "Scegli almeno un contenuto da generare nelle impostazioni prima di iniziare.",
     "description": "Choose at least one artifact in Settings before starting."
@@ -573,17 +569,9 @@
     "message": "PDF rilevato",
     "description": "Detected PDF"
   },
-  "ui_f142f1c5": {
-    "message": "Carica e genera",
-    "description": "Upload & Generate"
-  },
   "ui_d2cac6f0": {
     "message": "Scegli un altro PDF",
     "description": "Choose a different PDF"
-  },
-  "ui_3fac81f6": {
-    "message": "🎧 Genera contenuti",
-    "description": "🎧 Generate Artifacts"
   },
   "ui_c277b27a": {
     "message": "Nessun PDF rilevato in questa pagina.",
@@ -592,10 +580,6 @@
   "ui_f9bbdfd0": {
     "message": "Puoi comunque provare a importare direttamente l’URL della pagina.",
     "description": "You can still try importing this page URL directly."
-  },
-  "ui_f544e784": {
-    "message": "Importa la pagina e genera",
-    "description": "Import Page & Generate"
   },
   "ui_c104ecd": {
     "message": "Carica PDF locale",
@@ -661,37 +645,13 @@
     "message": "Contenuti pronti: $1!",
     "description": "Artifacts ready: $1!"
   },
-  "ui_1aadce96": {
-    "message": "Consenti il download o scegli un PDF per continuare in questo notebook.",
-    "description": "Allow the download or choose a PDF to continue in this notebook."
-  },
-  "ui_f5943c95": {
-    "message": "Puoi chiudere questa finestra. Il lavoro continua.",
-    "description": "You can close this popup. Work continues."
-  },
   "ui_f4a0bac0": {
     "message": "Consenti il download e continua",
     "description": "Allow download and continue"
   },
-  "ui_dd6a9d74": {
-    "message": "Carica un PDF in alternativa",
-    "description": "Upload PDF Instead"
-  },
   "ui_9d9a1d5b": {
     "message": "Dettagli del download",
     "description": "Download details"
-  },
-  "ui_92de1569": {
-    "message": "Interrompi il monitoraggio",
-    "description": "Stop Monitoring"
-  },
-  "ui_59ba73c4": {
-    "message": "Interrompe questo flusso di lavoro. Le attività già avviate in Gemini Notebook potrebbero continuare.",
-    "description": "Stops this workflow. Work already started in Gemini Notebook may continue."
-  },
-  "ui_a455e487": {
-    "message": "Ricomincia",
-    "description": "Start Over"
   },
   "ui_61e2a3f8": {
     "message": "Fonte",
@@ -717,10 +677,6 @@
     "message": "⏳ Avvio...",
     "description": "⏳ Starting..."
   },
-  "ui_dfcc9e32": {
-    "message": "Caricamento...",
-    "description": "Uploading..."
-  },
   "ui_1fb8851e": {
     "message": "Lettura del PDF corrente...",
     "description": "Reading current PDF..."
@@ -745,9 +701,9 @@
     "message": "Caricamento del PDF...",
     "description": "Uploading PDF..."
   },
-  "ui_a5712967": {
-    "message": "In attesa dell’elaborazione della fonte. Controllo ogni 30 secondi circa.",
-    "description": "Waiting for source processing. Checking about every 30 seconds."
+  "ui_1f7dbb47": {
+    "message": "In attesa dell’elaborazione della fonte...",
+    "description": "Waiting for source processing..."
   },
   "ui_a31472dd": {
     "message": "Richiesta di generazione dei contenuti...",
@@ -828,14 +784,6 @@
   "ui_c66a1109": {
     "message": "Aggiungi un altro articolo",
     "description": "Add another paper"
-  },
-  "ui_fc5bf3cc": {
-    "message": "Rimuovi dalla coda",
-    "description": "Remove from queue"
-  },
-  "ui_6810ced4": {
-    "message": "Interrompi questa attività",
-    "description": "Stop this job"
   },
   "ui_acc12e9e": {
     "message": "Metti in pausa la coda",
@@ -941,10 +889,6 @@
     "message": "In attesa del tuo intervento",
     "description": "Waiting for you"
   },
-  "ui_f7066e40": {
-    "message": "Rimuovi attività",
-    "description": "Dismiss job"
-  },
   "ui_47c21b54": {
     "message": "Carica PDF e continua",
     "description": "Upload PDF and continue"
@@ -960,10 +904,6 @@
   "ui_56d74e8d": {
     "message": "Impossibile scaricare il PDF. Scegli un PDF per continuare in questo notebook.",
     "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
-  },
-  "ui_9dab64e9": {
-    "message": "Elimina notebook inutilizzato",
-    "description": "Delete unused notebook"
   },
   "ui_97612a43": {
     "message": "Notebook eliminato da Gemini Notebook.",

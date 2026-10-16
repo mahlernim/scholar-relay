@@ -29,10 +29,6 @@
     "message": "アーティファクト",
     "description": "Artifact"
   },
-  "ui_85cc8e29": {
-    "message": "経過時間 $1 分。",
-    "description": "Elapsed time: $1 min."
-  },
   "ui_5495106b": {
     "message": "開始前に設定でアーティファクトを1つ以上選んでください。",
     "description": "Choose at least one artifact in Settings before starting."
@@ -573,17 +569,9 @@
     "message": "PDF を検出",
     "description": "Detected PDF"
   },
-  "ui_f142f1c5": {
-    "message": "アップロードして生成",
-    "description": "Upload & Generate"
-  },
   "ui_d2cac6f0": {
     "message": "別の PDF を選択",
     "description": "Choose a different PDF"
-  },
-  "ui_3fac81f6": {
-    "message": "🎧 アーティファクトを生成",
-    "description": "🎧 Generate Artifacts"
   },
   "ui_c277b27a": {
     "message": "このページに PDF が見つかりません。",
@@ -592,10 +580,6 @@
   "ui_f9bbdfd0": {
     "message": "このページの URL を直接インポートできます。",
     "description": "You can still try importing this page URL directly."
-  },
-  "ui_f544e784": {
-    "message": "ページをインポートして生成",
-    "description": "Import Page & Generate"
   },
   "ui_c104ecd": {
     "message": "ローカル PDF をアップロード",
@@ -661,37 +645,13 @@
     "message": "アーティファクト $1 件完了！",
     "description": "Artifacts ready: $1!"
   },
-  "ui_1aadce96": {
-    "message": "このノートブックで続けるにはダウンロードを許可するか PDF を選んでください。",
-    "description": "Allow the download or choose a PDF to continue in this notebook."
-  },
-  "ui_f5943c95": {
-    "message": "このポップアップを閉じても処理は続きます。",
-    "description": "You can close this popup. Work continues."
-  },
   "ui_f4a0bac0": {
     "message": "ダウンロードを許可して続行",
     "description": "Allow download and continue"
   },
-  "ui_dd6a9d74": {
-    "message": "代わりに PDF をアップロード",
-    "description": "Upload PDF Instead"
-  },
   "ui_9d9a1d5b": {
     "message": "ダウンロードの詳細",
     "description": "Download details"
-  },
-  "ui_92de1569": {
-    "message": "モニタリングを停止",
-    "description": "Stop Monitoring"
-  },
-  "ui_59ba73c4": {
-    "message": "この処理を停止します。Gemini Notebook で開始済みの作業は続く場合があります。",
-    "description": "Stops this workflow. Work already started in Gemini Notebook may continue."
-  },
-  "ui_a455e487": {
-    "message": "最初から",
-    "description": "Start Over"
   },
   "ui_61e2a3f8": {
     "message": "ソース",
@@ -717,10 +677,6 @@
     "message": "⏳ 開始中...",
     "description": "⏳ Starting..."
   },
-  "ui_dfcc9e32": {
-    "message": "アップロード中...",
-    "description": "Uploading..."
-  },
   "ui_1fb8851e": {
     "message": "現在の PDF を読み込み中...",
     "description": "Reading current PDF..."
@@ -745,9 +701,9 @@
     "message": "PDF をアップロード中...",
     "description": "Uploading PDF..."
   },
-  "ui_a5712967": {
-    "message": "ソースの処理を待機中。約30秒ごとに確認します。",
-    "description": "Waiting for source processing. Checking about every 30 seconds."
+  "ui_1f7dbb47": {
+    "message": "ソースの処理を待機中...",
+    "description": "Waiting for source processing..."
   },
   "ui_a31472dd": {
     "message": "アーティファクトをリクエスト中...",
@@ -828,14 +784,6 @@
   "ui_c66a1109": {
     "message": "別の論文を追加",
     "description": "Add another paper"
-  },
-  "ui_fc5bf3cc": {
-    "message": "キューから削除",
-    "description": "Remove from queue"
-  },
-  "ui_6810ced4": {
-    "message": "このジョブを停止",
-    "description": "Stop this job"
   },
   "ui_acc12e9e": {
     "message": "キューを一時停止",
@@ -941,10 +889,6 @@
     "message": "操作を待っています",
     "description": "Waiting for you"
   },
-  "ui_f7066e40": {
-    "message": "ジョブを終了",
-    "description": "Dismiss job"
-  },
   "ui_47c21b54": {
     "message": "PDF をアップロードして続行",
     "description": "Upload PDF and continue"
@@ -960,10 +904,6 @@
   "ui_56d74e8d": {
     "message": "PDF をダウンロードできませんでした。PDF を選択して、このノートブックで続行してください。",
     "description": "The PDF could not be downloaded. Select a PDF to continue in this notebook."
-  },
-  "ui_9dab64e9": {
-    "message": "未使用のノートブックを削除",
-    "description": "Delete unused notebook"
   },
   "ui_97612a43": {
     "message": "Gemini Notebook からノートブックを削除しました。",

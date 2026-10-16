@@ -643,3 +643,7 @@ The manifest and package version are 1.5.3. The release ZIP adds only the Arabic
 한국어
 
 검토된 대기열 결과 문구와 RPC 안전장치를 반영하고 패치 버전 1.5.3으로 준비했습니다. 아랍어 화면 문구 292개, 메타데이터, 알림, 스토어 설명과 스크린샷을 추가하여 열두 개 언어를 지원합니다. 별도의 의미 검토와 공식 아랍어 도움말 용어 확인을 진행했으며 원어민 검수는 아닙니다. 아랍어 레이아웃과 스위치 이동을 반전하고, 지원하지 않는 언어의 영어 대체 화면은 왼쪽에서 오른쪽 방향을 유지합니다. 사용자 제목, 모음 이름, URL, 프롬프트의 원래 값은 보존합니다. 좁은 화면과 혼합 문자, 키보드 조작, 저장된 설정과 기존 복구 상태를 검증합니다. 스토어 제출과 승인, 실제 공개는 구분하여 기록하며 검색 확인이 필요한 #66은 계속 열어 둡니다.
+
+### October 16 status message trim
+
+The source-processing step reads Waiting for source processing... like the other step labels. The polling interval does not help users act and is no longer shown. The artifact step drops its rounded elapsed-minutes line because the queue card already shows a live elapsed clock. Fourteen catalog rows left from removed controls are deleted from every locale. Remaining translations are unchanged, and the shortened wait label reuses each locale's existing first sentence.
