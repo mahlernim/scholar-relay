@@ -1112,5 +1112,13 @@
   "ui_4a3d4bfb": {
     "message": "Warte, bis die Warteschlange fortgesetzt oder ein anderer Auftrag vorbereitet wurde.",
     "description": "Wait for the queue to resume or finish preparing another job."
+  },
+  "ui_f94ac83e": {
+    "message": "Folien $1",
+    "description": "Slides $1"
+  },
+  "ui_b5c1611c": {
+    "message": "Quellen $1",
+    "description": "Sources $1"
   }
 }

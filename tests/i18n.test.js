@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
-import { messageKey, t, progressDetail, errorSummary, generationLimitSummary } from '../i18n.js';
+import { messageKey, t, progressDetail, errorSummary, generationLimitSummary, artifactMetadataText } from '../i18n.js';
 
 const locales = ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW', 'hi', 'ar'];
 const rows = JSON.parse(await readFile(new URL('../docs/localization/messages.json', import.meta.url), 'utf8'));
@@ -10,6 +10,14 @@ const sourceCatalogs = Object.fromEntries(await Promise.all(['zh_CN', 'it', 'zh_
     JSON.parse(await readFile(new URL(`../docs/localization/${locale}.json`, import.meta.url), 'utf8'))])));
 const catalogs = Object.fromEntries(await Promise.all(locales.map(async locale => [locale,
     JSON.parse(await readFile(new URL(`../_locales/${locale}/messages.json`, import.meta.url), 'utf8'))])));
+
+test('artifact metadata formats playback duration and optional counts without inferring length', () => {
+    assert.equal(artifactMetadataText({ durationSeconds: 1511.9, sourceCount: 1 }), '25:11 · Sources 1');
+    assert.equal(artifactMetadataText({ durationSeconds: 3661 }), '1:01:01');
+    assert.equal(artifactMetadataText({ durationSeconds: 0, slideCount: 0 }), '0:00 · Slides 0');
+    assert.equal(artifactMetadataText({ durationSeconds: NaN, sourceCount: -1, slideCount: 1.2 }), '');
+    assert.equal(artifactMetadataText({ submittedAudioOptions: { length: 3 } }), '');
+});
 
 test('generation limits name only confirmed failed artifacts and retain legacy codes', () => {
     const limited = { type: 'audio', status: 'failed', code: 'RATE_LIMITED' };

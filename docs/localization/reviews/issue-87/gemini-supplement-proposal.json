@@ -1,0 +1,15 @@
+{
+  "translations": {
+    "Slides $1": "幻灯片 $1",
+    "Sources $1": "来源 $1"
+  },
+  "rationale": {
+    "Slides $1": "Uses 幻灯片 to designate slide units in alignment with the observed NotebookLM term 演示用幻灯片. It functions as a neutral count label without implying that the deck is complete or ready, and it preserves $1 verbatim.",
+    "Sources $1": "Adopts 来源 directly from the verified hl=zh-CN interface term for Sources. It provides a compact label for item counts without implying complete or successful import, and it preserves $1 verbatim."
+  },
+  "terminology_caveats": {
+    "shared_Length": "Recommend 长度 for the shared key to cover both audio and slides neutrally, avoiding audio-only 时长 or slide-only 页数.",
+    "shared_Detailed": "Recommend 详细 as a flexible shared modifier across infographic detail and slide format, avoiding format-locked strings like 详细演示文稿.",
+    "slide_specific_Presenter": "Recommend 演示用 for slide format contexts based on the observed 演示用幻灯片 interface label, or 演示者 if strictly referencing the speaker role."
+  }
+}

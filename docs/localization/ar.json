@@ -275,5 +275,7 @@
   "Page text could not be read.": "تعذّرت قراءة نص الصفحة.",
   "Page text could not be imported. Check the existing notebook.": "تعذّر استيراد نص الصفحة. تحقّق من الدفتر الحالي.",
   "Page text": "نص الصفحة",
-  "Wait for the queue to resume or finish preparing another job.": "انتظر استئناف القائمة أو انتهاء تحضير مهمة أخرى."
+  "Wait for the queue to resume or finish preparing another job.": "انتظر استئناف القائمة أو انتهاء تحضير مهمة أخرى.",
+  "Slides $1": "الشرائح $1",
+  "Sources $1": "المصادر $1"
 }

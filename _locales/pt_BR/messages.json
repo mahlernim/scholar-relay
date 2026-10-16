@@ -1112,5 +1112,13 @@
   "ui_4a3d4bfb": {
     "message": "Aguarde a retomada da fila ou o fim da preparação de outro trabalho.",
     "description": "Wait for the queue to resume or finish preparing another job."
+  },
+  "ui_f94ac83e": {
+    "message": "Slides $1",
+    "description": "Slides $1"
+  },
+  "ui_b5c1611c": {
+    "message": "Fontes $1",
+    "description": "Sources $1"
   }
 }

@@ -11,6 +11,8 @@ import {
   ensureTokens,
   fetchTokens,
   generateAudio,
+  AudioLength,
+  AudioFormat,
   generateDataTable,
   generateFlashcards,
   generateInfographic,
@@ -603,6 +605,54 @@ test('all CREATE_ARTIFACT builders use the full capability envelope', async () =
   assert.equal(captured.length, 8);
   for (const params of captured) {
     assert.deepEqual(params[0], __testing.artifactClientOptions());
+  }
+});
+
+test('English audio lengths retain native request positions with explicit and default options', async () => {
+  const captured = [];
+  installFetch((url, options) => {
+    if (url.endsWith('/')) return tokenResponse();
+    captured.push(decodeRpcParams(options));
+    return rpcResponse(__testing.RPCMethod.CREATE_ARTIFACT, [['artifact-id-12345']]);
+  });
+  for (const length of [AudioLength.SHORT, AudioLength.DEFAULT, AudioLength.LONG]) {
+    await generateAudio('notebook-id-12345', ['source-id-12345'], 'en', length, AudioFormat.DEEP_DIVE, 'Focus on methods');
+    assert.deepEqual(captured.at(-1)[2][6], [null, ['Focus on methods', length, null, [['source-id-12345']], 'en', null, 1]]);
+  }
+  await generateAudio('notebook-id-12345', ['source-id-12345']);
+  assert.equal(captured.at(-1)[2][6][1][1], 3);
+});
+
+test('artifact metadata decodes duration and counts without retaining prompts or source identifiers', async () => {
+  const audio = ['audio-id', 'Title', 1, [[['source-id']]], 3];
+  // Sanitized October 16 live shape. Text and identifiers are synthetic.
+  audio[6] = [null, ['private prompt', 2, null, [['source-id']], 'en', null, 1], null, null, null,
+    [['https://example.org/audio.m4a']], [1511, 80000000]];
+  const video = ['video-id', 'Title', 3, [], 3];
+  video[8] = [null, null, null, null, [], [0]];
+  const slides = ['slides-id', 'Title', 8, [[['source-id']]], 3];
+  slides[16] = [null, null, [[['https://example.org/slide.png'], 'alt', 'text']], 'https://example.org/slides.pdf'];
+  installFetch((url) => url.endsWith('/') ? tokenResponse() : rpcResponse(__testing.RPCMethod.LIST_ARTIFACTS, [[audio, video, slides]]));
+  const result = await listArtifactStatuses('notebook-id');
+  assert.equal(result.get('audio-id').durationSeconds, 1511.08);
+  assert.equal(result.get('audio-id').sourceCount, 1);
+  assert.deepEqual(result.get('audio-id').serverAudioOptions, { length: 2, language: 'en', format: 1, instructionsPresent: true });
+  assert.equal(result.get('video-id').durationSeconds, 0);
+  assert.equal(result.get('video-id').sourceCount, 0);
+  assert.equal(result.get('slides-id').slideCount, 1);
+  assert.doesNotMatch(JSON.stringify([...result.values()]), /private prompt|source-id|example.org/);
+});
+
+test('malformed and absent metadata stays unknown without breaking status reads', async () => {
+  for (const duration of [null, [], [-1], ['10'], [true], [NaN], [Infinity], [1, -1], [1, 1e9], [1, '2'], [1, 2, 3]]) {
+    const audio = ['audio-id', 'Title', 1, [null], 3];
+    audio[6] = [null, [null, 99, null, null, 'bad language', null, 9], null, null, null, [['https://example.org/audio']], duration];
+    installFetch((url) => url.endsWith('/') ? tokenResponse() : rpcResponse(__testing.RPCMethod.LIST_ARTIFACTS, [[audio]]));
+    const item = (await listArtifactStatuses('notebook-id')).get('audio-id');
+    assert.equal(item.status, 'completed');
+    assert.equal(item.durationSeconds, undefined);
+    assert.equal(item.sourceCount, undefined);
+    assert.deepEqual(item.serverAudioOptions, { instructionsPresent: false });
   }
 });
 

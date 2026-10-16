@@ -20,7 +20,10 @@ export async function localizationSmoke({ popup, evaluate, reload, root, complet
         ` });
         try {
             const title = 'Settings "<Source>" $1';
-            await evaluate(popup, `globalThis.__smoke.setFixtureState(${JSON.stringify({ ...completedState, notebookTitle: title })}, {userSettings:{language:'ko',generateAudio:false,generateInfographic:true,audioPrompt:'Keep my prompt $1'}})`);
+            const withMetadata = { ...completedState, notebookTitle: title,
+                tasks: completedState.tasks.map((task, index) => ({ ...task, ...(index === 0
+                    ? { durationSeconds: 1511.5, sourceCount: 1 } : { slideCount: 12 }) })) };
+            await evaluate(popup, `globalThis.__smoke.setFixtureState(${JSON.stringify(withMetadata)}, {userSettings:{language:'ko',generateAudio:false,generateInfographic:true,audioPrompt:'Keep my prompt $1'}})`);
             await reload(popup);
   await evaluate(popup, `document.querySelector('[data-show]')?.click()`);
             const done = await evaluate(popup, `({title:document.querySelector('.nb-title').textContent,
@@ -29,6 +32,18 @@ export async function localizationSmoke({ popup, evaluate, reload, root, complet
             assert(done.title === title, `${locale} translated user content`);
             assert(done.text.includes(expected('Artifacts ready: $1!').replace('$1','2')), `${locale} completion not translated`);
             assert(done.width <= 360 && done.bottom <= 600, `${locale} completion overflow`);
+            for (const width of [320, 360]) {
+                await popup.call('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
+                const metadata = await evaluate(popup, `(() => {
+                    const details=document.querySelector('.workflow-details'); details.open=true;
+                    return {text:details.innerText,width:document.documentElement.scrollWidth};
+                })()`);
+                assert(metadata.text.includes('25:11') && metadata.text.includes(expected('Slides $1').replace('$1','12'))
+                    && metadata.text.includes(expected('Sources $1').replace('$1','1')), `${locale} missing artifact metadata`);
+                assert(metadata.width <= width, `${locale} artifact metadata overflow at ${width}`);
+            }
+            await evaluate(popup, `document.querySelector('.workflow-details').open=false`);
+            await popup.call('Emulation.setDeviceMetricsOverride', { width: 360, height: 600, deviceScaleFactor: 1, mobile: false });
             await popup.call('Page.bringToFront');
             const screen = await popup.call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
             await writeFile(join(out, `${locale}-complete.png`), Buffer.from(screen.data, 'base64'));
@@ -45,6 +60,27 @@ export async function localizationSmoke({ popup, evaluate, reload, root, complet
             assert(settings.audio === expected('🎧 Audio Overview'), `${locale} audio terminology mismatch`);
             assert(settings.label === settings.audio, `${locale} missing localized toggle label`);
             assert(settings.language === 'ko' && settings.prompt === 'Keep my prompt $1', `${locale} changed saved output language or prompt`);
+            if (locale === 'en') {
+                for (const length of ['short', 'default', 'long']) {
+                    await evaluate(popup, `document.querySelector('input[name="audioLength"][value="${length}"]').click()`);
+                    let saved;
+                    for (let n = 0; n < 50; n++) {
+                        saved = await evaluate(popup, `(async () => (await chrome.storage.local.get('userSettings')).userSettings?.audioLength)()`);
+                        if (saved === length) break;
+                        await new Promise(resolve => setTimeout(resolve, 20));
+                    }
+                    assert(saved === length, `Audio ${length} selection was not saved`);
+                    await reload(popup);
+                    await evaluate(popup, `document.getElementById('btn-gear').click()`);
+                    let restored;
+                    for (let n = 0; n < 50; n++) {
+                        restored = await evaluate(popup, `document.querySelector('input[name="audioLength"]:checked')?.value`);
+                        if (restored === length) break;
+                        await new Promise(resolve => setTimeout(resolve, 20));
+                    }
+                    assert(restored === length, `Audio ${length} selection did not survive popup reload`);
+                }
+            }
             // Expand every group and inspect its scroll width, not just the visible top.
             const overflow = await evaluate(popup, `(() => {
                 document.querySelectorAll('.s-section').forEach(el=>el.classList.add('expanded'));

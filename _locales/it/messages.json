@@ -1112,5 +1112,13 @@
   "ui_4a3d4bfb": {
     "message": "Attendi che la coda riprenda o che termini la preparazione di un altro lavoro.",
     "description": "Wait for the queue to resume or finish preparing another job."
+  },
+  "ui_f94ac83e": {
+    "message": "Diapositive $1",
+    "description": "Slides $1"
+  },
+  "ui_b5c1611c": {
+    "message": "Fonti $1",
+    "description": "Sources $1"
   }
 }

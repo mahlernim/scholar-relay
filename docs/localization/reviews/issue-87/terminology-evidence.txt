@@ -1,0 +1,7 @@
+Read-only signed-in UI observed by the coordinating reviewer on 2026-10-16 at notebook.google.com with hl=zh-CN. Private notebook titles and IDs omitted.
+Studio labels: Audio Overview 音频概览, Slide Deck 演示文稿, Video Overview 视频概览, Mind Map 思维导图, Report 报告, Flashcards 闪卡, Quiz 测验, Infographic 信息图, Data Table 数据表格.
+Studio heading stays Studio. Source 来源, Add source 添加来源, notebook 笔记本, Settings 设置.
+Audio dialog: 自定义音频概览, Format 格式, Deep Dive 深入探究, Brief 摘要, Critique 评论, Debate 辩论, language 选择语言, 中文（简体）, Length 时长, Short 短, Default 默认, Sources 来源, 稍后生成 / 立即生成. Chinese output exposes Short/Default only in this observation.
+Generic Artifact was not directly observed. Use a natural extension umbrella term, without claiming it is Google's exact UI label.
+
+Later observations supplied after both independent proposals on 2026-10-16. Slide dialog: Detailed deck 详细演示文稿, Presenter slides 演示用幻灯片, AI usage AI 用量, usage meter 用量计量. Infographic dialog: orientation 横向 / 纵向 / 方形; automatic style 自动选择; Kawaii 可爱; Clay 泥塑风; Sketch note 手绘笔记; Anime 动漫; Editorial 编辑风; Instructional 教学风; Bento grid Bento 网格; Bricks 积木; Scientific 科学; Professional 专业; detail 详细程度 with 简短 / 标准 / 详细 BETA 版. BETA 版 denotes the observed UI badge and is not added to the extension label. These later observations inform Astra final decisions, not the original proposal prompts.

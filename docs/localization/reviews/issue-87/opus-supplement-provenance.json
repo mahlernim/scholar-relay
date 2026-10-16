@@ -1,0 +1,13 @@
+{
+  "provider": "opus",
+  "requested_model": "opus",
+  "invocation_utc": "2026-10-16T06:17:31.109844+00:00",
+  "prompt_sha256": "178d2ae76dee6765274b02caf1b4a898ad6677bcdc0db91d258c775de5367036",
+  "returncode": 0,
+  "independent_proposal": true,
+  "response_reported_model": [
+    "claude-opus-5-5"
+  ],
+  "raw_reply_sha256": "8b889d4565533e204d43da65297e62bd4387802661257c64d1d9f82204340b06",
+  "tools_policy": "No tools, strict MCP config, no session persistence"
+}

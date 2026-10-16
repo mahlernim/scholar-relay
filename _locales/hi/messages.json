@@ -1112,5 +1112,13 @@
   "ui_4a3d4bfb": {
     "message": "कतार फिर चलने या दूसरे कार्य की तैयारी पूरी होने तक प्रतीक्षा करें।",
     "description": "Wait for the queue to resume or finish preparing another job."
+  },
+  "ui_f94ac83e": {
+    "message": "स्लाइड $1",
+    "description": "Slides $1"
+  },
+  "ui_b5c1611c": {
+    "message": "स्रोत $1",
+    "description": "Sources $1"
   }
 }

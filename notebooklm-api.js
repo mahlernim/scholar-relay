@@ -1835,7 +1835,40 @@ function parseGenerationResult(result, expectedType = null) {
       status = 'in_progress';
   }
 
-  return { taskId: String(taskId), status };
+  return { taskId: String(taskId), status, ...artifactMetadata(artifactData) };
+}
+
+// Optional listing fields never determine readiness or imply a length fallback.
+function artifactMetadata(art) {
+  const metadata = {};
+  const type = art?.[2];
+  const duration = type === ArtifactTypeCode.AUDIO ? art?.[6]?.[6]
+    : type === ArtifactTypeCode.VIDEO ? art?.[8]?.[5] : null;
+  if (Array.isArray(duration) && duration.length >= 1 && duration.length <= 2) {
+    const [seconds, nanos = 0] = duration;
+    if (Number.isSafeInteger(seconds) && seconds >= 0 && Number.isInteger(nanos) && nanos >= 0 && nanos < 1e9) {
+      metadata.durationSeconds = seconds + nanos / 1e9;
+    }
+  }
+  const sources = art?.[3];
+  if (Array.isArray(sources) && sources.every(source => {
+    const id = Array.isArray(source?.[0]) ? source[0][0] : source?.[0];
+    return Array.isArray(source) && typeof id === 'string' && id.length > 0;
+  })) metadata.sourceCount = sources.length;
+  const slides = type === ArtifactTypeCode.SLIDE_DECK ? art?.[16]?.[2] : null;
+  if (Array.isArray(slides) && slides.every(slide => Array.isArray(slide) && isValidMediaUrl(slide?.[0]?.[0]))) {
+    metadata.slideCount = slides.length;
+  }
+  if (type === ArtifactTypeCode.AUDIO) {
+    const config = art?.[6]?.[1];
+    const options = {};
+    if ([1, 2, 3].includes(config?.[1])) options.length = config[1];
+    if (typeof config?.[4] === 'string' && /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(config[4])) options.language = config[4];
+    if ([1, 2, 3, 4].includes(config?.[6])) options.format = config[6];
+    if (Array.isArray(config) && (config[0] === null || typeof config[0] === 'string')) options.instructionsPresent = !!config[0];
+    if (Object.keys(options).length) metadata.serverAudioOptions = options;
+  }
+  return metadata;
 }
 
 function isValidMediaUrl(value) {
@@ -1927,7 +1960,7 @@ async function listArtifactStatuses(notebookId, readOptions = {}) {
       default: status = 'unknown';
     }
 
-    statuses.set(artifactId, { taskId: artifactId, status, typeCode });
+    statuses.set(artifactId, { taskId: artifactId, status, typeCode, ...artifactMetadata(art) });
   }
 
   return statuses;

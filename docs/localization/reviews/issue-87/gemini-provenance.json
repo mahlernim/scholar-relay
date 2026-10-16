@@ -1,0 +1,12 @@
+{
+  "provider": "gemini",
+  "requested_model": "gemini-3.8-flash-high",
+  "invocation_utc": "2026-10-16T06:14:22.614166+00:00",
+  "prompt_sha256": "13e84fc8035b813b864742da92819fec7c413a6f9eb3b89c258b996934c254ce",
+  "prompt_file": "prompt.txt",
+  "returncode": 0,
+  "independent_proposal": true,
+  "response_reported_model": null,
+  "raw_reply_sha256": "2ceff5c0b97b2023d9b4762ab6c23d1f7b36bb8ed801d94aef6a35e2b1a26994",
+  "tools_policy": "Explicit no-tools prompt instruction. CLI warned that requested plan mode had no effect with slash command expansion disabled."
+}

@@ -275,5 +275,7 @@
   "Page text could not be read.": "पृष्ठ का टेक्स्ट पढ़ा नहीं जा सका।",
   "Page text could not be imported. Check the existing notebook.": "पृष्ठ का टेक्स्ट आयात नहीं हुआ। मौजूदा नोटबुक देखें।",
   "Page text": "पृष्ठ का टेक्स्ट",
-  "Wait for the queue to resume or finish preparing another job.": "कतार फिर चलने या दूसरे कार्य की तैयारी पूरी होने तक प्रतीक्षा करें।"
+  "Wait for the queue to resume or finish preparing another job.": "कतार फिर चलने या दूसरे कार्य की तैयारी पूरी होने तक प्रतीक्षा करें।",
+  "Slides $1": "स्लाइड $1",
+  "Sources $1": "स्रोत $1"
 }
