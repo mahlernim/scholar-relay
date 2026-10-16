@@ -47,7 +47,7 @@ Selection drafts remain in session storage. Notebook mode and enabled origins ar
 ## Local storage and retention
 
 - Settings and custom instructions remain in Chrome local extension storage until the user changes them or removes the extension.
-- The paper queue stores source URLs, titles, a settings snapshot for each job, Gemini Notebook identifiers, and progress. It holds up to 20 unfinished jobs and 50 previous finished jobs. Use Clear finished jobs to remove finished history. Removing the extension deletes the queue.
+- The paper queue stores source URLs, titles, a settings snapshot for each job, Gemini Notebook identifiers, progress, and available artifact duration and counts. Audio tasks also retain compact submitted and returned language, format, length and instruction-presence values without duplicating custom prompt text. It holds up to 20 unfinished jobs and 50 previous finished jobs. Use Clear finished jobs to remove finished history. Removing the extension deletes the queue.
 - Queued PDF bytes are stored in IndexedDB, with a 40 MiB limit per file and 100 MiB combined limit. They are removed after upload, failure, or removal of the queued job. Cleanup interrupted by browser shutdown finishes when the extension next starts. Gemini Notebook authentication values are never saved to persistent storage.
 - Website permissions remain until the user revokes them in Chrome or removes the extension.
 - Retry eligibility times and bounded operation deadlines are saved locally so worker restarts do not bypass a server wait. They contain no authentication tokens. Page-text recovery claims and replacement-source identifiers are retained with the job to prevent duplicate uploads after interruption.

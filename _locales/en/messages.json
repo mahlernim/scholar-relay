@@ -1112,5 +1112,13 @@
   "ui_4a3d4bfb": {
     "message": "Wait for the queue to resume or finish preparing another job.",
     "description": "Wait for the queue to resume or finish preparing another job."
+  },
+  "ui_f94ac83e": {
+    "message": "Slides $1",
+    "description": "Slides $1"
+  },
+  "ui_b5c1611c": {
+    "message": "Sources $1",
+    "description": "Sources $1"
   }
 }

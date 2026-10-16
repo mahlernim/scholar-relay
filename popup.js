@@ -3,7 +3,7 @@ import { canRecoverPageText } from './page-text.js';
 import { activeUsage, actionLimited, formatReset } from './usage.js';
 import { jobHandoff, jobPhase, isUnfinishedJob, jobElapsedText, jobReadyCount, hasJobActivity } from './job-queue.js';
 import { DEFAULT_SETTINGS as DEFAULTS } from './settings.js';
-import { t, localizeStaticDocument, progressDetail, errorSummary, generationLimitSummary, pdfWaitSummary, artifactLabel, artifactStatusLabel } from './i18n.js';
+import { t, localizeStaticDocument, progressDetail, errorSummary, generationLimitSummary, pdfWaitSummary, artifactLabel, artifactStatusLabel, artifactMetadataText } from './i18n.js';
 import { inspectPaperPage } from './content.js';
 import { choosePdfTitle, choosePdfFileTitle } from './pdf-metadata.js';
 import { directDetectionMatchesTab } from './detection-policy.js';
@@ -476,7 +476,11 @@ async function updateArtifactSummary(saved) {
     const settings = { ...DEFAULTS, ...(saved || (await chrome.storage.local.get('userSettings')).userSettings) };
     const button = document.getElementById('artifact-summary');
     if (!button) return;
-    const names = Object.entries(ARTIFACT_SETTING_TYPES).filter(([key]) => settings[key]).map(([, type]) => artifactLabel(type).replace(/^[^\p{L}\p{N}]+/u, ''));
+    const names = Object.entries(ARTIFACT_SETTING_TYPES).filter(([key]) => settings[key]).map(([, type]) => {
+        const label = artifactLabel(type).replace(/^[^\p{L}\p{N}]+/u, '');
+        const length = { short: 'Short', default: 'Default', long: 'Long' }[settings.audioLength] || 'Long';
+        return type === 'audio' ? `${label} (${t(length)})` : label;
+    });
     const language = [...document.getElementById('s-language').options].find(option => option.value === settings.language)?.textContent || settings.language;
     button.textContent = [names.join(', '), language].filter(Boolean).join(' · ');
 }
@@ -935,7 +939,7 @@ function renderProgress(state) {
     }
     if ((state.tasks || []).length && (state.status === 'completed' || state.tasks.some(task => task.error))) {
         bottomHtml += `<details class="workflow-details"><summary>${escapeHtml(t('Artifact details'))}</summary>${state.tasks.map(task =>
-            `<div class="step-detail">${escapeHtml(artifactLabel(task.type))} · ${escapeHtml(artifactStatusLabel(task.status))}${task.error ? `<div>${escapeHtml(task.error)}</div>` : ''}</div>`
+            `<div class="step-detail">${escapeHtml(artifactLabel(task.type))} · ${escapeHtml(artifactStatusLabel(task.status))}${artifactMetadataText(task) ? ` · <bdi>${escapeHtml(artifactMetadataText(task))}</bdi>` : ''}${task.error ? `<div>${escapeHtml(task.error)}</div>` : ''}</div>`
         ).join('')}</details>`;
     }
     if (!generationLimitSummary(state.tasks)) bottomHtml += `<p class="handoff-note" role="status">${escapeHtml(handoffMessage(state))}</p>`;

@@ -120,3 +120,17 @@ export function pdfWaitSummary(state) {
     if (reason === 'publisher') return t('The publisher blocked the PDF download. Select a downloaded PDF to continue in this notebook.');
     return t('The PDF could not be downloaded. Select a PDF to continue in this notebook.');
 }
+
+export function artifactMetadataText(task) {
+    const parts = [];
+    if (Number.isFinite(task.durationSeconds) && task.durationSeconds >= 0) {
+        const seconds = Math.floor(task.durationSeconds);
+        const minutes = Math.floor(seconds / 60);
+        parts.push(minutes >= 60
+            ? `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
+            : `${minutes}:${String(seconds % 60).padStart(2, '0')}`);
+    }
+    if (Number.isSafeInteger(task.slideCount) && task.slideCount >= 0) parts.push(t('Slides $1', [task.slideCount]));
+    if (Number.isSafeInteger(task.sourceCount) && task.sourceCount >= 0) parts.push(t('Sources $1', [task.sourceCount]));
+    return parts.join(' · ');
+}

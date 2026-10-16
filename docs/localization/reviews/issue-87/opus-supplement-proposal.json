@@ -1,0 +1,17 @@
+{
+  "translations": {
+    "Slides $1": "幻灯片 $1",
+    "Sources $1": "来源 $1"
+  },
+  "rationale": {
+    "Slides $1": "The label sits beside a count of individual slides, so 幻灯片 (slide pages) fits better than 演示文稿, which the observed zh-CN UI uses for the whole Slide Deck artifact. 幻灯片 also matches the observed 演示用幻灯片 wording. It is a neutral noun with no word suggesting the deck is ready, finished, or generated, so it reads as a plain count label. The space before $1 follows common zh-CN UI style for a label followed by a number.",
+    "Sources $1": "来源 matches the observed zh-CN Gemini Notebook label for Sources exactly, which keeps terminology consistent with what users see in the product. It is a neutral noun with no wording such as 已导入 or 成功, so it does not imply that import succeeded or is complete. $1 is preserved unchanged after a single space."
+  },
+  "terminology_caveats": [
+    "Shared Length key. Recommend the generic 长度, which works for both audio and slide length. Avoid audio-only wording such as 时长 or slide-only wording such as 页数, because one key serves both contexts.",
+    "Shared Detailed key. Recommend the generic adjective 详细, which reads naturally for infographic detail level and for slide format. Avoid 详细演示文稿 for this key, since that observed UI phrase is deck-specific and would read wrong in the infographic context.",
+    "Presenter key. Recommend the slide-specific 演示用幻灯片, matching the observed zh-CN UI for Presenter slides. This is safe only if the key is used solely for the slide format option.",
+    "If a future string labels the whole deck artifact rather than a slide count, prefer 演示文稿 to match the observed Slide Deck label, and keep 幻灯片 for per-slide counts.",
+    "These are proposals based on the observed zh-CN UI terms and general zh-CN UI conventions. They have not had native-speaker review, and in-context review in the popup is recommended to confirm spacing and length fit."
+  ]
+}

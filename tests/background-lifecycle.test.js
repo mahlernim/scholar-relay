@@ -109,6 +109,48 @@ function running(tasks = []) {
     stepStartedAt: new Date().toISOString(), tasks };
 }
 
+test('audio submission uses the job snapshot after restart, not changed global preferences', async () => {
+  for (const [length, code] of [['short', 1], ['default', 2], ['long', 3]]) {
+    const job = { ...running(), step: 'wait_source', sourceId: 'source',
+      settings: { ...settings.DEFAULT_SETTINGS, generateInfographic: false, audioLength: length, language: 'en', audioFormat: 'deep_dive', audioPrompt: 'private instructions', chimeEnabled: false, notificationEnabled: false } };
+    const w = await worker({ initialQueue: { version: 1, paused: false, jobs: [job] } });
+    Object.assign(w.data.userSettings, { audioLength: 'default', language: 'ko' });
+    let submitted;
+    w.context.listSources = async () => [{ id: 'source', status: api.SourceStatus.READY }];
+    w.context.getNotebookTitle = async () => 'Paper';
+    w.context.generateAudio = async (...args) => { submitted = args; return { taskId: 'audio-id', status: 'in_progress' }; };
+    await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+    assert.equal(submitted[2], 'en');
+    assert.equal(submitted[3], code);
+    assert.equal(submitted[4], 1);
+    assert.equal(submitted[5], 'private instructions');
+    assert.deepEqual(JSON.parse(JSON.stringify(w.data.pipelineState.tasks[0].submittedAudioOptions)),
+      { language: 'en', length: code, format: 1, instructionsPresent: true });
+    assert.doesNotMatch(JSON.stringify(w.data.pipelineState.tasks), /private instructions/);
+  }
+});
+
+test('partial listing metadata survives restart and never attaches to a different task', async () => {
+  const w = await worker();
+  w.data.pipelineState = running([{ type: 'audio', taskId: 'audio-id', status: 'in_progress', submittedAudioOptions: { length: 3 } }]);
+  w.context.listArtifactStatuses = async () => new Map([
+    ['audio-id', { taskId: 'audio-id', status: 'in_progress', durationSeconds: 1511.5, sourceCount: 1, serverAudioOptions: { length: 3, language: 'en' } }],
+    ['unrelated-id', { taskId: 'unrelated-id', status: 'completed', durationSeconds: 9999 }],
+  ]);
+  await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  const restarted = await worker({ initialQueue: w.data.jobQueue });
+  restarted.context.listArtifactStatuses = async () => new Map([
+    ['audio-id', { taskId: 'audio-id', status: 'completed', serverAudioOptions: { format: 1 } }],
+  ]);
+  await restarted.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  const task = restarted.data.pipelineState.tasks[0];
+  assert.equal(task.status, 'completed');
+  assert.equal(task.durationSeconds, 1511.5);
+  assert.equal(task.sourceCount, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(task.serverAudioOptions)), { length: 3, language: 'en', format: 1 });
+  assert.equal(task.submittedAudioOptions.length, 3);
+});
+
 test('all-failed generation retains quota diagnostics and notifies with the affected artifact', async () => {
   const w = await worker();
   w.data.userSettings.notificationEnabled = true;

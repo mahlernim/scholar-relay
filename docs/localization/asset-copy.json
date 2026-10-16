@@ -196,5 +196,23 @@
       "ملخّصات صوتية وأدوات للدراسة",
       "إشعارات ونغمة وفتح تلقائي"
     ]
+  },
+  "nl": {
+    "workflow": [
+      "Wachtrij voor artikelen",
+      "Voeg artikelen toe en ga verder",
+      "Sla het volgende artikel op terwijl Gemini Notebook genereert. Zie wanneer je de pop-up kunt sluiten.",
+      "Pdf en arXiv detecteren",
+      "Verzamelingen",
+      "Duidelijke voortgang"
+    ],
+    "settings": [
+      "Compacte instellingen",
+      "Kies je studiemateriaal",
+      "Stel de taal van de interface en de artefacten apart in en kies wat je wilt laten maken.",
+      "Verzameling en notebooktitel",
+      "Audio-overzichten en meer",
+      "Meldingen, geluid en automatisch openen"
+    ]
   }
 }

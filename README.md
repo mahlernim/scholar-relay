@@ -6,6 +6,12 @@ ScholarRelay (Scholar Relay) imports PDFs, arXiv research papers, and webpages i
 
 > ScholarRelay is an independent open-source extension and is not affiliated with, authorized by, or endorsed by Google. It uses your existing signed-in Gemini Notebook browser session and never asks for your Google password or verification code.
 
+## Version 1.5.4 candidate
+
+The next patch adds Dutch interface text and notifications, corrects Simplified Chinese wording, shows available artifact duration and counts, and includes the selected audio length in the start summary. Redundant progress text has been removed. This release is being prepared as a draft and is not yet published or submitted to the store.
+
+다음 패치는 네덜란드어 화면과 알림을 추가하고 중국어 간체 번역을 수정합니다. 제공되는 결과물 재생 시간과 개수를 표시하고 시작 전 요약에 선택한 오디오 길이를 보여 줍니다. 중복된 진행 문구를 줄였습니다. 초안으로 준비 중이며 아직 공개하거나 스토어에 제출하지 않았습니다.
+
 ## Version 1.5.3
 
 Version 1.5.3 adds Arabic interface text, notifications, and right-to-left layouts. Queue progress now distinguishes active generation, uncertain outcomes, failed requests, and completed results.

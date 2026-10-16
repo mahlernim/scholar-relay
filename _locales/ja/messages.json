@@ -1112,5 +1112,13 @@
   "ui_4a3d4bfb": {
     "message": "キューの再開または別のジョブの準備完了をお待ちください。",
     "description": "Wait for the queue to resume or finish preparing another job."
+  },
+  "ui_f94ac83e": {
+    "message": "スライド $1",
+    "description": "Slides $1"
+  },
+  "ui_b5c1611c": {
+    "message": "ソース $1",
+    "description": "Sources $1"
   }
 }

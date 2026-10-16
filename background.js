@@ -963,6 +963,12 @@ async function tickSourcePollOperation(state) {
         // Helper to run a generation function safely so one failure doesn't stop the pipeline
         const runTask = async (type, fn) => {
             await requireActiveRun(runId, ['generate_artifacts']);
+            const submittedAudioOptions = type === 'audio' ? {
+                language: settings.language,
+                length: resolveAudioLength(settings.audioLength),
+                format: resolveAudioFormat(settings.audioFormat) || AudioFormat.DEEP_DIVE,
+                instructionsPresent: !!settings.audioPrompt,
+            } : null;
             try {
                 const res = await fn();
                 await requireActiveRun(runId, ['generate_artifacts']);
@@ -975,6 +981,7 @@ async function tickSourcePollOperation(state) {
                     // Pending/unknown initial states are polled like in-progress tasks.
                     tasks.push({ type, taskId: res.taskId, status: 'in_progress' });
                 }
+                Object.assign(tasks[tasks.length - 1], taskMetadata(res));
             } catch (e) {
                 if (e?.code === 'PIPELINE_STALE_RUN') throw e;
                 console.warn(`[Pipeline] Failed to start ${type}:`, e.message);
@@ -986,6 +993,7 @@ async function tickSourcePollOperation(state) {
                     retryAfterSeconds: e?.retryAfterSeconds ?? null, nextEligibleAt: e?.delayUnknown ? null : e?.nextEligibleAt ?? null });
                 if (e?.code === 'RATE_LIMITED') void refreshFailureUsage(runId, type);
             }
+            if (submittedAudioOptions) tasks[tasks.length - 1].submittedAudioOptions = submittedAudioOptions;
             await transitionRun(runId, {
                 tasks: [...tasks],
                 stepDetail: `Started ${tasks.length} artifact request${tasks.length === 1 ? '' : 's'}...`,
@@ -1150,8 +1158,11 @@ async function tickArtifactPollOperation(state) {
         if (task.status !== 'in_progress') continue;
         try {
             const s = statusByTaskId.get(String(task.taskId)) || { taskId: task.taskId, status: 'pending' };
+            if (s.taskId === String(task.taskId)) {
+                updatedTasks[i] = { ...task, ...taskMetadata(s, task) };
+            }
             if (s.status === 'completed' || s.status === 'failed') {
-                updatedTasks[i] = { ...task, status: s.status };
+                updatedTasks[i] = { ...updatedTasks[i], status: s.status };
                 console.log(`[Tick] ${task.type}: ${s.status}`);
             }
         } catch (err) {
@@ -1180,6 +1191,16 @@ async function tickArtifactPollOperation(state) {
         }
         await completePipeline(runId);
     }
+}
+
+function taskMetadata(result, previous = {}) {
+    const metadata = {};
+    for (const key of ['durationSeconds', 'sourceCount', 'slideCount']) {
+        const value = result?.[key];
+        if (Number.isFinite(value) && value >= 0 && (key === 'durationSeconds' || Number.isSafeInteger(value))) metadata[key] = value;
+    }
+    if (result?.serverAudioOptions) metadata.serverAudioOptions = { ...previous.serverAudioOptions, ...result.serverAudioOptions };
+    return metadata;
 }
 
 // =========================================================================

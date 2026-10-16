@@ -275,5 +275,7 @@
   "Page text could not be read.": "無法讀取網頁內文。",
   "Page text could not be imported. Check the existing notebook.": "無法匯入網頁內文。請檢查現有筆記本。",
   "Page text": "網頁內文",
-  "Wait for the queue to resume or finish preparing another job.": "請等待佇列恢復或另一項工作的準備完成。"
+  "Wait for the queue to resume or finish preparing another job.": "請等待佇列恢復或另一項工作的準備完成。",
+  "Slides $1": "投影片 $1",
+  "Sources $1": "來源 $1"
 }

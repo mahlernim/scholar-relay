@@ -1112,5 +1112,13 @@
   "ui_4a3d4bfb": {
     "message": "대기열을 재개하거나 다른 작업의 준비가 끝난 후 다시 시도하세요.",
     "description": "Wait for the queue to resume or finish preparing another job."
+  },
+  "ui_f94ac83e": {
+    "message": "슬라이드 $1",
+    "description": "Slides $1"
+  },
+  "ui_b5c1611c": {
+    "message": "소스 $1",
+    "description": "Sources $1"
   }
 }
