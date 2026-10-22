@@ -214,5 +214,23 @@
       "Audio-overzichten en meer",
       "Meldingen, geluid en automatisch openen"
     ]
+  },
+  "es_419": {
+    "workflow": [
+      "Una cola para tus artículos",
+      "Agrega artículos. Sigue creando.",
+      "Guarda el siguiente artículo mientras Gemini Notebook genera. Sabrás cuándo puedes cerrar la ventana y continuar.",
+      "PDF y arXiv",
+      "Colecciones",
+      "Progreso claro"
+    ],
+    "settings": [
+      "Controles compactos",
+      "Elige qué genera Gemini Notebook",
+      "El idioma de la interfaz y el de los artefactos son independientes. Crea el material de estudio que necesitas.",
+      "Colección y título del artículo",
+      "Resúmenes en audio y herramientas de estudio",
+      "Notificaciones, sonido y apertura automática"
+    ]
   }
 }

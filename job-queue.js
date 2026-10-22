@@ -4,6 +4,9 @@ export const MAX_HISTORY_JOBS = 50;
 export const MAX_QUEUED_PDF_BYTES = 100 * 1024 * 1024;
 
 export const isUnfinishedJob = job => ['queued', 'running', 'stopping'].includes(job.status);
+// Unknown service states remain unresolved. Uncertain submissions need checking
+// without being polled as confirmed artifact identities.
+export const isUnsettledArtifactTask = task => !['completed', 'failed', 'uncertain'].includes(task.status);
 export const isPreparingJob = job => job.status === 'running' &&
     !['wait_artifacts', 'wait_pdf_access', 'wait_source_choice', 'queued_pdf'].includes(job.step);
 
@@ -14,6 +17,7 @@ export function canStartNextJob(queue) {
 
 export function jobHandoff(job) {
     if (job.status === 'queued' || job.step === 'queued_pdf') return 'saved';
+    if (job.status === 'handed_off') return 'handed_off';
     if (job.status === 'error' || job.step === 'wait_pdf_access') return 'attention';
     const tasks = job.tasks || [];
     if (job.status === 'completed' || job.step === 'wait_artifacts' || job.status === 'stopped') {
@@ -23,20 +27,24 @@ export function jobHandoff(job) {
         if (job.status === 'running' && tasks.length && tasks.every(task => task.status === 'completed')) return 'ready';
     }
     if (job.step === 'wait_artifacts' && job.tasks?.length &&
-        job.tasks.every(task => task.taskId && ['in_progress', 'completed'].includes(task.status))) return 'accepted';
+        job.tasks.every(task => task.taskId && ['in_progress', 'pending', 'scheduled', 'completed'].includes(task.status))) {
+        return job.tasks.some(task => task.status === 'scheduled') ? 'scheduled' : 'accepted';
+    }
     if (job.step === 'wait_artifacts' || job.status === 'stopped') return 'check';
     return 'preparing';
 }
 
 export function jobPhase(job) {
     if (job.status === 'queued' || job.step === 'queued_pdf') return 'queued';
+    if (job.status === 'handed_off') return 'check';
     if (job.status === 'completed') return jobHandoff(job) === 'ready' ? 'ready' : 'check';
     if (job.status === 'stopped') return 'stopped';
     if (job.step === 'wait_pdf_access' && job.status === 'running') return 'attention';
     if (job.status === 'error') return 'check';
     if (job.step === 'wait_artifacts') {
         if (jobHandoff(job) === 'ready') return 'ready';
-        return hasKnownArtifactActivity(job) ? 'generating' : 'check';
+        if (hasKnownArtifactActivity(job)) return 'generating';
+        return jobHandoff(job) === 'scheduled' ? 'scheduled' : 'check';
     }
     return 'preparing';
 }
@@ -49,7 +57,7 @@ function hasKnownArtifactActivity(job) {
 export function jobElapsedText(job, now = Date.now()) {
     const waiting = job.status === 'running' && job.step === 'wait_pdf_access';
     const start = Date.parse(waiting ? job.attentionSince : job.status === 'queued' ? job.queuedAt : job.startedAt || job.queuedAt);
-    const end = isUnfinishedJob(job) ? now : Date.parse(job.completedAt);
+    const end = isUnfinishedJob(job) ? now : Date.parse(job.handedOffAt || job.completedAt);
     if (!Number.isFinite(start) || !Number.isFinite(end)) return '';
     const seconds = Math.floor(Math.max(0, end - start) / 1000);
     const pad = value => String(value).padStart(2, '0');
@@ -78,7 +86,7 @@ export function createJobQueue({ read, write }) {
             const result = await operation(queue);
             if (!result) return { applied: false };
             const finished = queue.jobs.filter(job => !isUnfinishedJob(job));
-            const obsolete = new Set(finished.filter(job => !['unknown', 'deleting'].includes(job.cleanupStatus)).slice(0, Math.max(0, finished.length - MAX_HISTORY_JOBS)));
+            const obsolete = new Set(finished.filter(job => job.status !== 'handed_off' && !['unknown', 'deleting'].includes(job.cleanupStatus)).slice(0, Math.max(0, finished.length - MAX_HISTORY_JOBS)));
             queue.jobs = queue.jobs.filter(job => !obsolete.has(job));
             await write(queue);
             let effectError = null;

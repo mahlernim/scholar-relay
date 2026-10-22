@@ -277,5 +277,10 @@
   "Page text": "网页正文",
   "Wait for the queue to resume or finish preparing another job.": "请等待队列恢复或另一项任务准备完成。",
   "Slides $1": "幻灯片 $1",
-  "Sources $1": "来源 $1"
+  "Sources $1": "来源 $1",
+  "Check access": "检查访问权限",
+  "Gemini Notebook opened an access page. Open Notebook in your browser and check access.": "Gemini Notebook 打开了访问提示页面。请在浏览器中打开 Notebook 并检查是否可以访问。",
+  "Scheduled": "已安排",
+  "Gemini Notebook will generate scheduled artifacts later. You can close Chrome.": "Gemini Notebook 将稍后生成已安排的资料。可以关闭 Chrome。",
+  "Local monitoring ended. Check this notebook for scheduled or running results.": "本地监控已结束。请在此笔记本中查看已安排或正在生成的结果。"
 }

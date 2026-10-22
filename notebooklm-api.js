@@ -158,6 +158,7 @@ const ArtifactStatus = {
   FAILED: 4,
   SUGGESTED: 5,
   PENDING_REVIEW: 6,
+  SCHEDULED: 7,
 };
 
 // Source status codes
@@ -241,31 +242,40 @@ function fetchTokens({ recoverMissingTokens = false } = {}) {
 async function discoverTokens(recovery) {
   const candidates = [_baseUrl, ...PERSONAL_BASE_URLS.filter(url => url !== _baseUrl)];
   const failures = [];
+  // Keep the complete discovery within the previous three-read recovery budget.
+  // A fast failed discovery can use the remaining time for one sign-in probe.
+  const deadline = performance.now() + _readTimeoutMs * 3;
+  let probeUrl = null;
+
+  async function readPage(url, readHtml = true) {
+    const remaining = deadline - performance.now();
+    if (remaining <= 0) throw new Error('Session discovery timed out.');
+    return withRequestDeadline(async signal => {
+      const response = await fetch(url, { credentials: 'include', redirect: 'follow', signal });
+      const destination = sessionDestination(response.url || url);
+      // Google sign-in and access pages can carry token-shaped fields too.
+      const html = readHtml && response.ok && destination.kind === 'app' ? await response.text() : '';
+      return { response, destination, html };
+    }, Math.min(_readTimeoutMs, remaining));
+  }
 
   for (let index = 0; index < candidates.length; index++) {
     const baseUrl = candidates[index];
     const homepageUrl = `${baseUrl}/`;
     const host = new URL(baseUrl).hostname;
     try {
-      const { response, html } = await withRequestDeadline(async signal => {
-        const response = await fetch(homepageUrl, { credentials: 'include', redirect: 'follow', signal });
-        return { response, html: response.ok ? await response.text() : '' };
-      }, _readTimeoutMs);
+      const { response, destination, html } = await readPage(homepageUrl);
 
-      if (!response.ok) {
-        failures.push({ host, kind: response.status === 401 ? 'signin'
+      if (!response.ok || destination.kind === 'signin') {
+        failures.push({ host, kind: destination.kind === 'signin' && [200, 401].includes(response.status) ? 'signin'
           : response.status === 429 ? 'rate_limit' : response.status >= 500 ? 'service' : 'http',
           httpStatus: response.status });
         continue;
       }
 
-      const responseUrl = new URL(response.url || homepageUrl);
-      const responseHost = responseUrl.hostname;
-      const allowedHosts = PERSONAL_BASE_URLS.map(url => new URL(url).hostname);
-      if (!allowedHosts.includes(responseHost)) {
-        const signIn = responseHost === 'accounts.google.com' &&
-          /^\/(?:ServiceLogin|AccountChooser|(?:v\d+\/)?signin)(?:[/?]|$)/i.test(responseUrl.pathname);
-        failures.push({ host, kind: signIn ? 'signin' : 'redirect', redirectHost: responseHost });
+      const responseHost = destination.host;
+      if (destination.kind !== 'app') {
+        failures.push({ host, kind: destination.kind, redirectHost: responseHost });
         continue;
       }
 
@@ -273,6 +283,9 @@ async function discoverTokens(recovery) {
       const sessionMatch = html.match(/"FdrFJe"\s*:\s*"([^"]+)"/);
       if (!csrfMatch || !sessionMatch) {
         failures.push({ host, kind: 'format' });
+        // The extension uses the browser's default account. Do not infer an
+        // account selection from redirect queries or introduce an authuser value.
+        probeUrl ||= `${destination.origin}/login`;
         // After a read RPC rejects auth, a tokenless app response may have
         // rotated browser-managed cookies. Retry this homepage once per shared
         // refresh, without inspecting cookies or extending RPC replay limits.
@@ -297,21 +310,67 @@ async function discoverTokens(recovery) {
     }
   }
 
+  // Try all normal app routes first so a valid fallback or the existing cookie
+  // recovery read wins without an extra request. All concurrent callers share
+  // this one probe, including callers that enabled recovery while waiting.
+  let confirmedSignIn = false;
+  if (probeUrl) {
+    const host = new URL(probeUrl).hostname;
+    try {
+      const { response, destination } = await readPage(probeUrl, false);
+      if (!response.ok || destination.kind === 'signin') {
+        // Google can serve an HTTP 401 challenge at the final sign-in page.
+        // A 401 from an app, unknown host or unknown Accounts path is not proof.
+        const kind = destination.kind === 'signin' && [200, 401].includes(response.status) ? 'signin'
+          : response.status === 429 ? 'rate_limit' : response.status >= 500 ? 'service' : 'http';
+        confirmedSignIn = kind === 'signin';
+        failures.push({ host, kind, httpStatus: response.status });
+      } else if (destination.kind !== 'app') {
+        failures.push({ host, kind: destination.kind, redirectHost: destination.host });
+      }
+    } catch (_) {
+      // A blocked or timed-out optional probe cannot establish sign-out. Even
+      // an intermediate Accounts redirect can belong to a signed-in SSO flow.
+      // Preserve the original session evidence unless the final response is
+      // readable and its destination can be validated above.
+    }
+  }
+
   _csrfToken = null;
   _sessionId = null;
   const code = failures.some(item => item.kind === 'rate_limit') ? 'SESSION_RATE_LIMITED'
     : failures.some(item => ['network', 'service'].includes(item.kind)) ? 'SESSION_UNAVAILABLE'
-    : failures.every(item => item.kind === 'signin') ? 'AUTH_REQUIRED' : 'SESSION_UNRECOGNIZED';
+    : failures.some(item => item.kind === 'access') ? 'SESSION_ACCESS_REQUIRED'
+    : failures.every(item => item.kind === 'signin' || (confirmedSignIn && item.kind === 'format'))
+      ? 'AUTH_REQUIRED' : 'SESSION_UNRECOGNIZED';
   const description = {
     AUTH_REQUIRED: 'Sign in to Gemini Notebook before connecting again.',
     SESSION_RATE_LIMITED: 'Session discovery was rate limited. Wait before connecting again.',
     SESSION_UNAVAILABLE: 'Gemini Notebook could not be reached. Try connecting again later.',
+    SESSION_ACCESS_REQUIRED: 'Gemini Notebook opened an access page. Open Notebook in your browser and check access.',
     SESSION_UNRECOGNIZED: 'The Gemini Notebook session page was not recognized. Check the service and extension compatibility.',
   }[code];
   const details = failures.map(item => `${item.host}: ${item.kind}${item.httpStatus ? ` HTTP ${item.httpStatus}` : ''}`);
   const error = new Error(`${code}: ${description} ${details.join('. ')}`);
   Object.assign(error, { code, phase: 'auth_discovery', failures });
   throw error;
+}
+
+function sessionDestination(value) {
+  try {
+    const url = new URL(value);
+    const host = url.hostname;
+    if (url.protocol !== 'https:' || url.port || url.username || url.password) return { kind: 'redirect', host };
+    if (PERSONAL_BASE_URLS.includes(url.origin)) return { kind: 'app', host, origin: url.origin };
+    if (host === 'notebook.google' || host === 'notebooklm.google') return { kind: 'access', host };
+    if (host === 'accounts.google.com' &&
+        /^\/(?:ServiceLogin|AccountChooser|(?:v\d+\/)?signin)(?:[/?]|$)/i.test(url.pathname)) {
+      return { kind: 'signin', host };
+    }
+    return { kind: 'redirect', host };
+  } catch (_) {
+    return { kind: 'redirect' };
+  }
 }
 
 async function ensureTokens() {
@@ -1831,6 +1890,9 @@ function parseGenerationResult(result, expectedType = null) {
     case ArtifactStatus.PENDING_REVIEW:
       status = 'pending_review';
       break;
+    case ArtifactStatus.SCHEDULED:
+      status = 'scheduled';
+      break;
     default:
       status = 'in_progress';
   }
@@ -1957,6 +2019,7 @@ async function listArtifactStatuses(notebookId, readOptions = {}) {
       case ArtifactStatus.FAILED: status = 'failed'; break;
       case ArtifactStatus.SUGGESTED: status = 'suggested'; break;
       case ArtifactStatus.PENDING_REVIEW: status = 'pending_review'; break;
+      case ArtifactStatus.SCHEDULED: status = 'scheduled'; break;
       default: status = 'unknown';
     }
 

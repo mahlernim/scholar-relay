@@ -110,6 +110,7 @@ jobs:
             '_locales/hi/messages.json',
             '_locales/ar/messages.json',
             '_locales/nl/messages.json',
+            '_locales/es_419/messages.json',
             'i18n.js',
             'usage.js',
             'retry-policy.js',

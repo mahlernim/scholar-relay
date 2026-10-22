@@ -1,13 +1,13 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { messageKey } from '../i18n.js';
 
-export const locales = ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW', 'hi', 'ar', 'nl'];
+export const locales = ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW', 'hi', 'ar', 'nl', 'es_419'];
 const root = new URL('../', import.meta.url);
 const rows = JSON.parse(await readFile(new URL('docs/localization/messages.json', root), 'utf8'));
 const metadata = JSON.parse(await readFile(new URL('docs/localization/metadata.json', root), 'utf8'));
 // Locales translated from the English source key rather than a messages.json row.
 const catalogs = {};
-for (const locale of ['zh_CN', 'it', 'zh_TW', 'hi', 'ar', 'nl']) {
+for (const locale of ['zh_CN', 'it', 'zh_TW', 'hi', 'ar', 'nl', 'es_419']) {
     catalogs[locale] = JSON.parse(await readFile(new URL(`docs/localization/${locale}.json`, root), 'utf8'));
 }
 const seen = new Set();

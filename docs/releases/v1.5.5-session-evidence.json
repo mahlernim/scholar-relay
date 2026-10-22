@@ -1,0 +1,135 @@
+{
+  "observedAt": "2026-10-22T14:11:35.173Z",
+  "profile": "new isolated signed-out profile",
+  "expectedClassification": "AUTH_REQUIRED",
+  "requests": [
+    {
+      "requested": {
+        "host": "notebook.google.com",
+        "path": "/"
+      },
+      "final": {
+        "host": "notebook.google.com",
+        "path": "/"
+      },
+      "status": 200
+    },
+    {
+      "requested": {
+        "host": "notebooklm.google.com",
+        "path": "/"
+      },
+      "final": {
+        "host": "notebook.google.com",
+        "path": "/"
+      },
+      "status": 200
+    },
+    {
+      "requested": {
+        "host": "notebook.google.com",
+        "path": "/login"
+      },
+      "final": {
+        "host": "accounts.google.com",
+        "path": "/ServiceLogin"
+      },
+      "status": 401
+    }
+  ],
+  "classification": {
+    "ok": false,
+    "code": "AUTH_REQUIRED",
+    "phase": "auth_discovery",
+    "failures": [
+      {
+        "host": "notebook.google.com",
+        "kind": "format",
+        "httpStatus": null
+      },
+      {
+        "host": "notebooklm.google.com",
+        "kind": "format",
+        "httpStatus": null
+      },
+      {
+        "host": "notebook.google.com",
+        "kind": "signin",
+        "httpStatus": 401
+      }
+    ]
+  },
+  "browserNetwork": [
+    {
+      "type": "request",
+      "host": "notebook.google.com",
+      "path": "/"
+    },
+    {
+      "type": "response",
+      "host": "notebook.google.com",
+      "path": "/",
+      "status": 200
+    },
+    {
+      "type": "request",
+      "host": "notebooklm.google.com",
+      "path": "/"
+    },
+    {
+      "type": "redirect",
+      "host": "notebooklm.google.com",
+      "path": "/",
+      "status": 301
+    },
+    {
+      "type": "request",
+      "host": "notebook.google.com",
+      "path": "/"
+    },
+    {
+      "type": "response",
+      "host": "notebook.google.com",
+      "path": "/",
+      "status": 200
+    },
+    {
+      "type": "request",
+      "host": "notebook.google.com",
+      "path": "/login"
+    },
+    {
+      "type": "redirect",
+      "host": "notebook.google.com",
+      "path": "/login",
+      "status": 302
+    },
+    {
+      "type": "request",
+      "host": "accounts.google.com",
+      "path": "/ServiceLogin"
+    },
+    {
+      "type": "response",
+      "host": "accounts.google.com",
+      "path": "/ServiceLogin",
+      "status": 401
+    }
+  ],
+  "hostPermissions": [
+    "https://notebook.google.com/*",
+    "https://notebooklm.google.com/*",
+    "https://accounts.google.com/*",
+    "file:///*"
+  ],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "notifications",
+    "offscreen",
+    "alarms"
+  ],
+  "browserVersion": "Chrome/155.0.8059.85",
+  "matchesExpectedClassification": true
+}

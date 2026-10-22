@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
   "short_name": "ScholarRelay",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "minimum_chrome_version": "120",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
@@ -17,6 +17,7 @@
   "host_permissions": [
     "https://notebook.google.com/*",
     "https://notebooklm.google.com/*",
+    "https://accounts.google.com/*",
     "file:///*"
   ],
   "optional_host_permissions": [

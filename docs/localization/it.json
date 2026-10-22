@@ -277,5 +277,10 @@
   "Page text": "Testo della pagina",
   "Wait for the queue to resume or finish preparing another job.": "Attendi che la coda riprenda o che termini la preparazione di un altro lavoro.",
   "Slides $1": "Diapositive $1",
-  "Sources $1": "Fonti $1"
+  "Sources $1": "Fonti $1",
+  "Check access": "Verifica accesso",
+  "Gemini Notebook opened an access page. Open Notebook in your browser and check access.": "Gemini Notebook ha aperto una pagina di accesso. Apri Notebook nel browser e verifica di poter accedere.",
+  "Scheduled": "Programmato",
+  "Gemini Notebook will generate scheduled artifacts later. You can close Chrome.": "Gemini Notebook genererà i contenuti programmati più tardi. Puoi chiudere Chrome.",
+  "Local monitoring ended. Check this notebook for scheduled or running results.": "Il monitoraggio locale è terminato. Controlla questo notebook per i risultati programmati o in corso."
 }

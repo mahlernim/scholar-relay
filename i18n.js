@@ -54,7 +54,7 @@ export function artifactLabel(type) {
 
 export function artifactStatusLabel(status) {
     return t({ completed: 'Ready', failed: 'Failed', in_progress: 'Generating',
-        pending: 'Waiting', uncertain: 'Needs checking' }[status] || 'Waiting');
+        pending: 'Waiting', scheduled: 'Scheduled', uncertain: 'Needs checking' }[status] || 'Waiting');
 }
 
 export function progressDetail(state) {
@@ -92,6 +92,7 @@ export function errorSummary(detail) {
     const code = detail?.code || text.match(/^([A-Z_]+):/)?.[1];
     if (code === 'SESSION_UNAVAILABLE') return t('Gemini Notebook is temporarily unreachable. Try connecting again later.');
     if (code === 'SESSION_UNRECOGNIZED') return t('Could not recognize the Gemini Notebook session. Open Gemini Notebook and check the details.');
+    if (code === 'SESSION_ACCESS_REQUIRED') return t('Gemini Notebook opened an access page. Open Notebook in your browser and check access.');
     if (code === 'SESSION_RATE_LIMITED') return t('Gemini Notebook has reached a limit. Wait before starting more work.');
     if (code === 'AUTH_REQUIRED') return t('Sign in to Gemini Notebook, then reopen this popup.');
     const source = /isn't a valid PDF|not a PDF|not a valid PDF|PDF signature/i.test(text)

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { jobElapsedText, jobReadyCount, hasJobActivity, jobHandoff, jobPhase } from '../job-queue.js';
+import { jobElapsedText, jobReadyCount, hasJobActivity, jobHandoff, jobPhase, createJobQueue, isUnsettledArtifactTask } from '../job-queue.js';
 
 const start = '2026-09-08T00:00:00Z';
 const now = Date.parse(start) + 125000;
@@ -106,4 +106,33 @@ test('fully completed results and source-only completion remain ready without ac
     assert.equal(hasJobActivity(job), false);
     assert.equal(jobReadyCount(job), null);
   }
+});
+
+test('scheduled work is accepted without animation and only generating siblings animate', () => {
+  const scheduled = { type: 'audio', taskId: 'scheduled-audio', status: 'scheduled' };
+  const base = { status: 'running', step: 'wait_artifacts', tasks: [scheduled] };
+  assert.equal(jobHandoff(base), 'scheduled');
+  assert.equal(jobPhase(base), 'scheduled');
+  assert.equal(hasJobActivity(base), false);
+  const mixed = { ...base, tasks: [scheduled, { taskId: 'video', status: 'in_progress' }] };
+  assert.equal(jobPhase(mixed), 'generating');
+  assert.equal(hasJobActivity(mixed), true);
+  for (const status of ['scheduled', 'pending', 'unknown', 'future_status', undefined]) {
+    assert.equal(isUnsettledArtifactTask({ status }), true);
+  }
+  const handedOff = { ...mixed, status: 'handed_off', startedAt: start, handedOffAt: new Date(now).toISOString() };
+  assert.equal(jobPhase(handedOff), 'check');
+  assert.equal(jobHandoff(handedOff), 'handed_off');
+  assert.equal(hasJobActivity(handedOff), false);
+  assert.equal(jobElapsedText(handedOff, now + 86400000), '02:05');
+});
+
+test('history pruning preserves unresolved handoffs and their artifact identities', async () => {
+  let state = { jobs: [{ runId: 'scheduled', status: 'handed_off', tasks: [{ taskId: 'audio', status: 'scheduled' }] },
+    ...Array.from({ length: 55 }, (_, i) => ({ runId: String(i), status: 'completed' }))] };
+  const queue = createJobQueue({ read: async () => structuredClone(state), write: async next => { state = next; } });
+  await queue.transact(() => ({}));
+  assert.equal(state.jobs[0].runId, 'scheduled');
+  assert.equal(state.jobs[0].tasks[0].taskId, 'audio');
+  assert.equal(state.jobs.length, 50);
 });

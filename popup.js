@@ -84,6 +84,7 @@ function wirePageText(root) {
 
 function handoffMessage(job) {
     if (job.status === 'running' && job.step === 'wait_pdf_access') return pdfWaitSummary(job);
+    if (job.status === 'handed_off') return t('Local monitoring ended. Check this notebook for scheduled or running results.');
     const limit = generationLimitSummary(job.tasks, job.usageResetAt);
     if (limit) return limit;
     const wait = retryHint(job);
@@ -93,6 +94,7 @@ function handoffMessage(job) {
     return {
         saved: t('Queued. You can close this popup, but keep Chrome open.'),
         accepted: t('You can close Chrome. Gemini Notebook keeps generating.'),
+        scheduled: t('Gemini Notebook will generate scheduled artifacts later. You can close Chrome.'),
         preparing: t('You can close this popup, but keep Chrome open until generation starts.'),
         attention: t('This paper needs attention. Other queued papers can continue.'),
         check: t('Some requests may still be running in Gemini Notebook. Check this notebook for the result.'),
@@ -106,7 +108,7 @@ function queuePhase(job) {
     return {
         queued: t('Queued'), ready: t('Ready'), stopped: t('Stopped'),
         attention: t('Action needed'), check: t('Needs checking'),
-        generating: t('Generating'), preparing: t('Preparing'),
+        generating: t('Generating'), scheduled: t('Scheduled'), preparing: t('Preparing'),
     }[jobPhase(job)];
 }
 
@@ -180,6 +182,18 @@ function wireCancellation(root) {
     bind('cancel-delete', (id, button) => apply(id, button, 'delete'));
 }
 
+function connectionHoldHtml(block) {
+    if (!block) return '';
+    const canOpen = ['SESSION_ACCESS_REQUIRED', 'AUTH_REQUIRED'].includes(block.code);
+    const appUrl = ['https://notebook.google.com/', 'https://notebooklm.google.com/'].includes(block.sessionAppUrl)
+        ? block.sessionAppUrl : 'https://notebook.google.com/';
+    return '<div class="queue-connection" role="status"><p class="s-help">' +
+        (block.code === 'SESSION_ACCESS_REQUIRED' ? '<strong>' + escapeHtml(t('Check access')) + '</strong> · ' : '') +
+        escapeHtml(errorSummary(block)) + '</p><div class="job-actions">' +
+        (canOpen ? '<a id="open-session-app" href="' + appUrl + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(t('Open notebook')) + '</a>' : '') +
+        '<button class="btn-secondary" id="btn-retry-connection">' + escapeHtml(t('Try connection')) + '</button></div></div>';
+}
+
 async function refreshQueue() {
     const queue = await chrome.runtime.sendMessage({ type: 'GET_QUEUE' });
     if (!Array.isArray(queue?.jobs)) throw new Error(queue?.error || 'Could not read the saved queue.');
@@ -201,7 +215,7 @@ async function refreshQueue() {
     const html = '<div class="queue-heading"><strong>' + escapeHtml(t('Paper queue')) + ' · ' + active.length + '</strong>' +
         '<button id="btn-pause-queue">' + escapeHtml(queue.paused ? t('Resume queue') : t('Pause queue')) + '</button></div>' +
         '<p class="s-help">' + escapeHtml(queue.paused ? t('Queue paused. Jobs already started continue.') : t('Papers are prepared one at a time. Up to three notebooks generate at once.')) + '</p>' +
-        (queue.serviceBlock ? '<div class="queue-connection" role="status"><p class="s-help">' + escapeHtml(errorSummary(queue.serviceBlock)) + '</p><button class="btn-secondary" id="btn-retry-connection">' + escapeHtml(t('Try connection')) + '</button></div>' : '') +
+        connectionHoldHtml(queue.serviceBlock) +
         '<div class="job-list">' + active.map(card).join('') + '</div>' +
         (finished.length ? '<details id="finished-jobs"><summary>' + escapeHtml(t('Recent jobs')) + ' · ' + finished.length + '</summary><div class="job-list">' + finished.map(card).join('') + '</div><button class="btn-secondary" id="btn-clear-jobs">' + escapeHtml(t('Clear finished jobs')) + '</button></details>' : '');
     if (html !== lastQueueHtml) {
@@ -877,7 +891,8 @@ function renderProgress(state) {
         if (state.status === 'error' && idx === currentStepIndex) { cls = 'error'; content = '!'; }
         else if (state.status === 'stopped' && idx === currentStepIndex) { cls = 'stopped'; content = '■'; }
         else if (idx < currentStepIndex || state.step === 'done') { cls = 'done'; content = '✓'; }
-        else if (idx === currentStepIndex) { cls = 'active'; content = '●'; }
+        else if (idx === currentStepIndex && state.status !== 'handed_off' &&
+            (state.step !== 'wait_artifacts' || hasJobActivity(state))) { cls = 'active'; content = '●'; }
         const detail = idx === currentStepIndex && state.status !== 'error' && state.step !== 'wait_pdf_access' ? progressDetail(state) : '';
         return `
       <div class="pipeline-step">
@@ -937,12 +952,12 @@ function renderProgress(state) {
     if (state.notebookDeletedAt) {
         bottomHtml += `<p class="handoff-note" role="status">${escapeHtml(t('Notebook deleted from Gemini Notebook.'))}</p>`;
     }
-    if ((state.tasks || []).length && (state.status === 'completed' || state.tasks.some(task => task.error))) {
+    if ((state.tasks || []).length && (['completed', 'handed_off'].includes(state.status) || state.tasks.some(task => task.error))) {
         bottomHtml += `<details class="workflow-details"><summary>${escapeHtml(t('Artifact details'))}</summary>${state.tasks.map(task =>
             `<div class="step-detail">${escapeHtml(artifactLabel(task.type))} · ${escapeHtml(artifactStatusLabel(task.status))}${artifactMetadataText(task) ? ` · <bdi>${escapeHtml(artifactMetadataText(task))}</bdi>` : ''}${task.error ? `<div>${escapeHtml(task.error)}</div>` : ''}</div>`
         ).join('')}</details>`;
     }
-    if (!generationLimitSummary(state.tasks)) bottomHtml += `<p class="handoff-note" role="status">${escapeHtml(handoffMessage(state))}</p>`;
+    if (state.status === 'handed_off' || !generationLimitSummary(state.tasks)) bottomHtml += `<p class="handoff-note" role="status">${escapeHtml(handoffMessage(state))}</p>`;
     if (state.status === 'running' && state.step === 'wait_pdf_access') {
         bottomHtml += `${pdfWaitReason(state) === 'permission' ? `<button class="btn-generate" id="btn-resume-pdf">${escapeHtml(t("Allow download and continue"))}</button>` : ''}
           <button class="btn-secondary" id="btn-fallback-file">${escapeHtml(t("Upload PDF and continue"))}</button>
@@ -963,7 +978,7 @@ function renderProgress(state) {
     ${titleHtml}
     ${collectionHtml}
     ${state.failedUrlSourceId ? `<details class="workflow-details"><summary>${escapeHtml(t("Source replacement"))}</summary><div class="step-detail">${escapeHtml(t("Upload fallback uses this notebook. The failed URL source is kept. Artifacts use the replacement PDF."))}</div></details>` : ''}
-    ${['completed', 'queued', 'stopped'].includes(state.status)
+    ${['completed', 'queued', 'stopped', 'handed_off'].includes(state.status)
         ? `${bottomHtml}<details class="workflow-details"><summary>${escapeHtml(t("Workflow details"))}</summary><div class="pipeline">${stepsHtml}</div></details>`
         : `<div class="pipeline">${stepsHtml}</div>${bottomHtml}`}`;
     document.getElementById('skip-source')?.addEventListener('click', async event => {

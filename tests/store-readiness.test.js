@@ -70,7 +70,8 @@ test('ScholarRelay branding and package identity stay aligned', async () => {
   assert.match(popupScriptText, /addEventListener\('keydown'/);
   assert.match(popupScriptText, /aria-expanded/);
   assert.match(popupScriptText, /state\.status === 'stopped'.*cls = 'stopped'/);
-  assert.match(popupScriptText, /state\.status === 'completed'.*state\.tasks\.some/);
+  // Artifact-detail visibility and nonterminal presentation are exercised in
+  // queue-status-smoke with real completed, scheduled and handed-off DOM states.
   assert.match(readmeText, /formerly NotebookLM/);
   assert.match(privacyText, /^# Privacy Policy for ScholarRelay/m);
   assert.match(packageScript, /scholar-relay-v\$\(\$manifest\.version\)\.zip/);
@@ -88,6 +89,8 @@ test('runtime recovery recreates only missing polling alarms', () => {
   assert.equal(runtimeRecoveryAction({ status: 'running', step: 'wait_artifacts' }, false), 'create_alarm');
   assert.equal(runtimeRecoveryAction({ status: 'running', step: 'wait_artifacts' }, true), 'none');
   assert.equal(runtimeRecoveryAction({ status: 'completed', step: 'done' }, true), 'clear_alarm');
+  assert.equal(runtimeRecoveryAction({ status: 'handed_off', step: 'wait_artifacts' }, true), 'clear_alarm');
+  assert.equal(runtimeRecoveryAction({ status: 'handed_off', step: 'wait_artifacts' }, false), 'none');
 });
 
 test('runtime recovery stops interrupted non-idempotent phases', () => {

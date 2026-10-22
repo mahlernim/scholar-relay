@@ -36,7 +36,41 @@ export async function recoverySmoke({ popup, evaluate, reload, completedState })
         await new Promise(resolve => setTimeout(resolve, 20));
     }
     assert(!queue.serviceBlock && queue.paused && queue.jobs[0].status === 'queued', 'Connection resume changed the user pause or started work');
-    console.log('Recovery popup smoke passed: job deep link, failed stage, connection hold and independent pause');
+    for (const code of ['SESSION_ACCESS_REQUIRED', 'AUTH_REQUIRED']) {
+        for (const width of [320, 360]) {
+            await popup.call('Emulation.setDeviceMetricsOverride', { width, height: 600, deviceScaleFactor: 1, mobile: false });
+            const block = { id: `held-${code}-${width}`, code, message: `${code}: Connection needs attention.`,
+                sessionAppUrl: code === 'SESSION_ACCESS_REQUIRED' ? 'https://notebooklm.google.com/' : 'https://untrusted.example/?private=value' };
+            const fixture = { ...held, serviceBlock: block };
+            const seeded = await evaluate(popup, `chrome.runtime.sendMessage({type:'SMOKE_SET_QUEUE',queue:${JSON.stringify(fixture)}})`);
+            assert(seeded?.ok, 'Auth connection fixture was not committed');
+            await reload(popup);
+            await evaluate(popup, `globalThis.__smoke.refreshQueue()`);
+            const authView = await evaluate(popup, `(() => {
+                const open=document.getElementById('open-session-app'); open?.focus();
+                return {text:document.querySelector('.queue-connection')?.innerText,
+                    href:open?.href,target:open?.target,rel:open?.rel,focused:document.activeElement===open,
+                    retry:document.getElementById('btn-retry-connection')?.textContent,
+                    hint:document.querySelector('.job-hint')?.textContent,width:document.documentElement.scrollWidth};
+            })()`);
+            assert(authView.href === (code === 'SESSION_ACCESS_REQUIRED' ? 'https://notebooklm.google.com/' : 'https://notebook.google.com/'), 'Auth action used an unsafe or incorrect app route');
+            assert(authView.focused && authView.target === '_blank' && authView.rel.includes('noopener'), 'Open notebook action lost keyboard access or safe navigation');
+            assert(authView.retry === 'Try connection' && authView.hint?.includes('paper is saved'), 'Auth recovery lost explicit retry or saved-paper guidance');
+            assert(authView.width <= width, `${code} connection row overflowed at ${width}px`);
+            assert(code === 'SESSION_ACCESS_REQUIRED' ? authView.text.includes('Check access') && !authView.text.includes('Sign in')
+                : authView.text.includes('Sign in'), 'Access and sign-in guidance were confused');
+            const stillHeld = await evaluate(popup, `chrome.runtime.sendMessage({type:'GET_QUEUE'})`);
+            assert(stillHeld.serviceBlock?.id === block.id && stillHeld.jobs[0].status === 'queued', 'Inspecting the connection action resumed work');
+            await evaluate(popup, `document.getElementById('btn-retry-connection').click()`);
+            for (let i = 0; i < 50; i++) {
+                queue = await evaluate(popup, `chrome.runtime.sendMessage({type:'GET_QUEUE'})`);
+                if (!queue.serviceBlock) break;
+                await new Promise(resolve => setTimeout(resolve, 20));
+            }
+            assert(!queue.serviceBlock && queue.paused && queue.jobs[0].status === 'queued', 'Auth retry changed an independent pause or started work');
+        }
+    }
+    console.log('Recovery popup smoke passed: job deep link, failed stage, saved auth/access holds, safe app links, explicit retry and independent pause');
 }
 
 export async function compactProgressSmoke({ popup, evaluate, reload, root, origin }) {
@@ -55,7 +89,7 @@ export async function compactProgressSmoke({ popup, evaluate, reload, root, orig
             completedAt: new Date(fixedNow - 5000).toISOString(), tasks },
     ];
     await evaluate(popup, `chrome.tabs.create({url:${JSON.stringify(origin + '/plain')},active:true})`);
-    for (const locale of ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW', 'hi', 'ar', 'nl']) {
+    for (const locale of ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW', 'hi', 'ar', 'nl', 'es_419']) {
         const catalog = JSON.parse(await readFile(join(root, '_locales', locale, 'messages.json'), 'utf8'));
         const countText = catalog[messageKey('$1/$2 ready')].message.replace('$1', '1').replace('$2', '2');
         const { identifier } = await popup.call('Page.addScriptToEvaluateOnNewDocument', { source: `
@@ -110,7 +144,7 @@ export async function compactProgressSmoke({ popup, evaluate, reload, root, orig
     }
     await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'idle'})`);
     await reload(popup);
-    console.log('Compact progress smoke passed in thirteen locales: timers, counts, stable focus and height, reduced motion and no-PDF actions');
+    console.log('Compact progress smoke passed in fourteen locales: timers, counts, stable focus and height, reduced motion and no-PDF actions');
 }
 
 export async function generationLimitSmoke({ popup, evaluate, reload, root, completedState }) {
@@ -120,7 +154,7 @@ export async function generationLimitSmoke({ popup, evaluate, reload, root, comp
     const assert = (condition, message) => { if (!condition) throw new Error(message); };
     const out = join(root, 'dist', 'generationLimitSmoke');
     await mkdir(out, { recursive: true });
-    for (const locale of ['en','ko','ja','es','fr','de','pt_BR','zh_CN','it','zh_TW', 'hi', 'ar', 'nl']) {
+    for (const locale of ['en','ko','ja','es','fr','de','pt_BR','zh_CN','it','zh_TW', 'hi', 'ar', 'nl', 'es_419']) {
         const catalog = JSON.parse(await readFile(join(root, '_locales', locale, 'messages.json'), 'utf8'));
         const { identifier } = await popup.call('Page.addScriptToEvaluateOnNewDocument', { source:
             `const catalog=${JSON.stringify(catalog)}; chrome.i18n.getUILanguage=()=>${JSON.stringify(locale.replace('_', '-'))}; chrome.i18n.getMessage=(key,values=[])=>catalog[key]?.message.replace(/\\$(\\d+)/g,(_,i)=>values[i-1]??'')||'';` });
@@ -146,7 +180,7 @@ export async function generationLimitSmoke({ popup, evaluate, reload, root, comp
             }
         } finally { await popup.call('Page.removeScriptToEvaluateOnNewDocument', { identifier }); }
     }
-    console.log('generationLimitSmoke passed in thirteen locales');
+    console.log('generationLimitSmoke passed in fourteen locales');
 }
 
 export async function pdfWaitSmoke({ popup, evaluate, reload, root, completedState }) {
@@ -156,7 +190,7 @@ export async function pdfWaitSmoke({ popup, evaluate, reload, root, completedSta
     const assert = (condition, message) => { if (!condition) throw new Error(message); };
     const out = join(root, 'dist', 'pdfWaitSmoke');
     await mkdir(out, { recursive: true });
-    for (const locale of ['en','ko','ja','es','fr','de','pt_BR','zh_CN','it','zh_TW', 'hi', 'ar', 'nl']) {
+    for (const locale of ['en','ko','ja','es','fr','de','pt_BR','zh_CN','it','zh_TW', 'hi', 'ar', 'nl', 'es_419']) {
         const catalog = JSON.parse(await readFile(join(root, '_locales', locale, 'messages.json'), 'utf8'));
         const { identifier } = await popup.call('Page.addScriptToEvaluateOnNewDocument', { source:
             `const catalog=${JSON.stringify(catalog)}; chrome.i18n.getUILanguage=()=>${JSON.stringify(locale.replace('_', '-'))}; chrome.i18n.getMessage=(key,values=[])=>catalog[key]?.message.replace(/\\$(\\d+)/g,(_,i)=>values[i-1]??'')||'';` });
@@ -186,5 +220,5 @@ export async function pdfWaitSmoke({ popup, evaluate, reload, root, completedSta
             }
         } finally { await popup.call('Page.removeScriptToEvaluateOnNewDocument', { identifier }); }
     }
-    console.log('pdfWaitSmoke passed in thirteen locales');
+    console.log('pdfWaitSmoke passed in fourteen locales');
 }

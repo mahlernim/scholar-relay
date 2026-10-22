@@ -1120,5 +1120,25 @@
   "ui_b5c1611c": {
     "message": "소스 $1",
     "description": "Sources $1"
+  },
+  "ui_8264c96b": {
+    "message": "접근 확인",
+    "description": "Check access"
+  },
+  "ui_e603a33e": {
+    "message": "Gemini Notebook 접근 안내 페이지가 열렸습니다. 브라우저에서 Notebook을 열어 접근 가능 여부를 확인하세요.",
+    "description": "Gemini Notebook opened an access page. Open Notebook in your browser and check access."
+  },
+  "ui_aa20a418": {
+    "message": "예약됨",
+    "description": "Scheduled"
+  },
+  "ui_bb4257ad": {
+    "message": "Gemini Notebook이 예약된 결과물을 나중에 생성합니다. Chrome을 닫아도 됩니다.",
+    "description": "Gemini Notebook will generate scheduled artifacts later. You can close Chrome."
+  },
+  "ui_a5c99ad3": {
+    "message": "로컬 모니터링이 종료되었습니다. 예약되었거나 생성 중인 결과물은 이 노트북에서 확인하세요.",
+    "description": "Local monitoring ended. Check this notebook for scheduled or running results."
   }
 }

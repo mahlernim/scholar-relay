@@ -1,6 +1,6 @@
 # Privacy Policy for ScholarRelay
 
-Last updated: September 29, 2026
+Last updated: October 22, 2026
 
 ScholarRelay is an independent browser extension that helps a user add a PDF or webpage to the user's own Gemini Notebook account (formerly NotebookLM) and request artifacts. It is not affiliated with, authorized by, or endorsed by Google.
 
@@ -19,6 +19,8 @@ The extension handles only data needed for a user-requested workflow:
 
 The extension never asks for, reads, stores, or transmits a Google password or multi-factor authentication code. It does not use the Chrome Cookies API. Temporary Gemini Notebook CSRF and session values are kept only in service-worker memory and are discarded when that worker stops.
 
+For Notebook connection checks, required access to https://accounts.google.com/* lets Notebook requests follow redirects using the browser-managed session and inspect the final response URL and HTTP status. When normal Notebook pages lack usable session information, the extension can make one bounded login check starting on a Notebook host. These checks do not read the sign-in page body, passwords, verification codes, or cookies through an API. They do not use webRequest or monitor other browsing. A blocked response, timeout, or intermediate redirect alone does not establish that the user is signed out. Full redirect URLs and queries are not saved. The resulting connection error category can be saved with a queued job so recovery guidance survives a restart.
+
 ## How data is used and shared
 
 HTML metadata is read before remote PDF import. PDF bytes are downloaded only when upload is needed, such as after a confirmed URL import failure.
@@ -32,6 +34,7 @@ Usage reads occur on popup open, job start and once after a generation-limit fai
 Data is transmitted to:
 
 - Google's Gemini Notebook service, as necessary to perform the workflow requested by the user.
+- Google's sign-in service at accounts.google.com, when the bounded Notebook login check follows a redirect there.
 - The host of a user-selected PDF, when the extension must download that PDF. Cross-origin access is requested for that specific host before downloading.
 
 The developer does not operate a server for this extension and does not receive extension data. The extension contains no analytics, advertising, tracking, or telemetry. Data is not sold, licensed, used for advertising, or made available for human review by the developer.
@@ -47,7 +50,7 @@ Selection drafts remain in session storage. Notebook mode and enabled origins ar
 ## Local storage and retention
 
 - Settings and custom instructions remain in Chrome local extension storage until the user changes them or removes the extension.
-- The paper queue stores source URLs, titles, a settings snapshot for each job, Gemini Notebook identifiers, progress, and available artifact duration and counts. Audio tasks also retain compact submitted and returned language, format, length and instruction-presence values without duplicating custom prompt text. It holds up to 20 unfinished jobs and 50 previous finished jobs. Use Clear finished jobs to remove finished history. Removing the extension deletes the queue.
+- The paper queue stores source URLs, titles, a settings snapshot for each job, Gemini Notebook identifiers, progress, and available artifact duration and counts. Audio tasks also retain compact submitted and returned language, format, length and instruction-presence values without duplicating custom prompt text. It holds up to 20 unfinished jobs and normally retains up to 50 finished jobs. Clear finished jobs removes ordinary finished history. Jobs whose local monitoring ended while scheduled work remained unresolved, and jobs with uncertain or ongoing notebook deletion, are preserved beyond that history limit and are not removed by Clear finished jobs. Their source details, notebook links, and artifact identifiers remain available for checking. Removing the extension deletes the queue.
 - Queued PDF bytes are stored in IndexedDB, with a 40 MiB limit per file and 100 MiB combined limit. They are removed after upload, failure, or removal of the queued job. Cleanup interrupted by browser shutdown finishes when the extension next starts. Gemini Notebook authentication values are never saved to persistent storage.
 - Website permissions remain until the user revokes them in Chrome or removes the extension.
 - Retry eligibility times and bounded operation deadlines are saved locally so worker restarts do not bypass a server wait. They contain no authentication tokens. Page-text recovery claims and replacement-source identifiers are retained with the job to prevent duplicate uploads after interruption.

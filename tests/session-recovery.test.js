@@ -5,6 +5,7 @@ import { resetRetryMemoryForTesting } from '../retry-policy.js';
 
 const PRIMARY = 'https://notebook.google.com/';
 const LEGACY = 'https://notebooklm.google.com/';
+const LOGIN = 'https://notebook.google.com/login';
 const METHOD = __testing.RPCMethod.LIST_ARTIFACTS;
 const originalFetch = globalThis.fetch;
 
@@ -101,7 +102,7 @@ test('concurrent rejected reads share one tokenless-page recovery', async () => 
   assert.equal(rpcTokens.filter(value => value === 'csrf-fresh').length, 2);
 });
 
-test('persistent tokenless pages consume one extra homepage read across both hosts', async () => {
+test('persistent tokenless pages consume one extra homepage read and one sign-in probe across both hosts', async () => {
   await warmTokens();
   const homes = [];
   let rpcCalls = 0;
@@ -112,13 +113,13 @@ test('persistent tokenless pages consume one extra homepage read across both hos
   };
 
   await assert.rejects(listArtifactStatuses('notebook-id-one'), { code: 'SESSION_UNRECOGNIZED' });
-  assert.deepEqual(homes, [PRIMARY, PRIMARY, LEGACY]);
+  assert.deepEqual(homes, [PRIMARY, PRIMARY, LEGACY, LOGIN]);
   assert.equal(rpcCalls, 1);
   globalThis.fetch = async () => tokens('later');
   assert.equal((await ensureTokens()).csrfToken, 'csrf-later');
 });
 
-test('ordinary discovery does not reread tokenless app pages', async () => {
+test('ordinary discovery probes once without rereading tokenless app pages', async () => {
   const homes = [];
   globalThis.fetch = async url => {
     homes.push(url);
@@ -126,12 +127,12 @@ test('ordinary discovery does not reread tokenless app pages', async () => {
   };
 
   await assert.rejects(fetchTokens(), { code: 'SESSION_UNRECOGNIZED' });
-  assert.deepEqual(homes, [PRIMARY, LEGACY]);
+  assert.deepEqual(homes, [PRIMARY, LEGACY, LOGIN]);
 });
 
 for (const [label, target, code] of [
   ['unknown redirect', 'https://example.org/?secret=hidden', 'SESSION_UNRECOGNIZED'],
-  ['access gate', 'https://notebook.google/?location=unsupported', 'SESSION_UNRECOGNIZED'],
+  ['access gate', 'https://notebook.google/?location=unsupported', 'SESSION_ACCESS_REQUIRED'],
   ['cookie mismatch', 'https://accounts.google.com/CookieMismatch?secret=hidden', 'SESSION_UNRECOGNIZED'],
   ['login redirect', 'https://accounts.google.com/ServiceLogin?secret=hidden', 'AUTH_REQUIRED'],
 ]) {
@@ -205,7 +206,9 @@ test('a read rejection upgrades an ordinary refresh already in flight', async ()
   assert.equal(rpcCalls, 2);
 });
 
-test('the extra homepage read has a timeout and cannot consume another retry', async () => {
+test('the extra homepage read has a timeout and cannot consume another retry', async t => {
+  // Exercise the per-read timer independently of worker scheduling delays.
+  t.mock.method(performance, 'now', () => 0);
   await warmTokens();
   __testing.setReadTimeout(5);
   const homes = [], signals = [];
@@ -259,7 +262,56 @@ test(`a late read rejection ${siblingRecovered ? 'uses the refreshed cache' : 'r
 
   assert.equal((await late).size, 0);
   assert.deepEqual(homes, siblingRecovered ? [PRIMARY, PRIMARY]
-    : [PRIMARY, PRIMARY, LEGACY, PRIMARY, PRIMARY]);
+    : [PRIMARY, PRIMARY, LEGACY, LOGIN, PRIMARY, PRIMARY]);
   assert.equal(rpcCalls, siblingRecovered ? 4 : 3);
 });
 }
+
+test('a confirmed sign-out probe after read recovery never replays the rejected RPC', async () => {
+  await warmTokens();
+  const homes = [];
+  let rpcCalls = 0;
+  globalThis.fetch = async (url, options = {}) => {
+    if (options.method === 'POST') { rpcCalls++; return authFailure(); }
+    homes.push(url);
+    return url === LOGIN
+      ? response('', { url: 'https://accounts.google.com/ServiceLogin' })
+      : response('<html>Tokenless app</html>', { url });
+  };
+  await assert.rejects(listArtifactStatuses('notebook-id-one'), { code: 'AUTH_REQUIRED' });
+  assert.deepEqual(homes, [PRIMARY, PRIMARY, LEGACY, LOGIN]);
+  assert.equal(rpcCalls, 1);
+});
+
+test('the complete discovery has one shared deadline and cannot extend it for the probe', async t => {
+  let elapsed = 0;
+  t.mock.method(performance, 'now', () => elapsed);
+  __testing.setReadTimeout(50);
+  const homes = [];
+  globalThis.fetch = async url => {
+    homes.push(url);
+    elapsed += 50;
+    return response('<html>Tokenless app</html>', { url });
+  };
+  await assert.rejects(fetchTokens({ recoverMissingTokens: true }), { code: 'SESSION_UNRECOGNIZED' });
+  assert.deepEqual(homes, [PRIMARY, PRIMARY, LEGACY]);
+  assert.equal(elapsed, 150);
+});
+
+test('a stalled sign-in probe is aborted once and does not start another host probe', async t => {
+  t.mock.method(performance, 'now', () => 0);
+  __testing.setReadTimeout(5);
+  const homes = [];
+  let probeSignal;
+  globalThis.fetch = async (url, options) => {
+    homes.push(url);
+    if (url === LOGIN) {
+      probeSignal = options.signal;
+      return new Promise(() => {});
+    }
+    return response('<html>Tokenless app</html>', { url });
+  };
+  await assert.rejects(fetchTokens(), { code: 'SESSION_UNRECOGNIZED' });
+  assert.deepEqual(homes, [PRIMARY, LEGACY, LOGIN]);
+  assert.equal(probeSignal.aborted, true);
+});

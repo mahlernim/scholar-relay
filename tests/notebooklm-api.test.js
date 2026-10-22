@@ -351,6 +351,7 @@ test('artifact status and quiz quantity enums match current wire values', () => 
     FAILED: 4,
     SUGGESTED: 5,
     PENDING_REVIEW: 6,
+    SCHEDULED: 7,
   });
   assert.deepEqual(QuizQuantity, {
     FEWER: 1,
@@ -867,6 +868,24 @@ test('unknown artifact status keeps polling and generic values are not IDs', asy
   }
   assert.equal(__testing.extractFirstIdFromResult('artifact-id-12345'), 'artifact-id-12345');
   assert.equal(__testing.extractFirstIdFromResult('AbCdEfGhIjKlMnOp'), 'AbCdEfGhIjKlMnOp');
+});
+
+test('scheduled artifact responses preserve nonterminal status without requesting deferral', async () => {
+  const artifact = ['artifact-id-scheduled', 'Deferred audio', 1, null, 7];
+  let createdParams;
+  installFetch((url, options) => {
+    if (url.endsWith('/')) return tokenResponse();
+    if (url.includes(__testing.RPCMethod.CREATE_ARTIFACT)) {
+      const request = JSON.parse(new URLSearchParams(options.body).get('f.req'));
+      createdParams = JSON.parse(request[0][0][1]);
+      return rpcResponse(__testing.RPCMethod.CREATE_ARTIFACT, [artifact]);
+    }
+    return rpcResponse(__testing.RPCMethod.LIST_ARTIFACTS, [[artifact]]);
+  });
+  assert.equal(ArtifactStatus.SCHEDULED, 7);
+  assert.equal((await generateAudio('notebook-id-12345', ['source-id-12345'])).status, 'scheduled');
+  assert.equal(createdParams.length, 3, 'ordinary audio must not opt into deferred generation');
+  assert.equal((await listArtifactStatuses('notebook-id-12345')).get(artifact[0]).status, 'scheduled');
 });
 
 function nullStatusResponse(methodId, status) {
