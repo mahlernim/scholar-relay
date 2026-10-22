@@ -113,6 +113,7 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 
 ### 권한 및 문제 해결
 
+- `https://accounts.google.com/*` 권한은 제한된 Notebook 로그인 확인에서 기존 브라우저 세션의 리디렉션을 따라간 뒤 최종 응답 주소와 상태를 확인하는 데 사용합니다. 로그인 페이지 본문, 비밀번호, 인증 코드를 읽지 않으며 쿠키 API도 사용하지 않습니다. 시간 초과나 중간 리디렉션만으로 로그아웃 상태라고 판단하지 않습니다.
 - PDF 다운로드를 위해 현재 페이지와 다른 사이트에 있는 PDF를 직접 내려받아야 할 때 해당 PDF 사이트에 대한 Chrome 권한을 요청합니다. URL 가져오기는 다운로드 권한 없이 먼저 시도하며, 업로드가 필요할 때만 권한을 요청합니다. 권한을 거부하면 파일을 직접 선택할 수 있습니다.
 - 로컬 `file://` PDF를 읽으려면 확장 프로그램 세부정보에서 **파일 URL에 대한 액세스 허용**을 켜야 할 수 있습니다.
 - 실행되지 않으면 [Gemini Notebook](https://notebook.google.com)에 로그인되어 있는지 확인하고 다시 시도합니다.
@@ -186,6 +187,7 @@ The queue holds up to 20 unfinished jobs. Local PDFs are saved temporarily on yo
 
 ### Permissions and troubleshooting
 
+- Access to `https://accounts.google.com/*` lets a bounded Notebook login check follow the existing browser session and inspect the final response URL and status. The extension does not read the sign-in page body, passwords, verification codes, or cookies through an API. A timeout or intermediate redirect alone does not mean you are signed out.
 - For PDF downloads, Chrome asks for access to a specific PDF website when the PDF is hosted on a different site and must be downloaded directly. URL import is tried first without download access. If upload fallback needs permission, you can grant it or select the PDF manually.
 - To read local `file://` PDFs, enable **Allow access to file URLs** in the extension's details.
 - If a run does not start, confirm that you are signed in at [Gemini Notebook](https://notebook.google.com) and retry.

@@ -1,7 +1,7 @@
 {
-  "observedAt": "2026-10-22T14:01:38.938Z",
+  "observedAt": "2026-10-22T14:11:35.173Z",
   "profile": "new isolated signed-out profile",
-  "expectedClassification": "SESSION_UNRECOGNIZED",
+  "expectedClassification": "AUTH_REQUIRED",
   "requests": [
     {
       "requested": {
@@ -30,13 +30,16 @@
         "host": "notebook.google.com",
         "path": "/login"
       },
-      "status": 0,
-      "errorType": "TypeError"
+      "final": {
+        "host": "accounts.google.com",
+        "path": "/ServiceLogin"
+      },
+      "status": 401
     }
   ],
   "classification": {
     "ok": false,
-    "code": "SESSION_UNRECOGNIZED",
+    "code": "AUTH_REQUIRED",
     "phase": "auth_discovery",
     "failures": [
       {
@@ -48,6 +51,11 @@
         "host": "notebooklm.google.com",
         "kind": "format",
         "httpStatus": null
+      },
+      {
+        "host": "notebook.google.com",
+        "kind": "signin",
+        "httpStatus": 401
       }
     ]
   },
@@ -102,15 +110,16 @@
       "path": "/ServiceLogin"
     },
     {
-      "type": "failure",
-      "status": 0,
-      "blockedReason": null,
-      "corsError": "MissingAllowOriginHeader"
+      "type": "response",
+      "host": "accounts.google.com",
+      "path": "/ServiceLogin",
+      "status": 401
     }
   ],
   "hostPermissions": [
     "https://notebook.google.com/*",
     "https://notebooklm.google.com/*",
+    "https://accounts.google.com/*",
     "file:///*"
   ],
   "permissions": [

@@ -266,8 +266,8 @@ async function discoverTokens(recovery) {
     try {
       const { response, destination, html } = await readPage(homepageUrl);
 
-      if (!response.ok) {
-        failures.push({ host, kind: response.status === 401 ? 'signin'
+      if (!response.ok || destination.kind === 'signin') {
+        failures.push({ host, kind: destination.kind === 'signin' && [200, 401].includes(response.status) ? 'signin'
           : response.status === 429 ? 'rate_limit' : response.status >= 500 ? 'service' : 'http',
           httpStatus: response.status });
         continue;
@@ -318,12 +318,13 @@ async function discoverTokens(recovery) {
     const host = new URL(probeUrl).hostname;
     try {
       const { response, destination } = await readPage(probeUrl, false);
-      if (!response.ok) {
-        failures.push({ host, kind: response.status === 429 ? 'rate_limit'
-          : response.status >= 500 ? 'service' : 'http', httpStatus: response.status });
-      } else if (destination.kind === 'signin') {
-        confirmedSignIn = true;
-        failures.push({ host, kind: 'signin' });
+      if (!response.ok || destination.kind === 'signin') {
+        // Google can serve an HTTP 401 challenge at the final sign-in page.
+        // A 401 from an app, unknown host or unknown Accounts path is not proof.
+        const kind = destination.kind === 'signin' && [200, 401].includes(response.status) ? 'signin'
+          : response.status === 429 ? 'rate_limit' : response.status >= 500 ? 'service' : 'http';
+        confirmedSignIn = kind === 'signin';
+        failures.push({ host, kind, httpStatus: response.status });
       } else if (destination.kind !== 'app') {
         failures.push({ host, kind: destination.kind, redirectHost: destination.host });
       }

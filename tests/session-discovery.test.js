@@ -21,7 +21,10 @@ for (const [label, reply, code] of [
   ['unrecognized redirect', () => response(200, '', 'https://example.org/?secret=abc'), 'SESSION_UNRECOGNIZED'],
   ['forbidden', () => response(403), 'SESSION_UNRECOGNIZED'],
   ['login redirect', () => response(200, '', 'https://accounts.google.com/ServiceLogin?secret=abc'), 'AUTH_REQUIRED'],
-  ['unauthorized', () => response(401), 'AUTH_REQUIRED'],
+  ['trusted sign-in challenge', () => response(401, '', 'https://accounts.google.com/ServiceLogin?secret=abc'), 'AUTH_REQUIRED'],
+  ['unauthorized app response', () => response(401), 'SESSION_UNRECOGNIZED'],
+  ['unauthorized unknown response', () => response(401, '', 'https://example.org/'), 'SESSION_UNRECOGNIZED'],
+  ['unexpected successful sign-in status', () => response(204, '', 'https://accounts.google.com/ServiceLogin'), 'SESSION_UNRECOGNIZED'],
 ]) {
   test(`${label} discovery failures retain a safe category and localized summary`, async () => {
     globalThis.fetch = async () => reply();
@@ -157,7 +160,9 @@ for (const [label, probe, code] of [
   ['timed-out redirect fetch', () => { throw new Error('The network request timed out.'); }, 'SESSION_UNRECOGNIZED'],
   ['unknown redirect', () => response(200, '', 'https://example.org/'), 'SESSION_UNRECOGNIZED'],
   ['cookie mismatch', () => response(200, '', 'https://accounts.google.com/CookieMismatch'), 'SESSION_UNRECOGNIZED'],
-  ['unauthorized probe', () => response(401, '', 'https://accounts.google.com/ServiceLogin'), 'SESSION_UNRECOGNIZED'],
+  ['unauthorized app probe', () => response(401), 'SESSION_UNRECOGNIZED'],
+  ['unauthorized unknown probe', () => response(401, '', 'https://example.org/'), 'SESSION_UNRECOGNIZED'],
+  ['empty sign-in probe', () => response(204, '', 'https://accounts.google.com/ServiceLogin'), 'SESSION_UNRECOGNIZED'],
   ['forbidden probe', () => response(403, '', 'https://accounts.google.com/ServiceLogin'), 'SESSION_UNRECOGNIZED'],
   ['rate-limited probe', () => response(429, '', 'https://accounts.google.com/ServiceLogin'), 'SESSION_RATE_LIMITED'],
   ['service-error probe', () => response(503, '', 'https://accounts.google.com/ServiceLogin'), 'SESSION_UNAVAILABLE'],
@@ -175,16 +180,46 @@ for (const [label, probe, code] of [
   });
 }
 
+for (const status of [200, 401]) {
+  for (const path of ['/ServiceLogin', '/AccountChooser', '/v3/signin/identifier']) {
+    test(`only the final trusted sign-in ${status} at ${path} confirms sign-out without reading its body`, async () => {
+      const calls = [];
+      globalThis.fetch = async url => {
+        calls.push(url);
+        if (!url.endsWith('/login')) return response(200, '<html>Tokenless app</html>', url);
+        return { ...response(status, '"SNlM0e":"wrong","FdrFJe":"wrong"', `https://accounts.google.com${path}?private=value`),
+          text: async () => { throw new Error('The sign-in body must not be read.'); } };
+      };
+      await assert.rejects(fetchTokens(), error => {
+        assert.equal(error.code, 'AUTH_REQUIRED');
+        assert.doesNotMatch(error.message + JSON.stringify(error), /private|wrong|ServiceLogin|AccountChooser|identifier/);
+        return true;
+      });
+      assert.deepEqual(calls, ['https://notebook.google.com/', 'https://notebooklm.google.com/', 'https://notebook.google.com/login']);
+    });
+  }
+}
+
+for (const finalUrl of ['http://accounts.google.com/ServiceLogin', 'https://accounts.google.com.evil.test/ServiceLogin',
+  'https://accounts.google.com:8443/ServiceLogin', 'https://name@accounts.google.com/ServiceLogin',
+  'https://accounts.google.com/CookieMismatch', 'https://accounts.google.com/unknown', 'not-a-url']) {
+  test(`a final 401 at ${finalUrl} does not establish sign-out`, async () => {
+    globalThis.fetch = async url => url.endsWith('/login') ? response(401, '', finalUrl) : response(200, '<html>Tokenless</html>', url);
+    await assert.rejects(fetchTokens(), { code: 'SESSION_UNRECOGNIZED' });
+  });
+}
+
 for (const [label, fallback, code] of [
   ['rate limit', () => response(429), 'SESSION_RATE_LIMITED'],
   ['service error', () => response(503), 'SESSION_UNAVAILABLE'],
+  ['network failure', () => { throw new TypeError('Failed to fetch'); }, 'SESSION_UNAVAILABLE'],
   ['access gate', () => response(200, '', 'https://notebooklm.google/'), 'SESSION_ACCESS_REQUIRED'],
   ['unknown redirect', () => response(200, '', 'https://example.org/'), 'SESSION_UNRECOGNIZED'],
   ['forbidden', () => response(403), 'SESSION_UNRECOGNIZED'],
 ]) {
-  test(`a confirmed probe does not erase ${label} evidence from another host`, async () => {
+  for (const status of [200, 401]) test(`a confirmed ${status} probe does not erase ${label} evidence from another host`, async () => {
     globalThis.fetch = async url => url.endsWith('/login')
-      ? response(200, '', 'https://accounts.google.com/ServiceLogin')
+      ? response(status, '', 'https://accounts.google.com/ServiceLogin')
       : url.includes('notebooklm') ? fallback() : response(200, '<html>Tokenless app</html>', url);
     await assert.rejects(fetchTokens(), { code });
   });

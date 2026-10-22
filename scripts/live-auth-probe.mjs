@@ -14,7 +14,7 @@ const runRoot = await mkdtemp(join(root, 'dist', 'live-auth-'));
 const extensionRoot = join(runRoot, 'extension');
 const profileRoot = join(runRoot, 'profile');
 const delay = ms => new Promise(resolveDelay => setTimeout(resolveDelay, ms));
-const expectedCode = process.argv.find(arg => arg.startsWith('--expect-code='))?.slice('--expect-code='.length) || 'SESSION_UNRECOGNIZED';
+const expectedCode = process.argv.find(arg => arg.startsWith('--expect-code='))?.slice('--expect-code='.length) || 'AUTH_REQUIRED';
 if (!['AUTH_REQUIRED', 'SESSION_UNRECOGNIZED'].includes(expectedCode)) throw new Error('Unsupported expected classification.');
 
 async function chromeExecutable() {

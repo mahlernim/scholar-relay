@@ -19,7 +19,7 @@ The extension handles only data needed for a user-requested workflow:
 
 The extension never asks for, reads, stores, or transmits a Google password or multi-factor authentication code. It does not use the Chrome Cookies API. Temporary Gemini Notebook CSRF and session values are kept only in service-worker memory and are discarded when that worker stops.
 
-When Notebook returns a page without usable session information, the extension makes a bounded login check on an already permitted Notebook host. If Chrome prevents the extension from seeing the final response or the check times out, that check does not establish that the user is signed out. No Google Accounts host permission is added. Full redirect URLs and queries are not saved. The resulting connection error category can be saved with a queued job so recovery guidance survives a restart.
+For Notebook connection checks, required access to https://accounts.google.com/* lets Notebook requests follow redirects using the browser-managed session and inspect the final response URL and HTTP status. When normal Notebook pages lack usable session information, the extension can make one bounded login check starting on a Notebook host. These checks do not read the sign-in page body, passwords, verification codes, or cookies through an API. They do not use webRequest or monitor other browsing. A blocked response, timeout, or intermediate redirect alone does not establish that the user is signed out. Full redirect URLs and queries are not saved. The resulting connection error category can be saved with a queued job so recovery guidance survives a restart.
 
 ## How data is used and shared
 
@@ -34,6 +34,7 @@ Usage reads occur on popup open, job start and once after a generation-limit fai
 Data is transmitted to:
 
 - Google's Gemini Notebook service, as necessary to perform the workflow requested by the user.
+- Google's sign-in service at accounts.google.com, when the bounded Notebook login check follows a redirect there.
 - The host of a user-selected PDF, when the extension must download that PDF. Cross-origin access is requested for that specific host before downloading.
 
 The developer does not operate a server for this extension and does not receive extension data. The extension contains no analytics, advertising, tracking, or telemetry. Data is not sold, licensed, used for advertising, or made available for human review by the developer.
