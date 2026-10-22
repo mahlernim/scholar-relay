@@ -26,7 +26,8 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "24"
+          node-version: "^24.22.1"
+          check-latest: true
           package-manager-cache: false
 
       - name: Set up pinned Chromium
@@ -51,7 +52,8 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "24"
+          node-version: "^24.22.1"
+          check-latest: true
           package-manager-cache: false
 
       - name: Run deterministic tests

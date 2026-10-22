@@ -177,6 +177,9 @@ Published v1.2.2 package SHA-256, verified again against the local archive and G
 
 Use the existing commands according to the change being made.
 
+Use Node.js 24.22.1 or a newer 24.x release for development and testing. CI checks
+for the latest 24.x release at or above that security baseline.
+
 | Command | Purpose and scope |
 | --- | --- |
 | `npm test` | Deterministic API, metadata, permissions and lifecycle tests. The finalized v1.2.2 release recorded 51 passing tests. |
