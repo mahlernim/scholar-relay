@@ -25,7 +25,7 @@ import { activeUsage, actionLimited } from './usage.js';
  */
 
 import { DEFAULT_SETTINGS } from './settings.js';
-import { createJobQueue, canStartNextJob, isUnfinishedJob, MAX_QUEUED_JOBS, MAX_QUEUED_PDF_BYTES } from './job-queue.js';
+import { createJobQueue, canStartNextJob, isUnfinishedJob, isUnsettledArtifactTask, MAX_QUEUED_JOBS, MAX_QUEUED_PDF_BYTES } from './job-queue.js';
 import { createQueuedPdfStore } from './queued-pdfs.js';
 import { t, errorSummary, generationLimitSummary, pdfWaitSummary } from './i18n.js';
 import {
@@ -765,9 +765,16 @@ async function notifyJobAttention(state, error) {
 // Only session discovery before notebook creation can return safely to the queue.
 async function holdForSession(runId, error) {
     if (error?.phase !== 'auth_discovery' || ![
-        'AUTH_REQUIRED', 'SESSION_RATE_LIMITED', 'SESSION_UNAVAILABLE', 'SESSION_UNRECOGNIZED',
+        'AUTH_REQUIRED', 'SESSION_ACCESS_REQUIRED', 'SESSION_RATE_LIMITED', 'SESSION_UNAVAILABLE', 'SESSION_UNRECOGNIZED',
     ].includes(error.code)) return false;
     const diagnostic = failureDiagnostic(error, 'auth');
+    const failures = Array.isArray(error.failures) ? error.failures : [];
+    const appHosts = ['notebook.google.com', 'notebooklm.google.com'];
+    const kind = error.code === 'SESSION_ACCESS_REQUIRED' ? 'access' : 'signin';
+    const appFailure = failures.find(item => appHosts.includes(item?.host) && item.kind === kind)
+        || failures.find(item => appHosts.includes(item?.host));
+    // Only retain the attempted app origin, never a redirect URL or account route.
+    diagnostic.sessionAppUrl = `https://${appFailure?.host || appHosts[0]}/`;
     const result = await pipelineState.transact(queue => {
         const job = queue.jobs.find(item => item.runId === runId);
         if (job?.status !== 'running' || job.step !== 'auth' || job.notebookId) return null;
@@ -978,8 +985,8 @@ async function tickSourcePollOperation(state) {
                     tasks.push({ type, taskId: res.taskId || null, status: 'failed', error: res.error || 'Artifact generation failed' });
                 } else {
                     if (!res?.taskId) throw new Error('API returned no task ID');
-                    // Pending/unknown initial states are polled like in-progress tasks.
-                    tasks.push({ type, taskId: res.taskId, status: 'in_progress' });
+                    // Preserve deferred acceptance instead of claiming active generation.
+                    tasks.push({ type, taskId: res.taskId, status: res.status === 'scheduled' ? 'scheduled' : 'in_progress' });
                 }
                 Object.assign(tasks[tasks.length - 1], taskMetadata(res));
             } catch (e) {
@@ -996,6 +1003,7 @@ async function tickSourcePollOperation(state) {
             if (submittedAudioOptions) tasks[tasks.length - 1].submittedAudioOptions = submittedAudioOptions;
             await transitionRun(runId, {
                 tasks: [...tasks],
+                scheduledObserved: tasks.some(task => task.status === 'scheduled'),
                 stepDetail: `Started ${tasks.length} artifact request${tasks.length === 1 ? '' : 's'}...`,
             }, { expectedSteps: ['generate_artifacts'] });
         };
@@ -1135,8 +1143,32 @@ async function tickArtifactPollOperation(state) {
     }
     const ARTIFACT_TIMEOUT_MS = 1200000; // 20 minutes
     const elapsed = pollingElapsedMs(state.stepStartedAt);
+    const scheduledObserved = state.scheduledObserved || tasks.some(task => task.status === 'scheduled');
+
+    // A restart can happen after the final task update but before completion.
+    // Saved terminal evidence still wins over the local observation deadline.
+    if (scheduledObserved && tasks.every(task => !isUnsettledArtifactTask(task))) {
+        if (tasks.some(task => task.status === 'uncertain')) {
+            await failPipeline(runId, 'Uncertain artifact generation. Some requests may have been accepted. Check this notebook before starting again.');
+            return;
+        }
+        await completePipeline(runId);
+        return;
+    }
 
     if (elapsed > ARTIFACT_TIMEOUT_MS) {
+        if (scheduledObserved && tasks.some(isUnsettledArtifactTask)) {
+            // This ends local observation, not remote work. The server may start
+            // a deferred artifact after this window, so preserve its identity.
+            await transitionRun(runId, {
+                status: 'handed_off',
+                scheduledObserved: true,
+                handedOffAt: new Date().toISOString(),
+                stepDetail: 'Local monitoring ended. Check this notebook for scheduled or running results.',
+                nextEligibleAt: null,
+            }, { expectedSteps: ['wait_artifacts'] });
+            return;
+        }
         await failPipeline(runId, 'Artifact generation timed out after 20 minutes.');
         return;
     }
@@ -1155,15 +1187,15 @@ async function tickArtifactPollOperation(state) {
 
     for (let i = 0; i < tasks.length; i++) {
         const task = tasks[i];
-        if (task.status !== 'in_progress') continue;
+        if (!isUnsettledArtifactTask(task)) continue;
         try {
-            const s = statusByTaskId.get(String(task.taskId)) || { taskId: task.taskId, status: 'pending' };
-            if (s.taskId === String(task.taskId)) {
-                updatedTasks[i] = { ...task, ...taskMetadata(s, task) };
-            }
-            if (s.status === 'completed' || s.status === 'failed') {
-                updatedTasks[i] = { ...updatedTasks[i], status: s.status };
-                console.log(`[Tick] ${task.type}: ${s.status}`);
+            const s = statusByTaskId.get(String(task.taskId));
+            if (!s || (s.taskId != null && s.taskId !== String(task.taskId))) continue;
+            updatedTasks[i] = { ...task, ...taskMetadata(s, task) };
+            // Missing or unfamiliar listings cannot erase a known scheduled
+            // state or establish completion. Preserve the last understood state.
+            if (['completed', 'failed', 'scheduled', 'in_progress', 'pending', 'pending_review', 'suggested'].includes(s.status)) {
+                updatedTasks[i].status = s.status;
             }
         } catch (err) {
             console.warn(`[Tick] Error polling ${task.type}:`, err.message);
@@ -1174,11 +1206,12 @@ async function tickArtifactPollOperation(state) {
     const summary = updatedTasks.map(t => `${t.type}: ${t.status}`).join(' | ');
     const updated = await transitionRun(runId, {
         tasks: updatedTasks,
+        scheduledObserved: !!scheduledObserved || updatedTasks.some(task => task.status === 'scheduled'),
         stepDetail: `${summary} (~${elapsedMin} min elapsed)`,
     }, { expectedSteps: ['wait_artifacts'] });
     if (!updated) return;
 
-    const allDone = updatedTasks.every(t => t.status !== 'in_progress');
+    const allDone = updatedTasks.every(task => !isUnsettledArtifactTask(task));
     if (allDone && updatedTasks.length > 0) {
         if (updatedTasks.some(t => t.status === 'uncertain')) {
             await failPipeline(runId, 'Uncertain artifact generation. Some requests may have been accepted. Check this notebook before starting again.');
@@ -1725,7 +1758,7 @@ async function inspectNotebookCleanup(runId) {
     }
     const [sources, artifacts] = await Promise.all([listSources(job.notebookId), listArtifactStatuses(job.notebookId)]);
     const statuses = [...artifacts.values()].map(artifact => artifact.status);
-    if (statuses.some(status => ['completed', 'in_progress', 'pending', 'pending_review', 'unknown'].includes(status))) {
+    if (statuses.some(status => status !== 'failed' && status !== 'suggested')) {
         throw new Error('This notebook has completed or possibly active work. Open it and review it manually.');
     }
     return {
@@ -1768,7 +1801,7 @@ async function deleteJobNotebook(message) {
 async function clearFinishedJobs() {
     await ensureBootReconciled();
     await pipelineState.transact(queue => {
-        queue.jobs = queue.jobs.filter(job => isUnfinishedJob(job) || ['deleting', 'unknown'].includes(job.cleanupStatus));
+        queue.jobs = queue.jobs.filter(job => isUnfinishedJob(job) || job.status === 'handed_off' || ['deleting', 'unknown'].includes(job.cleanupStatus));
         return {};
     });
     await syncQueueRuntime();

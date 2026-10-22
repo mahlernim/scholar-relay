@@ -277,5 +277,10 @@
   "Page text": "Paginatekst",
   "Wait for the queue to resume or finish preparing another job.": "Wacht tot de wachtrij wordt hervat of een andere taak klaar is met voorbereiden.",
   "Slides $1": "Dia's $1",
-  "Sources $1": "Bronnen $1"
+  "Sources $1": "Bronnen $1",
+  "Check access": "Controleer toegang",
+  "Gemini Notebook opened an access page. Open Notebook in your browser and check access.": "Gemini Notebook heeft een toegangspagina geopend. Open Notebook in je browser en controleer de toegang.",
+  "Scheduled": "Gepland",
+  "Gemini Notebook will generate scheduled artifacts later. You can close Chrome.": "Gemini Notebook maakt de geplande inhoud later. Je kunt Chrome sluiten.",
+  "Local monitoring ended. Check this notebook for scheduled or running results.": "De lokale controle is gestopt. Bekijk deze notebook voor geplande of lopende resultaten."
 }

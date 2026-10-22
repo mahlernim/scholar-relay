@@ -277,5 +277,10 @@
   "Page text": "पृष्ठ का टेक्स्ट",
   "Wait for the queue to resume or finish preparing another job.": "कतार फिर चलने या दूसरे कार्य की तैयारी पूरी होने तक प्रतीक्षा करें।",
   "Slides $1": "स्लाइड $1",
-  "Sources $1": "स्रोत $1"
+  "Sources $1": "स्रोत $1",
+  "Check access": "ऐक्सेस जाँचें",
+  "Gemini Notebook opened an access page. Open Notebook in your browser and check access.": "Gemini Notebook ने ऐक्सेस पेज खोला है। ब्राउज़र में Notebook खोलकर ऐक्सेस जाँचें।",
+  "Scheduled": "निर्धारित",
+  "Gemini Notebook will generate scheduled artifacts later. You can close Chrome.": "Gemini Notebook निर्धारित सामग्री बाद में बनाएगा। आप Chrome बंद कर सकते हैं।",
+  "Local monitoring ended. Check this notebook for scheduled or running results.": "स्थानीय निगरानी समाप्त हो गई है। निर्धारित या बन रहे परिणामों के लिए यह नोटबुक देखें।"
 }

@@ -50,5 +50,9 @@
   "nl": [
     "Scholar Relay - Gemini Notebook (NotebookLM) automatisering",
     "Importeer pdf’s, arXiv-artikelen en webpagina’s in Gemini Notebook (NotebookLM). Maak audio-overzichten en studiemateriaal."
+  ],
+  "es_419": [
+    "Scholar Relay - Automatización de Gemini Notebook (NotebookLM)",
+    "Importa PDF, artículos de arXiv y páginas a Gemini Notebook (NotebookLM). Genera resúmenes en audio y materiales de estudio."
   ]
 }

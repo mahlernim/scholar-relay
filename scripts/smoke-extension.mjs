@@ -262,9 +262,13 @@ try {
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   // Route the copied test extension to a controlled server. Production files are untouched.
   const apiPath = join(extensionRoot, 'notebooklm-api.js');
-  await writeFile(apiPath, (await readFile(apiPath, 'utf8'))
+  const destinationGuard = "    if (url.protocol !== 'https:' || url.port || url.username || url.password) return { kind: 'redirect', host };";
+  const copiedApi = await readFile(apiPath, 'utf8');
+  assert(copiedApi.includes(destinationGuard), 'Session destination guard changed. Review the local fixture override.');
+  await writeFile(apiPath, copiedApi
     .replace("const DEFAULT_BASE_URL = 'https://notebook.google.com';", `const DEFAULT_BASE_URL = '${origin}';`)
-    .replace("const LEGACY_BASE_URL = 'https://notebooklm.google.com';", `const LEGACY_BASE_URL = '${origin}';`));
+    .replace("const LEGACY_BASE_URL = 'https://notebooklm.google.com';", `const LEGACY_BASE_URL = '${origin}';`)
+    .replace(destinationGuard, `    if (url.origin === '${origin}' && !url.username && !url.password) return { kind: 'app', host, origin: url.origin };\n${destinationGuard}`));
   const workerPath = join(extensionRoot, 'background.js');
   await writeFile(workerPath, (await readFile(workerPath,'utf8')) + '\nchrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message.type!=="SMOKE_TICK")return;handlePollAlarm({name:ALARM_NAME}).then(()=>reply({ok:true}));return true;});\n');
   // Fixture replacement must use the same serialized writer as worker callbacks.
@@ -572,5 +576,6 @@ try {
   if (dirname(resolvedTemp) !== safeTempRoot || !basename(resolvedTemp).startsWith('scholar-relay-smoke-')) {
     throw new Error(`Refusing to remove unexpected temporary path: ${resolvedTemp}`);
   }
-  await rm(resolvedTemp, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  if (process.env.SCHOLAR_RELAY_RETAIN_SMOKE === '1') console.log(`Retained smoke profile and copied extension at ${resolvedTemp}`);
+  else await rm(resolvedTemp, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 }

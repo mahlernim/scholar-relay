@@ -682,3 +682,21 @@ The same ZIP was uploaded once to existing Chrome Web Store item `epopghhfmpokhb
 초안 준비 후 사용자의 공개 및 제출 승인을 받아 커밋 `a4ff399bf595735a4d938a6ef75983bd79bb555d`의 v1.5.4를 GitHub에 공개했습니다. PR 최종 커밋과 병합된 main의 CI가 통과했습니다. 공개 다운로드의 허용 파일 39개, 크기 222659바이트와 위 SHA-256이 검증한 ZIP과 일치합니다.
 
 같은 ZIP을 기존 Chrome 웹 스토어 항목에 한 번 업로드하여 1.5.4의 SUCCEEDED 응답을 확인했습니다. 13개 언어 설명, 네덜란드어 목록과 스크린샷 3개, 교체한 중국어 간체 스크린샷 3개를 저장하고 대조했습니다. 승인 후 자동 공개를 설정하여 제출했으며 후속 API 조회에서 1.5.4는 PENDING_REVIEW, 공개 버전은 1.5.3의 100% 배포로 확인했습니다. 경고나 게시 중단 표시는 없습니다. 심사 대기는 스토어 공개 완료가 아닙니다. #66의 공개 후 검색 확인과 #95의 실제 동영상 및 슬라이드 메타데이터 검증은 계속 열어 둡니다.
+
+### October 22 v1.5.5 session recovery and scheduled artifacts
+
+Issues #94 and #110 share one session-discovery change. Exact HTTPS app origins are checked before using tokens. Recognized marketing gates become SESSION_ACCESS_REQUIRED. A successful tokenless app page permits one shared, bounded read-only `/login` check. Only a successful final response at a validated Google sign-in destination establishes AUTH_REQUIRED. A failed or timed-out optional probe retains the preceding unknown-page evidence. Rate limits, service failures, access restrictions and unrecognized destinations retain their diagnostic priority. No cookies, tokens, HTML bodies or account selectors are persisted. The existing connection row saves queued papers and PDF references and offers a validated app link plus an explicit connection retry. Pausing the queue remains independent of recovery.
+
+Read-only live qualification found an important #110 limit. Signed-in browser navigation through `/login` returns to the app. A fresh signed-out Chrome profile receives tokenless HTTP 200 app pages and a login redirect whose final cross-origin response is hidden by Chrome. An intermediate sign-in redirect can also occur during a signed-in handshake, so it must not establish sign-out after a fetch failure or timeout. The release preserves SESSION_UNRECOGNIZED for this case and adds no new permissions. The bounded probe and conservative regression coverage ship, while #110 remains open for reliable live detection.
+
+Issue #115 treats status 7 as scheduled in create and list responses. Scheduled identities survive partial or unknown listings and restarts. Scheduled work remains nonterminal, and only known active siblings animate. The existing 20-minute observation window and three active generation slots remain bounded. Jobs that have observed scheduled work and still have unresolved remote tasks at the deadline become handed_off with their task identities, notebook link and a frozen observation time. They release their local slot without a completion notification, regeneration, timeout failure or automatic deletion. History pruning and Clear finished jobs preserve these unresolved records. Confirmed final task evidence can still complete or fail the job after a worker restart.
+
+Spanish for Latin America uses `es_419` and keeps Spain Spanish as a separate locale. All 284 source messages, metadata, notifications, recovery guidance and store descriptions are translated. Product terms follow official es-419 Help. This is machine-assisted editorial review, not native-speaker certification. Fourteen locales are covered by the popup smoke at 320 and 360 pixels. The manifest and package are aligned at patch version 1.5.5, with 40 runtime files. Publication and Chrome Web Store submission are authorized after all release checks pass. Final provenance and provider state are retained with the [release](https://github.com/mahlernim/scholar-relay/releases/tag/v1.5.5).
+
+한국어
+
+#94와 #110은 하나의 세션 탐색 수정으로 처리합니다. 정확한 HTTPS 앱 주소를 검증한 뒤 토큰을 사용하며 접근 제한, Google 로그인 필요와 알 수 없는 응답을 구분합니다. 세션 정보가 없는 정상 앱 응답에만 제한된 읽기 전용 로그인 확인을 한 번 허용합니다. 쿠키, 토큰, 응답 본문과 계정 선택 정보는 저장하지 않습니다. 기존 연결 안내에서 논문과 PDF 참조를 보존하고 안전한 앱 링크와 직접 연결 재시도를 제공합니다. 대기열 일시 정지는 별도로 유지합니다.
+
+#115는 서버 상태 7을 예약됨으로 처리하고 조회와 재시작 후에도 작업 ID를 보존합니다. 예약 상태는 완료로 처리하지 않으며 실제 활성 작업만 애니메이션을 표시합니다. 20분의 로컬 확인과 동시 생성 세 자리 제한을 유지합니다. 예약 상태를 관찰한 작업이 기한에도 해결되지 않으면 노트북 링크와 작업 상태를 기록에 남기고 로컬 자리를 비웁니다. 완료 알림, 재생성, 시간 초과 실패나 자동 삭제를 하지 않습니다. 기록 정리에서도 해결되지 않은 작업을 보존합니다.
+
+라틴 아메리카 스페인어 `es_419`를 별도로 추가하여 14개 화면 언어를 지원합니다. 284개 문구, 메타데이터, 알림, 복구 안내와 스토어 설명을 번역했으며 공식 도움말 용어를 참고했습니다. 기계 보조 검토이며 원어민 검수는 아닙니다. 버전은 패치 1.5.5이며 런타임 파일은 40개입니다. 모든 검증 후 공개와 스토어 제출을 진행하고 최종 빌드 근거와 심사 상태는 릴리스에 기록합니다.

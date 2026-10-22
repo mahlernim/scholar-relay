@@ -1120,5 +1120,25 @@
   "ui_b5c1611c": {
     "message": "来源 $1",
     "description": "Sources $1"
+  },
+  "ui_8264c96b": {
+    "message": "检查访问权限",
+    "description": "Check access"
+  },
+  "ui_e603a33e": {
+    "message": "Gemini Notebook 打开了访问提示页面。请在浏览器中打开 Notebook 并检查是否可以访问。",
+    "description": "Gemini Notebook opened an access page. Open Notebook in your browser and check access."
+  },
+  "ui_aa20a418": {
+    "message": "已安排",
+    "description": "Scheduled"
+  },
+  "ui_bb4257ad": {
+    "message": "Gemini Notebook 将稍后生成已安排的资料。可以关闭 Chrome。",
+    "description": "Gemini Notebook will generate scheduled artifacts later. You can close Chrome."
+  },
+  "ui_a5c99ad3": {
+    "message": "本地监控已结束。请在此笔记本中查看已安排或正在生成的结果。",
+    "description": "Local monitoring ended. Check this notebook for scheduled or running results."
   }
 }

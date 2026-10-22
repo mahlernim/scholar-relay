@@ -6,6 +6,12 @@ ScholarRelay (Scholar Relay) imports PDFs, arXiv research papers, and webpages i
 
 > ScholarRelay is an independent open-source extension and is not affiliated with, authorized by, or endorsed by Google. It uses your existing signed-in Gemini Notebook browser session and never asks for your Google password or verification code.
 
+## Version 1.5.5
+
+Version 1.5.5 adds Latin American Spanish interface text and notifications. Session guidance distinguishes sign-in from access restrictions. Scheduled artifacts remain distinct from active generation, and notebook links stay available when local monitoring ends. Release and Chrome Web Store publication states are recorded in the release notes.
+
+1.5.5는 라틴 아메리카 스페인어 화면과 알림을 추가합니다. 로그인 문제와 접근 제한을 구분해 안내합니다. 예약된 결과물을 실제 생성 중인 작업과 구분하며 로컬 모니터링이 끝난 뒤에도 노트북 링크를 유지합니다. GitHub 릴리스와 Chrome 웹 스토어 게시 상태는 릴리스 노트에 기록합니다.
+
 ## Version 1.5.4
 
 Version 1.5.4 adds Dutch interface text and notifications, corrects Simplified Chinese wording, shows available artifact duration and counts, and includes the selected audio length in the start summary. Redundant progress text has been removed. The GitHub release is available. Chrome Web Store review status is recorded in the release notes.
@@ -42,7 +48,7 @@ The compact selector remembers its notebook mode. Optional per-site detection sh
 
 ScholarRelay(Scholar Relay)는 PDF, arXiv 연구 논문, 웹페이지를 Gemini Notebook(이전 명칭 NotebookLM)으로 가져옵니다. 노트북을 정리하고 AI 오디오 오버뷰, 학습 자료 등 원하는 아티팩트를 한 번에 생성합니다.
 
-v1.5.4에서는 화면과 알림을 영어, 한국어, 일본어, 스페인어, 프랑스어, 독일어, 브라질 포르투갈어, 중국어 간체, 이탈리아어, 중국어 번체, 힌디어, 아랍어, 네덜란드어로 제공합니다. 화면 언어는 Chrome 설정을 따르며 지원하지 않는 언어에서는 영어를 사용합니다. 아티팩트 생성 언어는 별도 설정이며 기존 선택값은 유지됩니다. 기술 진단은 상세 내용에 원문으로 표시됩니다.
+v1.5.5에서는 화면과 알림을 영어, 한국어, 일본어, 스페인어, 라틴 아메리카 스페인어, 프랑스어, 독일어, 브라질 포르투갈어, 중국어 간체, 이탈리아어, 중국어 번체, 힌디어, 아랍어, 네덜란드어로 제공합니다. 화면 언어는 Chrome 설정을 따르며 지원하지 않는 언어에서는 영어를 사용합니다. 아티팩트 생성 언어는 별도 설정이며 기존 선택값은 유지됩니다. 기술 진단은 상세 내용에 원문으로 표시됩니다.
 
 1.4.4는 생성 제한과 PDF 다운로드 대기를 명확히 표시하고, 논문이 아닌 페이지에서 자동화를 시작하기 전에 확인합니다. 실패하거나 중지된 ScholarRelay 노트북은 내용을 확인한 뒤 명시적으로 삭제할 수 있으며 자동 삭제는 하지 않습니다.
 
@@ -118,7 +124,7 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 
 ## English
 
-Version 1.5.4 localizes the interface and notifications in English, Korean, Japanese, Spanish, French, German, Brazilian Portuguese, Simplified Chinese, Italian, Traditional Chinese, Hindi, Arabic, and Dutch. The interface follows Chrome's language with English fallback. Artifact output language is a separate setting and existing choices are preserved. Original technical diagnostics remain available in Details.
+Version 1.5.5 localizes the interface and notifications in English, Korean, Japanese, Spanish, Latin American Spanish, French, German, Brazilian Portuguese, Simplified Chinese, Italian, Traditional Chinese, Hindi, Arabic, and Dutch. The interface follows Chrome's language with English fallback. Artifact output language is a separate setting and existing choices are preserved. Original technical diagnostics remain available in Details.
 
 ### Highlights
 
@@ -176,7 +182,7 @@ Artifact language is shared by audio, video, reports, infographics, slide decks,
 
 The queue prepares one paper at a time and monitors generation in up to three notebooks together. Once saved, you can close the popup. Keep Chrome running until all artifact requests are accepted. The popup then confirms that Gemini Notebook will keep generating even if Chrome closes. Pause queue stops new starts. Stopping one job leaves other papers alone. If an outcome is uncertain, check the existing notebook.
 
-The queue holds up to 20 unfinished jobs. Local PDFs are saved temporarily on your device, up to 40 MiB each and 100 MiB combined, and removed after upload, failure, or removal from the queue. Up to 50 recent finished jobs are retained. Use **Clear finished jobs** to remove that history.
+The queue holds up to 20 unfinished jobs. Local PDFs are saved temporarily on your device, up to 40 MiB each and 100 MiB combined, and removed after upload, failure, or removal from the queue. Up to 50 ordinary finished jobs are retained. **Clear finished jobs** removes those records while preserving unresolved scheduled handoffs and uncertain or ongoing notebook deletions.
 
 ### Permissions and troubleshooting
 

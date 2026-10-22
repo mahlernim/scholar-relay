@@ -618,7 +618,7 @@ function discoveryFailure() {
     { code: 'SESSION_UNAVAILABLE', phase: 'auth_discovery' });
 }
 
-async function makeHeldQueue() {
+async function makeHeldQueue(error = discoveryFailure()) {
   const w = await worker();
   const writes = installQueueService(w);
   w.data.userSettings.notificationEnabled = true;
@@ -626,7 +626,7 @@ async function makeHeldQueue() {
   const first = await w.startPipelineRequest({}, { filename: 'saved.pdf', fileData: btoa('%PDF-1.7\n retained bytes') });
   await w.startPipelineRequest({ pdfUrl: 'https://example.org/second.pdf' });
   let attempts = 0;
-  w.context.fetchTokens = async () => { attempts++; throw discoveryFailure(); };
+  w.context.fetchTokens = async () => { attempts++; throw error; };
   await sendWorkerMessage(w, { type: 'PAUSE_QUEUE', paused: false });
   await settleUntil(() => w.notifications.length === 1);
   return { w, writes, first, attempts: () => attempts };
@@ -668,6 +668,52 @@ test('connection hold survives worker restart and resume uploads the retained PD
   assert.equal(uploads, 1);
   assert.equal(writes.filter(item => item.kind === 'notebook').length, 1);
 });
+
+for (const code of ['SESSION_ACCESS_REQUIRED', 'AUTH_REQUIRED']) {
+  test(`${code} retains the paper and safe app route through restart until explicit retry`, async () => {
+    const error = Object.assign(new Error(`${code}: Connection needs attention.`), {
+      code, phase: 'auth_discovery', failures: [
+        { host: 'notebook.google.com', kind: 'format' },
+        { host: 'notebooklm.google.com', kind: code === 'AUTH_REQUIRED' ? 'signin' : 'access',
+          redirectHost: 'untrusted.example', redirectUrl: 'https://untrusted.example/?private=value' },
+      ],
+    });
+    const { w, writes, first, attempts } = await makeHeldQueue(error);
+    assert.equal(w.data.jobQueue.serviceBlock.code, code);
+    assert.equal(w.data.jobQueue.serviceBlock.sessionAppUrl, 'https://notebooklm.google.com/');
+    assert.equal(w.data.jobQueue.jobs[0].connectionError.code, code);
+    assert.equal(w.data.jobQueue.jobs[0].status, 'queued');
+    assert.equal(w.files.size, 1);
+    assert.equal(writes.length, 0);
+    assert.doesNotMatch(JSON.stringify(w.data.jobQueue), /untrusted|private=value/);
+    for (let i = 0; i < 2; i++) await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+    assert.equal(attempts(), 1);
+    assert.equal(w.notifications.length, 1);
+    if (code === 'AUTH_REQUIRED') assert.match(w.notifications[0].message, /Sign in/);
+    else assert.doesNotMatch(w.notifications[0].message, /Sign in/);
+
+    const restarted = await worker({ initialQueue: w.data.jobQueue, initialFiles: [...w.files] });
+    const restartedWrites = installQueueService(restarted);
+    let uploads = 0;
+    restarted.context.addFileSource = async (id, filename, bytes) => {
+      uploads++;
+      assert.equal(filename, 'saved.pdf');
+      assert.equal(new TextDecoder().decode(bytes), '%PDF-1.7\n retained bytes');
+      return { id: 'source-' + id };
+    };
+    assert.equal(restarted.data.jobQueue.serviceBlock.code, code);
+    assert.equal(restarted.data.jobQueue.serviceBlock.sessionAppUrl, 'https://notebooklm.google.com/');
+    assert.equal(restartedWrites.length, 0);
+    assert.equal(restarted.files.size, 1);
+    assert.equal((await sendWorkerMessage(restarted, { type: 'RESUME_SERVICE', blockId: 'stale' })).ok, false);
+    assert.equal((await sendWorkerMessage(restarted, { type: 'RESUME_SERVICE', blockId: restarted.data.jobQueue.serviceBlock.id })).ok, true);
+    await settleUntil(() => restarted.data.jobQueue.jobs[0].step === 'wait_source' && restarted.files.size === 0);
+    assert.equal(restarted.data.jobQueue.jobs[0].runId, first.runId);
+    assert.equal(restarted.data.jobQueue.serviceBlock, null);
+    assert.equal(uploads, 1);
+    assert.equal(restartedWrites.filter(item => item.kind === 'notebook').length, 1);
+  });
+}
 
 test('stale resume does not clear a newer connection hold and resume preserves user pause', async () => {
   const { w, writes } = await makeHeldQueue();
@@ -1023,4 +1069,142 @@ test('failure reset hints require an unexpired post-failure snapshot and matchin
     assert.equal(hint.usageResetAt,expected);
     assert.equal(w.data.jobQueue.jobs[0].usageResetAt,undefined);
   }
+});
+
+test('initial scheduled acceptance persists without enabling a deferred request setting', async () => {
+  const w = await worker();
+  const writes = installQueueService(w);
+  Object.assign(w.data.userSettings, { generateInfographic: false });
+  w.context.generateAudio = async (...args) => {
+    writes.push({ kind: 'audio', args });
+    return { taskId: 'scheduled-audio', status: 'scheduled' };
+  };
+  const started = await w.startPipelineRequest({ pdfUrl: 'https://example.org/scheduled.pdf' });
+  await settleUntil(() => w.data.jobQueue.jobs[0].step === 'wait_source');
+  await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  const job = w.data.jobQueue.jobs.find(item => item.runId === started.runId);
+  assert.equal(job.tasks[0].status, 'scheduled');
+  assert.equal(job.scheduledObserved, true);
+  assert.equal(job.status, 'running');
+  assert.equal(writes.filter(item => item.kind === 'audio').length, 1);
+  assert.equal(writes.find(item => item.kind === 'audio').args.length, 6);
+});
+
+test('scheduled lifecycle survives missing listings and restart, then completes or fails normally', async () => {
+  for (const terminal of ['completed', 'failed']) {
+    let w = await worker();
+    w.data.pipelineState = running([{ type: 'audio', taskId: 'audio', status: 'in_progress' }]);
+    const observed = status => new Map([['audio', { taskId: 'audio', status }]]);
+    w.context.listArtifactStatuses = async () => observed('scheduled');
+    await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+    assert.equal(w.data.pipelineState.tasks[0].status, 'scheduled');
+    assert.equal(w.data.pipelineState.scheduledObserved, true);
+    w = await worker({ initialQueue: w.data.jobQueue });
+    for (const rows of [new Map(), observed('unknown'), new Map([['audio', { taskId: 'another', status: 'completed' }]])]) {
+      w.context.listArtifactStatuses = async () => rows;
+      await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+      assert.equal(w.data.pipelineState.status, 'running');
+      assert.equal(w.data.pipelineState.tasks[0].status, 'scheduled');
+    }
+    for (const status of ['pending', 'in_progress', terminal]) {
+      w.context.listArtifactStatuses = async () => observed(status);
+      await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+      assert.equal(w.data.pipelineState.tasks[0].status, status);
+      assert.equal(w.data.pipelineState.scheduledObserved, true);
+      assert.equal(w.data.pipelineState.status, status === 'completed' ? 'completed' : status === 'failed' ? 'error' : 'running');
+    }
+  }
+});
+
+test('unknown persisted task states and scheduled siblings never count as locally settled', async () => {
+  for (const status of ['scheduled', 'unknown', 'future_status']) {
+    const w = await worker();
+    w.data.pipelineState = running([{ type: 'audio', taskId: 'audio', status }, { type: 'report', taskId: 'report', status: 'completed' }]);
+    w.context.listArtifactStatuses = async () => new Map();
+    await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+    assert.equal(w.data.pipelineState.status, 'running');
+    assert.equal(w.data.pipelineState.tasks[0].status, status);
+    assert.equal(w.notifications.length, 0);
+  }
+});
+
+test('deferred observation ends as a persistent handoff without failure, success, replay or another poll', async () => {
+  for (const taskStatus of ['scheduled', 'in_progress']) {
+    const job = { ...running([{ type: 'audio', taskId: 'audio', status: taskStatus }]), scheduledObserved: true,
+      notebookUrl: 'https://notebook.google.com/notebook/notebook',
+      stepStartedAt: new Date(Date.now() - 21 * 60000).toISOString() };
+    const w = await worker({ initialQueue: { version: 1, paused: false, jobs: [job] } });
+    await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+    assert.equal(w.data.pipelineState.status, 'handed_off');
+    assert.equal(w.data.pipelineState.tasks[0].taskId, 'audio');
+    assert.equal(w.data.pipelineState.notebookUrl, job.notebookUrl);
+    assert.ok(w.data.pipelineState.handedOffAt);
+    assert.equal(w.data.pipelineState.completedAt, undefined);
+    assert.equal(w.data.pipelineState.error, undefined);
+    assert.equal(w.notifications.length, 0);
+    const restarted = await worker({ initialQueue: w.data.jobQueue });
+    await restarted.listener({ name: runtime.PIPELINE_ALARM_NAME });
+    const cleared = await sendWorkerMessage(restarted, { type: 'RESET_STATE' });
+    assert.equal(cleared.ok, true);
+    assert.equal(restarted.data.pipelineState.status, 'handed_off');
+    assert.equal(restarted.data.pipelineState.tasks[0].taskId, 'audio');
+    assert.equal(restarted.logs.some(row => String(row).includes('Unexpected service call')), false);
+  }
+});
+
+test('scheduled handoff releases a generation slot while immediate timeout behavior stays unchanged', async () => {
+  const w = await worker();
+  const writes = installQueueService(w);
+  w.context.listArtifactStatuses = async () => new Map();
+  w.data.jobQueue.jobs = [1, 2, 3].map(i => ({ ...running([{ taskId: `audio-${i}`, status: i === 1 ? 'scheduled' : 'in_progress' }]),
+    runId: `run-${i}`, notebookId: `nb-${i}` }));
+  const queued = await w.startPipelineRequest({ pdfUrl: 'https://example.org/after-scheduled.pdf' });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(writes.length, 0);
+  w.data.jobQueue.jobs[0].stepStartedAt = new Date(Date.now() - 21 * 60000).toISOString();
+  await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  await settleUntil(() => w.data.jobQueue.jobs.find(job => job.runId === queued.runId).step === 'wait_source');
+  assert.equal(w.data.jobQueue.jobs.find(job => job.runId === 'run-1').status, 'handed_off');
+  assert.equal(writes.filter(item => item.kind === 'notebook').length, 1);
+  const immediate = await worker();
+  immediate.data.pipelineState = { ...running([{ taskId: 'immediate', status: 'in_progress' }]),
+    stepStartedAt: new Date(Date.now() - 21 * 60000).toISOString() };
+  await immediate.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  assert.equal(immediate.data.pipelineState.status, 'error');
+  assert.match(immediate.data.pipelineState.error, /timed out after 20 minutes/);
+});
+
+test('scheduled work blocks unused-notebook cleanup and still permits an explicit keep cancellation', async () => {
+  const w = await worker();
+  w.data.pipelineState = { ...running([{ taskId: 'audio', status: 'scheduled' }]), status: 'error' };
+  w.context.listSources = async () => [];
+  w.context.listArtifactStatuses = async () => new Map([['audio', { taskId: 'audio', status: 'scheduled' }]]);
+  await assert.rejects(w.inspectNotebookCleanup('old'), /completed or possibly active work/);
+  w.data.pipelineState = running([{ taskId: 'audio', status: 'scheduled' }]);
+  await w.stopPipelineRequest('old', 'keep');
+  assert.equal(w.data.pipelineState.status, 'stopped');
+  assert.equal(w.data.pipelineState.tasks[0].taskId, 'audio');
+});
+
+test('restart after a scheduled final read preserves terminal evidence beyond the local deadline', async () => {
+  for (const status of ['completed', 'failed']) {
+    const job = { ...running([{ type: 'audio', taskId: 'audio', status }]), scheduledObserved: true,
+      stepStartedAt: new Date(Date.now() - 21 * 60000).toISOString() };
+    const w = await worker({ initialQueue: { version: 1, paused: false, jobs: [job] } });
+    await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+    assert.equal(w.data.pipelineState.status, status === 'completed' ? 'completed' : 'error');
+    assert.doesNotMatch(w.data.pipelineState.error || '', /timed out/);
+    assert.equal(w.data.pipelineState.handedOffAt, undefined);
+  }
+});
+
+test('scheduled history with completed and uncertain requests retains checking guidance at deadline', async () => {
+  const job = { ...running([{ taskId: 'audio', status: 'completed' }, { taskId: null, status: 'uncertain' }]),
+    scheduledObserved: true, stepStartedAt: new Date(Date.now() - 21 * 60000).toISOString() };
+  const w = await worker({ initialQueue: { version: 1, paused: false, jobs: [job] } });
+  await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  assert.equal(w.data.pipelineState.status, 'error');
+  assert.match(w.data.pipelineState.error, /Uncertain artifact generation/);
+  assert.doesNotMatch(w.data.pipelineState.error, /timed out/);
+  assert.equal(w.data.pipelineState.tasks[1].status, 'uncertain');
 });

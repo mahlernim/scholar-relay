@@ -14,15 +14,21 @@ export async function queueStatusSmoke({ popup, evaluate, reload, root }) {
     const uncertain = { type: 'video', taskId: null, status: 'uncertain' };
     const completed = { type: 'audio', taskId: 'ready-audio', status: 'completed' };
     const failed = { type: 'video', taskId: null, status: 'failed' };
+    const scheduled = { type: 'audio', taskId: 'scheduled-audio', status: 'scheduled' };
     const fixtures = [
         { ...base, runId: 'status-mixed', status: 'running', step: 'wait_artifacts', tasks: [active, uncertain] },
         { ...base, runId: 'status-uncertain', status: 'running', step: 'wait_artifacts', tasks: [{ ...uncertain, type: 'audio' }, uncertain] },
         { ...base, runId: 'status-failed', status: 'completed', step: 'done', tasks: [completed, failed], completedAt: new Date(now).toISOString() },
+        { ...base, runId: 'status-scheduled', status: 'running', step: 'wait_artifacts', tasks: [scheduled, completed] },
+        { ...base, runId: 'status-handoff', status: 'handed_off', step: 'wait_artifacts', tasks: [scheduled, completed],
+            scheduledObserved: true, handedOffAt: new Date(now).toISOString(), notebookUrl: 'https://notebook.google.com/notebook/scheduled-smoke' },
     ];
     const unknownHint = 'Some requests may still be running in Gemini Notebook. Check this notebook for the result.';
     const failedHint = 'Some requests failed. Check this notebook for details.';
+    const scheduledHint = 'Gemini Notebook will generate scheduled artifacts later. You can close Chrome.';
+    const handedOffHint = 'Local monitoring ended. Check this notebook for scheduled or running results.';
     const results = [];
-    for (const locale of ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW', 'hi', 'ar', 'nl']) {
+    for (const locale of ['en', 'ko', 'ja', 'es', 'fr', 'de', 'pt_BR', 'zh_CN', 'it', 'zh_TW', 'hi', 'ar', 'nl', 'es_419']) {
         const catalog = JSON.parse(await readFile(join(root, '_locales', locale, 'messages.json'), 'utf8'));
         const expected = (source, values = []) => catalog[messageKey(source)].message.replace(/\$(\d+)/g, (_, i) => values[i - 1] ?? '');
         const { identifier } = await popup.call('Page.addScriptToEvaluateOnNewDocument', { source: `
@@ -63,10 +69,12 @@ export async function queueStatusSmoke({ popup, evaluate, reload, root }) {
                 for (const card of view.cards) {
                     const mixed = card.id === 'status-mixed';
                     const failedOnly = card.id === 'status-failed';
-                    assert(card.phase === expected(mixed ? 'Generating' : 'Needs checking'), `${locale} ${card.id} phase contradicts the task outcomes`);
+                    const deferred = card.id === 'status-scheduled';
+                    const handedOff = card.id === 'status-handoff';
+                    assert(card.phase === expected(mixed ? 'Generating' : deferred ? 'Scheduled' : 'Needs checking'), `${locale} ${card.id} phase contradicts the task outcomes`);
                     assert(card.active === mixed, `${locale} ${card.id} activity contradicts the task outcomes`);
-                    assert(card.hint === expected(failedOnly ? failedHint : unknownHint), `${locale} ${card.id} handoff hint contradicts the task outcomes`);
-                    assert(card.count === expected('$1/$2 ready', [failedOnly ? 1 : 0, 2]), `${locale} ${card.id} lost the ready count`);
+                    assert(card.hint === expected(failedOnly ? failedHint : deferred ? scheduledHint : handedOff ? handedOffHint : unknownHint), `${locale} ${card.id} handoff hint contradicts the task outcomes`);
+                    assert(card.count === expected('$1/$2 ready', [failedOnly || deferred || handedOff ? 1 : 0, 2]), `${locale} ${card.id} lost the ready count`);
                     assert(card.phaseFits && card.labelFits && card.hintFits,
                         `${locale} ${width}px ${card.id} status text is clipped ${JSON.stringify(card.metrics)}`);
                 }
@@ -75,6 +83,14 @@ export async function queueStatusSmoke({ popup, evaluate, reload, root }) {
                 await popup.call('Page.bringToFront');
                 const screenshot = await popup.call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
                 await writeFile(join(out, `${locale}-${width}.png`), Buffer.from(screenshot.data, 'base64'));
+                for (const id of ['status-scheduled', 'status-handoff']) {
+                    await evaluate(popup, `document.querySelector('[data-show="${id}"]').click()`);
+                    const detail = await evaluate(popup, `({active:!!document.querySelector('#content .step-indicator.active'),
+                        success:!!document.querySelector('#content .completed-box'),
+                        text:document.getElementById('content').textContent})`);
+                    assert(!detail.active && !detail.success, `${locale} ${id} falsely animates or celebrates completion`);
+                    assert(detail.text.includes(expected('Scheduled')), `${locale} ${id} loses the scheduled artifact detail`);
+                }
             }
             if (locale === 'en') {
                 const priorityJobs = [
@@ -82,6 +98,7 @@ export async function queueStatusSmoke({ popup, evaluate, reload, root }) {
                     { ...fixtures[2], runId: 'status-retry', nextEligibleAt: now + 3600000 },
                     { ...fixtures[2], runId: 'status-ready', tasks: [completed] },
                     { ...fixtures[2], runId: 'status-source', tasks: [] },
+                    { ...fixtures[4], runId: 'status-handoff-limit', tasks: [scheduled, { ...failed, code: 'RATE_LIMITED' }] },
                 ];
                 await evaluate(popup, `chrome.runtime.sendMessage({type:'SMOKE_SET_QUEUE',queue:${JSON.stringify({ version: 1, paused: true, jobs: priorityJobs })}})`);
                 await reload(popup);
@@ -96,6 +113,12 @@ export async function queueStatusSmoke({ popup, evaluate, reload, root }) {
                 assert(priority['status-retry'].hint.startsWith('Server wait until '), 'Server wait lost priority over the failure hint');
                 assert(priority['status-ready'].phase === 'Ready' && !priority['status-ready'].active && priority['status-ready'].count === '1/1 ready', 'Complete result lost Ready or still animates');
                 assert(priority['status-source'].phase === 'Ready' && !priority['status-source'].count && priority['status-source'].hint === 'Source imported. No artifacts requested.', 'Source-only completion claims artifact generation');
+                assert(priority['status-handoff-limit'].hint === handedOffHint && !priority['status-handoff-limit'].active,
+                    'A sibling quota failure hides the scheduled handoff or makes it animate');
+                await evaluate(popup, `document.querySelector('[data-show="status-handoff-limit"]').click()`);
+                const handoffDetail = await evaluate(popup, `document.getElementById('content').textContent`);
+                assert(handoffDetail.includes(handedOffHint) && handoffDetail.includes('Generation is limited for '),
+                    'The job detail must retain both the ended-monitoring guidance and the sibling quota failure');
             }
         } finally {
             await popup.call('Page.removeScriptToEvaluateOnNewDocument', { identifier });
@@ -105,5 +128,5 @@ export async function queueStatusSmoke({ popup, evaluate, reload, root }) {
     await evaluate(popup, `globalThis.__smoke.setFixtureState({status:'idle'})`);
     await popup.call('Emulation.setDeviceMetricsOverride', { width: 360, height: 600, deviceScaleFactor: 1, mobile: false });
     await reload(popup);
-    console.log('Queue status smoke passed in thirteen locales at 320/360 px with consistent phases, hints, activity, ready counts and hint priority.');
+    console.log('Queue status smoke passed in fourteen locales at 320/360 px with consistent phases, hints, activity, ready counts and hint priority.');
 }

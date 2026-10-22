@@ -1,6 +1,6 @@
 # Privacy Policy for ScholarRelay
 
-Last updated: September 29, 2026
+Last updated: October 22, 2026
 
 ScholarRelay is an independent browser extension that helps a user add a PDF or webpage to the user's own Gemini Notebook account (formerly NotebookLM) and request artifacts. It is not affiliated with, authorized by, or endorsed by Google.
 
@@ -18,6 +18,8 @@ The extension handles only data needed for a user-requested workflow:
 - For a PDF hosted on a different website, the extension may request access to that specific website and use the site's existing browser session when downloading the user-selected PDF.
 
 The extension never asks for, reads, stores, or transmits a Google password or multi-factor authentication code. It does not use the Chrome Cookies API. Temporary Gemini Notebook CSRF and session values are kept only in service-worker memory and are discarded when that worker stops.
+
+When Notebook returns a page without usable session information, the extension makes a bounded login check on an already permitted Notebook host. If Chrome prevents the extension from seeing the final response or the check times out, that check does not establish that the user is signed out. No Google Accounts host permission is added. Full redirect URLs and queries are not saved. The resulting connection error category can be saved with a queued job so recovery guidance survives a restart.
 
 ## How data is used and shared
 
@@ -47,7 +49,7 @@ Selection drafts remain in session storage. Notebook mode and enabled origins ar
 ## Local storage and retention
 
 - Settings and custom instructions remain in Chrome local extension storage until the user changes them or removes the extension.
-- The paper queue stores source URLs, titles, a settings snapshot for each job, Gemini Notebook identifiers, progress, and available artifact duration and counts. Audio tasks also retain compact submitted and returned language, format, length and instruction-presence values without duplicating custom prompt text. It holds up to 20 unfinished jobs and 50 previous finished jobs. Use Clear finished jobs to remove finished history. Removing the extension deletes the queue.
+- The paper queue stores source URLs, titles, a settings snapshot for each job, Gemini Notebook identifiers, progress, and available artifact duration and counts. Audio tasks also retain compact submitted and returned language, format, length and instruction-presence values without duplicating custom prompt text. It holds up to 20 unfinished jobs and normally retains up to 50 finished jobs. Clear finished jobs removes ordinary finished history. Jobs whose local monitoring ended while scheduled work remained unresolved, and jobs with uncertain or ongoing notebook deletion, are preserved beyond that history limit and are not removed by Clear finished jobs. Their source details, notebook links, and artifact identifiers remain available for checking. Removing the extension deletes the queue.
 - Queued PDF bytes are stored in IndexedDB, with a 40 MiB limit per file and 100 MiB combined limit. They are removed after upload, failure, or removal of the queued job. Cleanup interrupted by browser shutdown finishes when the extension next starts. Gemini Notebook authentication values are never saved to persistent storage.
 - Website permissions remain until the user revokes them in Chrome or removes the extension.
 - Retry eligibility times and bounded operation deadlines are saved locally so worker restarts do not bypass a server wait. They contain no authentication tokens. Page-text recovery claims and replacement-source identifiers are retained with the job to prevent duplicate uploads after interruption.

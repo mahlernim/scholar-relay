@@ -1120,5 +1120,25 @@
   "ui_b5c1611c": {
     "message": "Fuentes $1",
     "description": "Sources $1"
+  },
+  "ui_8264c96b": {
+    "message": "Comprobar acceso",
+    "description": "Check access"
+  },
+  "ui_e603a33e": {
+    "message": "Gemini Notebook abrió una página de acceso. Abre Notebook en el navegador y comprueba el acceso.",
+    "description": "Gemini Notebook opened an access page. Open Notebook in your browser and check access."
+  },
+  "ui_aa20a418": {
+    "message": "Programado",
+    "description": "Scheduled"
+  },
+  "ui_bb4257ad": {
+    "message": "Gemini Notebook generará los artefactos programados más tarde. Puedes cerrar Chrome.",
+    "description": "Gemini Notebook will generate scheduled artifacts later. You can close Chrome."
+  },
+  "ui_a5c99ad3": {
+    "message": "Finalizó el seguimiento local. Revisa este cuaderno para ver los resultados programados o en curso.",
+    "description": "Local monitoring ended. Check this notebook for scheduled or running results."
   }
 }

@@ -277,5 +277,10 @@
   "Page text": "نص الصفحة",
   "Wait for the queue to resume or finish preparing another job.": "انتظر استئناف القائمة أو انتهاء تحضير مهمة أخرى.",
   "Slides $1": "الشرائح $1",
-  "Sources $1": "المصادر $1"
+  "Sources $1": "المصادر $1",
+  "Check access": "تحقّق من الوصول",
+  "Gemini Notebook opened an access page. Open Notebook in your browser and check access.": "فتح Gemini Notebook صفحة للتحقّق من الوصول. افتح Notebook في المتصفح وتحقّق من إمكانية الوصول.",
+  "Scheduled": "مجدول",
+  "Gemini Notebook will generate scheduled artifacts later. You can close Chrome.": "سينشئ Gemini Notebook المحتوى المجدول لاحقًا. يمكنك إغلاق Chrome.",
+  "Local monitoring ended. Check this notebook for scheduled or running results.": "انتهت المتابعة المحلية. افتح هذا الدفتر للتحقّق من النتائج المجدولة أو التي يجري إنشاؤها."
 }

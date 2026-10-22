@@ -1,0 +1,126 @@
+{
+  "observedAt": "2026-10-22T14:01:38.938Z",
+  "profile": "new isolated signed-out profile",
+  "expectedClassification": "SESSION_UNRECOGNIZED",
+  "requests": [
+    {
+      "requested": {
+        "host": "notebook.google.com",
+        "path": "/"
+      },
+      "final": {
+        "host": "notebook.google.com",
+        "path": "/"
+      },
+      "status": 200
+    },
+    {
+      "requested": {
+        "host": "notebooklm.google.com",
+        "path": "/"
+      },
+      "final": {
+        "host": "notebook.google.com",
+        "path": "/"
+      },
+      "status": 200
+    },
+    {
+      "requested": {
+        "host": "notebook.google.com",
+        "path": "/login"
+      },
+      "status": 0,
+      "errorType": "TypeError"
+    }
+  ],
+  "classification": {
+    "ok": false,
+    "code": "SESSION_UNRECOGNIZED",
+    "phase": "auth_discovery",
+    "failures": [
+      {
+        "host": "notebook.google.com",
+        "kind": "format",
+        "httpStatus": null
+      },
+      {
+        "host": "notebooklm.google.com",
+        "kind": "format",
+        "httpStatus": null
+      }
+    ]
+  },
+  "browserNetwork": [
+    {
+      "type": "request",
+      "host": "notebook.google.com",
+      "path": "/"
+    },
+    {
+      "type": "response",
+      "host": "notebook.google.com",
+      "path": "/",
+      "status": 200
+    },
+    {
+      "type": "request",
+      "host": "notebooklm.google.com",
+      "path": "/"
+    },
+    {
+      "type": "redirect",
+      "host": "notebooklm.google.com",
+      "path": "/",
+      "status": 301
+    },
+    {
+      "type": "request",
+      "host": "notebook.google.com",
+      "path": "/"
+    },
+    {
+      "type": "response",
+      "host": "notebook.google.com",
+      "path": "/",
+      "status": 200
+    },
+    {
+      "type": "request",
+      "host": "notebook.google.com",
+      "path": "/login"
+    },
+    {
+      "type": "redirect",
+      "host": "notebook.google.com",
+      "path": "/login",
+      "status": 302
+    },
+    {
+      "type": "request",
+      "host": "accounts.google.com",
+      "path": "/ServiceLogin"
+    },
+    {
+      "type": "failure",
+      "status": 0,
+      "blockedReason": null,
+      "corsError": "MissingAllowOriginHeader"
+    }
+  ],
+  "hostPermissions": [
+    "https://notebook.google.com/*",
+    "https://notebooklm.google.com/*",
+    "file:///*"
+  ],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "notifications",
+    "offscreen",
+    "alarms"
+  ],
+  "browserVersion": "Chrome/155.0.8059.85",
+  "matchesExpectedClassification": true
+}
