@@ -3,6 +3,9 @@
   "version": "1.5.4",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "^24.22.1"
+  },
   "scripts": {
     "test": "node --test",
     "smoke:chrome": "node ./scripts/smoke-extension.mjs",
