@@ -1081,6 +1081,10 @@
     "message": "Seitentext importieren",
     "description": "Import page text"
   },
+  "ui_49e779da": {
+    "message": "Seitentext importieren, wenn die URL fehlschlägt",
+    "description": "Import page text if the URL fails"
+  },
   "ui_15d48e31": {
     "message": "Sendet den Tabtext als Textquelle an Google. Er kann Inhalte enthalten, die nur nach Anmeldung zugänglich sind.",
     "description": "Sends tab text to Google as a text source. May include sign-in-only content."

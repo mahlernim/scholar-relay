@@ -29,6 +29,8 @@ Data is used only to detect the source selected by the user, upload or import it
 
 Import page text sends the confirmed tab's article text to Google as a text source in the same notebook. The original failed source remains. The extension requests access to that specific site on the confirmation click and checks that the tab still shows the original URL. Declining confirmation prevents extraction and upload. The text includes the capture time and a source URL without query or fragment. Article text is held in memory only and is not written to the extension's queue or local history.
 
+Import page text if the URL fails is off by default. When it is on and the user starts a webpage import, the extension reads the open tab's visible text, links and image addresses at that click and saves it in the extension's local IndexedDB storage with the queued job. The text is sent to Google only if the URL import fails, and is deleted when the URL source is ready, after the text source is added, or when the job fails or is cancelled.
+
 Usage reads occur on popup open, job start and once after a generation-limit failure. Unavailable or expired data is hidden. Snapshots and failure-related reset hints stay in popup or service-worker memory, with no usage history or developer telemetry. A read does not generate content or debit usage locally.
 
 Data is transmitted to:

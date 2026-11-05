@@ -12,12 +12,12 @@ export function canRecoverPageText(job) {
 
 // This function is injected as a standalone function into the selected tab.
 // Read only the existing top-frame DOM, after explicit consent and permission.
-export function extractPageText(expectedUrl) {
+export function extractPageText(expectedUrl, allowBody = false) {
     const current = new URL(document.URL);
     if (!['http:', 'https:'].includes(current.protocol) || current.href !== new URL(expectedUrl).href) throw new Error('PAGE_TEXT_CHANGED');
-    const root = document.querySelector('article, main');
+    const root = document.querySelector('article, main') || (allowBody ? document.body : null);
     if (!root || document.querySelector('iframe[src*="captcha"], #challenge-form, .cf-challenge')) throw new Error('PAGE_TEXT_UNREADABLE');
-    const excluded = 'script,style,noscript,nav,header,footer,aside,form,input,textarea,select,button,img,iframe,object,embed,video,audio,link,[hidden],[aria-hidden="true"]';
+    const excluded = 'script,style,noscript,nav,header,footer,aside,form,input,textarea,select,button,iframe,object,embed,video,audio,link,[hidden],[aria-hidden="true"]';
     const parts = []; let count = 0, bytes = 0;
     const append = text => {
         bytes += new TextEncoder().encode(text).length;
@@ -30,9 +30,20 @@ export function extractPageText(expectedUrl) {
         if (node.nodeType !== 1 || node.matches(excluded)) return;
         const style = getComputedStyle(node);
         if (style.display === 'none' || style.visibility !== 'visible' || style.opacity === '0') return;
+        const tag = node.localName;
+        if (tag === 'img') {
+            const alt = (node.alt || '').replace(/[[\]\s]+/g, ' ').trim();
+            if (/^https?:/.test(node.currentSrc || node.src) && (alt || node.width >= 100)) append(`![${alt}](${node.currentSrc || node.src})`);
+            return;
+        }
         const block = !style.display.startsWith('inline');
-        if (block) append('\n');
+        const href = tag === 'a' && /^https?:/.test(node.href) ? node.href : '';
+        if (block) append('\n' + (/^h[1-6]$/.test(tag) ? '#'.repeat(+tag[1]) + ' ' : tag === 'li' ? '- ' : tag === 'pre' ? '```\n' : ''));
+        if (href) append('[');
         for (const child of node.childNodes) visit(child, depth + 1);
+        if (href) append(`](${href})`);
+        if (tag === 'pre') append('\n```');
+        if (tag === 'td' || tag === 'th') append(' | ');
         if (block) append('\n');
     }
     // A hidden ancestor must not make its article eligible.

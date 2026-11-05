@@ -47,5 +47,6 @@ export const DEFAULT_SETTINGS = {
     chimeEnabled: true,
     autoOpenNotebook: true,
     useSourceTitleForNotebook: true,
+    pageTextFallback: false,
     collectionId: '',
 };

@@ -1,5 +1,5 @@
 import { pdfWaitReason } from './source-import.js';
-import { canRecoverPageText } from './page-text.js';
+import { canRecoverPageText, extractPageText } from './page-text.js';
 import { activeUsage, actionLimited, formatReset } from './usage.js';
 import { jobHandoff, jobPhase, isUnfinishedJob, jobElapsedText, jobReadyCount, hasJobActivity } from './job-queue.js';
 import { DEFAULT_SETTINGS as DEFAULTS } from './settings.js';
@@ -344,6 +344,7 @@ const TOGGLE_MAP = {
     's-chimeEnabled': 'chimeEnabled',
     's-autoOpenNotebook': 'autoOpenNotebook',
     's-useSourceTitleForNotebook': 'useSourceTitleForNotebook',
+    's-pageTextFallback': 'pageTextFallback',
 };
 const TEXTAREA_MAP = {
     's-audioPrompt': 'audioPrompt',
@@ -611,7 +612,7 @@ function wireSettingsListeners() {
         });
     }
     // Non-artifact toggles (chime, auto-open) -- no validation needed
-    ['s-notificationEnabled', 's-chimeEnabled', 's-autoOpenNotebook', 's-useSourceTitleForNotebook'].forEach(id => {
+    ['s-notificationEnabled', 's-chimeEnabled', 's-autoOpenNotebook', 's-useSourceTitleForNotebook', 's-pageTextFallback'].forEach(id => {
         document.getElementById(id)?.addEventListener('change', saveSettings);
     });
     // Textareas (debounced)
@@ -832,12 +833,14 @@ function renderDetection(data) {
     </div>
     <button class="btn-generate" id="btn-start">${escapeHtml(t('Create notebook'))}</button>
     ${artifactSummaryHtml()}
-    ${/^https?:\/\//i.test(data.pageUrl || '') ? `<div class="paper-tools paper-actions"><button id="single-paper-auto">${escapeHtml(t('Detect automatically on this site'))}</button></div><div id="single-paper-feedback" role="status"></div>` : ''}`;
+    ${/^https?:\/\//i.test(data.pageUrl || '') ? `<div class="paper-tools paper-actions">${data.pageUrl !== data.pdfUrl ? `<button id="single-paper-webpage">${escapeHtml(t('Use this webpage'))}</button>` : ''}<button id="single-paper-auto">${escapeHtml(t('Detect automatically on this site'))}</button></div><div id="single-paper-feedback" role="status"></div>` : ''}`;
     updateArtifactSummary();
     document.getElementById('btn-start').addEventListener('click', () =>
         startPipeline(data.pdfUrl, data.pageUrl, 'pdf', data.sourceTitle, data.pdfEvidence || data.source)
             .catch(error => showError(error.message))
     );
+    document.getElementById('single-paper-webpage')?.addEventListener('click', () =>
+        startPipeline(data.pageUrl, data.pageUrl, 'webpage', data.sourceTitle).catch(error => showError(error.message)));
     document.getElementById('single-paper-auto')?.addEventListener('click', async () => {
         try {
             const origin = new URL(data.pageUrl).origin + '/*';
@@ -1066,7 +1069,8 @@ async function startPipeline(pdfUrl, pageUrl, sourceType = 'pdf', sourceTitle = 
     const originalText = btn?.textContent || '';
     if (btn) { btn.disabled = true; btn.textContent = t("⏳ Starting..."); }
     try {
-        const response = await enqueueRequest({ type: 'START_PIPELINE', pdfUrl, pageUrl, sourceType, sourceTitle, pdfEvidence });
+        const pageText = sourceType === 'webpage' ? await capturePageText(pageUrl) : null;
+        const response = await enqueueRequest({ type: 'START_PIPELINE', pdfUrl, pageUrl, sourceType, sourceTitle, pdfEvidence, pageText });
         if (!response?.ok) {
             const error = new Error(response?.message || 'Could not start pipeline');
             error.code = response?.code;
@@ -1081,6 +1085,17 @@ async function startPipeline(pdfUrl, pageUrl, sourceType = 'pdf', sourceTitle = 
         }
         throw error;
     }
+}
+
+async function capturePageText(pageUrl) {
+    const settings = { ...DEFAULTS, ...(await chrome.storage.local.get('userSettings')).userSettings };
+    if (!settings.pageTextFallback) return null;
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.url !== pageUrl) return null;
+    try {
+        const results = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: extractPageText, args: [pageUrl, true] });
+        return results?.[0]?.result?.content || null;
+    } catch { return null; }
 }
 
 async function startPipelineFromCurrentPageUrl() {

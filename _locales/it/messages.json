@@ -1081,6 +1081,10 @@
     "message": "Importa testo della pagina",
     "description": "Import page text"
   },
+  "ui_49e779da": {
+    "message": "Importa testo della pagina se l’URL non riesce",
+    "description": "Import page text if the URL fails"
+  },
   "ui_15d48e31": {
     "message": "Invia il testo della scheda a Google come fonte di testo. Può includere contenuti accessibili solo dopo l’accesso.",
     "description": "Sends tab text to Google as a text source. May include sign-in-only content."

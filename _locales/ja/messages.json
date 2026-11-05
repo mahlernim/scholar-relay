@@ -1081,6 +1081,10 @@
     "message": "ページ本文を取り込む",
     "description": "Import page text"
   },
+  "ui_49e779da": {
+    "message": "URLを取り込めない場合はページ本文を取り込む",
+    "description": "Import page text if the URL fails"
+  },
   "ui_15d48e31": {
     "message": "タブの本文をテキストソースとして Google に送信します。ログイン後のみ閲覧できる内容が含まれる場合があります。",
     "description": "Sends tab text to Google as a text source. May include sign-in-only content."

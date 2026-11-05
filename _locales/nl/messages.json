@@ -1081,6 +1081,10 @@
     "message": "Paginatekst importeren",
     "description": "Import page text"
   },
+  "ui_49e779da": {
+    "message": "Paginatekst importeren als de URL mislukt",
+    "description": "Import page text if the URL fails"
+  },
   "ui_15d48e31": {
     "message": "Stuurt de tekst van het tabblad naar Google als tekstbron. Kan inhoud bevatten die alleen na aanmelden zichtbaar is.",
     "description": "Sends tab text to Google as a text source. May include sign-in-only content."

@@ -826,6 +826,7 @@ async function failPipeline(runId, errorInput, notebookId = null) {
         await syncQueueRuntime();
         return;
     }
+    if (state.pageTextFallback && ['add_source', 'wait_source'].includes(state.step) && await usePageTextFallback(state)) return;
     const diagnostic = failureDiagnostic(errorInput, state.step);
     const finalError = diagnostic.message;
     if (state.sources && ['wait_source', 'download_pdf'].includes(state.step)) {
@@ -841,8 +842,42 @@ async function failPipeline(runId, errorInput, notebookId = null) {
         pageTextFailure: errorInput?.pageTextFailure || null,
     });
     if (!failedState) return;
+    if (state.pageTextFallback) await releaseJobPdf(runId);
     await notifyJobAttention(failedState, { ...diagnostic, message: finalError });
     console.error('[Pipeline] Error:', finalError);
+}
+
+async function usePageTextFallback(state) {
+    const text = await pdfStore.get(state.payloadId).catch(() => null);
+    let sources;
+    try { sources = await listSources(state.notebookId, { mode: 'optional' }); } catch { return false; }
+    if (typeof text?.content !== 'string') return false;
+    const usable = state.step === 'add_source' && sources.find(source => source.url === state.pdfUrl && source.status !== SourceStatus.ERROR);
+    if (usable) {
+        await transitionRun(state.runId, { sourceId: usable.id, step: 'wait_source', stepStartedAt: new Date().toISOString() },
+            { expectedSteps: ['add_source'] });
+        return true;
+    }
+    const claimed = await transitionRun(state.runId, { step: 'upload_text', pageTextFallback: false, importMethod: 'text',
+        failedUrlSourceId: state.sourceId || null, stepDetail: 'URL import failed. Adding page text...' }, { expectedSteps: [state.step] });
+    if (!claimed) return true;
+    try {
+        const source = await addTextSource(state.notebookId, text.title || state.sourceTitle || t('Page text'), text.content);
+        await pipelineState.transact(queue => {
+            const job = queue.jobs.find(item => item.runId === state.runId);
+            if (!job || !['running', 'stopping'].includes(job.status)) return null;
+            Object.assign(job, { replacementSourceId: source.id, sourceId: source.id });
+            return {};
+        });
+        const waiting = await transitionRun(state.runId, { step: 'wait_source', stepStartedAt: new Date().toISOString(),
+            stepDetail: 'Waiting for imported page text.' }, { expectedSteps: ['upload_text'] });
+        if (waiting) await syncQueueRuntime();
+    } catch (error) {
+        if ((await getState(state.runId)).status === 'running') await failPipeline(state.runId, error, state.notebookId);
+    } finally {
+        await releaseJobPdf(state.runId);
+    }
+    return true;
 }
 
 // =========================================================================
@@ -921,6 +956,7 @@ async function tickSourcePollOperation(state) {
         state = await requireActiveRun(runId, ['wait_source']);
     }
 
+    if (state.pageTextFallback) await releaseJobPdf(runId);
     // Source is READY -- fetch notebook title, then trigger artifact generation
     console.log('[Tick] Source ready, triggering artifact generation');
     const claimed = await transitionRun(runId, {
@@ -1297,10 +1333,10 @@ async function dispatchNextJob() {
     // A separate runtime lock also covers the brief wait_pdf_access resume claim.
     try {
         const file = job.payloadId ? await pdfStore.get(job.payloadId) : null;
-        if (job.payloadId && !file) throw new Error('The saved PDF is unavailable. Select it again.');
+        if (job.payloadId && !file && !job.pageTextFallback) throw new Error('The saved PDF is unavailable. Select it again.');
         await requireActiveRun(job.runId);
         if (claimed.resume) await fallbackPdf(job.runId, { resume: true, file });
-        else await runPipeline(job.runId, job.pdfUrl, job.pageUrl, file, job.sourceType, job.sourceTitle);
+        else await runPipeline(job.runId, job.pdfUrl, job.pageUrl, job.pageTextFallback ? null : file, job.sourceType, job.sourceTitle);
     } catch (error) {
         if (error?.code !== 'PIPELINE_STALE_RUN') await failPipeline(job.runId, error.message);
     } finally {
@@ -1314,7 +1350,7 @@ async function dispatchNextJob() {
 
 function shouldRetainJobPdf(job) {
     return ['queued', 'auth', 'create_notebook', 'add_source', 'download_pdf', 'upload_pdf', 'queued_pdf', 'wait_pdf_access']
-        .includes(job?.step);
+        .includes(job?.step) || (!!job?.pageTextFallback && ['wait_read', 'wait_source'].includes(job.step));
 }
 
 async function releaseJobPdf(runId) {
@@ -1375,7 +1411,7 @@ async function reconcilePipelineRuntime() {
             } else if (action === 'interrupt' && job.step !== 'queued_pdf') {
                 Object.assign(job, interruptedPipelineUpdate(job));
             }
-            if (!isUnfinishedJob(job)) Object.assign(job, { payloadId: null, payloadBytes: 0 });
+            if (!isUnfinishedJob(job) || !shouldRetainJobPdf(job)) Object.assign(job, { payloadId: null, payloadBytes: 0 });
         }
         return {};
     });
@@ -1670,6 +1706,9 @@ async function startPipelineRequest(message, uploadFile = null) {
     if (sources) message = { ...message, ...sources[0], sourceTitle: normalizeSourceTitle(message.notebookTitle) || normalizeSourceTitle(message.sourceTitle) };
     let file = null;
     let sourceKey;
+    const pageText = !uploadFile && !sources && message.sourceType === 'webpage' && settings.pageTextFallback &&
+        typeof message.pageText === 'string' && message.pageText.trim() && new TextEncoder().encode(message.pageText).length <= 200000
+        ? { kind: 'text', title: normalizeSourceTitle(message.sourceTitle) || null, content: message.pageText } : null;
     if (uploadFile) {
         file = decodeQueuedPdf(uploadFile.fileData, uploadFile.filename);
         const digest = await crypto.subtle.digest('SHA-256', file.fileData);
@@ -1689,9 +1728,10 @@ async function startPipelineRequest(message, uploadFile = null) {
             if (duplicate) return { state: duplicate, duplicate: true };
             if (queue.jobs.filter(isUnfinishedJob).length >= MAX_QUEUED_JOBS) throw new Error('The queue is full. Wait for a job to finish or remove a queued paper.');
             await chrome.alarms.create(ALARM_NAME, { periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES });
-            if (file) {
-                assertQueuePdfBudget(queue, file.fileData.byteLength);
-                await pdfStore.put(runId, file);
+            const payloadBytes = file ? file.fileData.byteLength : pageText ? new TextEncoder().encode(pageText.content).length : 0;
+            if (file || pageText) {
+                assertQueuePdfBudget(queue, payloadBytes);
+                await pdfStore.put(runId, file || pageText);
             }
             const job = {
                 ...INITIAL_STATE, sources, sourceIndex: 0, status: 'queued', runId, requestId: message.requestId || runId,
@@ -1702,7 +1742,7 @@ async function startPipelineRequest(message, uploadFile = null) {
                 sourceTitle: normalizeSourceTitle(message.sourceTitle) || null,
                 sourceKey, importMethod: file ? 'file' : 'url', originalPdfUrl: file ? null : message.pdfUrl,
                 pdfEvidence: message.pdfEvidence || null,
-                payloadId: file ? runId : null, payloadBytes: file?.fileData.byteLength || 0,
+                payloadId: file || pageText ? runId : null, payloadBytes, pageTextFallback: !!pageText,
             };
             queue.jobs.push(job);
             return { state: job };
@@ -1711,7 +1751,7 @@ async function startPipelineRequest(message, uploadFile = null) {
         const saved = (await getQueue()).jobs.find(job => job.runId === runId);
         if (saved) result = { state: saved };
         else {
-            if (file) await pdfStore.remove(runId);
+            if (file || pageText) await pdfStore.remove(runId);
             throw error;
         }
     }

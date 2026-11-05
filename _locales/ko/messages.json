@@ -1081,6 +1081,10 @@
     "message": "페이지 본문 가져오기",
     "description": "Import page text"
   },
+  "ui_49e779da": {
+    "message": "URL을 가져오지 못하면 페이지 본문 가져오기",
+    "description": "Import page text if the URL fails"
+  },
   "ui_15d48e31": {
     "message": "탭의 본문을 텍스트 소스로 Google에 전송합니다. 로그인 후에만 볼 수 있는 내용이 포함될 수 있습니다.",
     "description": "Sends tab text to Google as a text source. May include sign-in-only content."

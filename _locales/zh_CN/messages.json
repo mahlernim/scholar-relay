@@ -1081,6 +1081,10 @@
     "message": "导入网页正文",
     "description": "Import page text"
   },
+  "ui_49e779da": {
+    "message": "URL 导入失败时导入网页正文",
+    "description": "Import page text if the URL fails"
+  },
   "ui_15d48e31": {
     "message": "将标签页正文作为文本来源发送给 Google，可能包含仅登录后可见的内容。",
     "description": "Sends tab text to Google as a text source. May include sign-in-only content."
