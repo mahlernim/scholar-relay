@@ -1,5 +1,5 @@
 import { inspectPaperPage } from './content.js';
-import { withRequestDeadline } from './request-deadline.js';
+import { withStallDeadline } from './request-deadline.js';
 import { canRecoverPageText, extractPageText } from './page-text.js';
 import { activeUsage, actionLimited } from './usage.js';
 /**
@@ -431,7 +431,7 @@ function ensurePdfFilename(name) {
     return /\.pdf$/i.test(sanitized) ? sanitized : `${sanitized}.pdf`;
 }
 
-async function downloadRemotePdfForUpload(pdfUrl, pageUrl = null) {
+async function downloadRemotePdfForUpload(pdfUrl, pageUrl = null, runId = null) {
     const originPattern = httpOriginPattern(pdfUrl);
     const coveredByActiveTab = sameHttpOrigin(pdfUrl, pageUrl);
     const hasGrantedOrigin = originPattern
@@ -444,7 +444,17 @@ async function downloadRemotePdfForUpload(pdfUrl, pageUrl = null) {
         );
     }
 
-    return withRequestDeadline(async signal => {
+    let lastKeepAlive = Date.now();
+    const watch = async () => {
+        if (Date.now() - lastKeepAlive >= 20000) {
+            lastKeepAlive = Date.now();
+            chrome.runtime.getPlatformInfo?.().catch(() => {});
+        }
+        if (!runId) return null;
+        const state = await getState(runId);
+        return isActivePipelineRun(state, runId) && state.step === 'download_pdf' ? null : 'The PDF download was cancelled.';
+    };
+    return withStallDeadline(async (signal, touch) => {
         const response = await fetch(pdfUrl, {
             signal,
             method: 'GET',
@@ -474,7 +484,8 @@ async function downloadRemotePdfForUpload(pdfUrl, pageUrl = null) {
         const likelyPdfMime = /application\/pdf/i.test(contentType) || /application\/octet-stream/i.test(contentType);
         const likelyPdfUrl = /\.pdf(\?|#|$)/i.test(response.url || pdfUrl);
 
-        const bytes = await readResponseWithinLimit(response);
+        touch();
+        const bytes = await readResponseWithinLimit(response, undefined, touch);
         const fileData = bytes.buffer;
         const hasPdfMagic = hasPdfSignature(bytes);
 
@@ -488,7 +499,7 @@ async function downloadRemotePdfForUpload(pdfUrl, pageUrl = null) {
             mimeType: 'application/pdf',
             fileData,
         };
-    }, 25000);
+    }, { idleMs: 25000, maxMs: 600000, watch });
 }
 
 // =========================================================================
