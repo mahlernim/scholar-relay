@@ -25,7 +25,7 @@ export function assertPdfUploadSize(size, limit = MAX_PDF_UPLOAD_BYTES) {
   return size;
 }
 
-export async function readResponseWithinLimit(response, limit = MAX_PDF_UPLOAD_BYTES) {
+export async function readResponseWithinLimit(response, limit = MAX_PDF_UPLOAD_BYTES, onChunk = () => {}) {
   const contentLengthHeader = response?.headers?.get?.('content-length');
   if (contentLengthHeader !== null && contentLengthHeader !== undefined && contentLengthHeader !== '') {
     try {
@@ -48,6 +48,7 @@ export async function readResponseWithinLimit(response, limit = MAX_PDF_UPLOAD_B
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
+      onChunk();
       if (!value?.byteLength) continue;
       total += value.byteLength;
       if (total > limit) {

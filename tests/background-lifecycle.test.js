@@ -14,7 +14,7 @@ import * as jobs from '../job-queue.js';
 import * as settings from '../settings.js';
 import * as usage from '../usage.js';
 import * as pageText from '../page-text.js';
-import { withRequestDeadline } from '../request-deadline.js';
+import { withRequestDeadline, withStallDeadline } from '../request-deadline.js';
 
 // Run the shipped worker with real policy modules and controlled browser/service IO.
 const source = (await readFile(new URL('../background.js', import.meta.url), 'utf8'))
@@ -49,10 +49,10 @@ async function worker({ failInitialQueueRead = false, initialQueue = null, initi
   const apiMocks = Object.fromEntries(Object.entries(api).map(([key, value]) => [key,
     typeof value === 'function' ? () => { throw new Error(`Unexpected service call ${key}`); } : value]));
   const context = vm.createContext({
-    ...apiMocks, ...runtime, ...fallback, ...detection, ...pdf, ...permissions, ...i18n, ...jobs, ...settings, ...usage, ...pageText, withRequestDeadline,
+    ...apiMocks, ...runtime, ...fallback, ...detection, ...pdf, ...permissions, ...i18n, ...jobs, ...settings, ...usage, ...pageText, withRequestDeadline, withStallDeadline,
     createQueuedPdfStore: () => ({ put: async (id,file) => files.set(id,structuredClone(file)), get: async id => files.get(id), remove: async id => files.delete(id), prune: async () => {} }),
     console: Object.fromEntries(['log', 'warn', 'error'].map(level => [level, (...args) => logs.push([level, ...args])])),
-    crypto: webcrypto, AbortController, URL, TextEncoder, TextDecoder, Uint8Array, ArrayBuffer, atob, btoa, setTimeout, clearTimeout,
+    crypto: webcrypto, AbortController, URL, TextEncoder, TextDecoder, Uint8Array, ArrayBuffer, atob, btoa, setTimeout, clearTimeout, setInterval, clearInterval,
     chrome: {
       storage: { local: {
         async remove(key) { if(key!=='pipelineState') delete data[key]; },
@@ -550,6 +550,41 @@ test('queued PDF data URLs decode correctly and payloads survive permission wait
   assert.equal(new TextDecoder().decode(decoded.fileData), raw);
   assert.equal(w.shouldRetainJobPdf({ step: 'wait_pdf_access' }), true);
   assert.equal(w.shouldRetainJobPdf({ step: 'wait_source' }), false);
+});
+
+test('PDF download deadlines end stalled transfers but let slow steady transfers finish', async () => {
+  const tick = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const steady = await withStallDeadline(async (_signal, touch) => {
+    for (let chunk = 0; chunk < 6; chunk += 1) { await tick(20); touch(); }
+    return 'complete';
+  }, { idleMs: 50, maxMs: 1000 });
+  assert.equal(steady, 'complete');
+  let aborted = false;
+  await assert.rejects(withStallDeadline(async signal => {
+    signal.addEventListener('abort', () => { aborted = true; });
+    await tick(200);
+  }, { idleMs: 50, maxMs: 1000 }), /stalled/);
+  assert.equal(aborted, true);
+  await assert.rejects(withStallDeadline(async (signal, touch) => {
+    while (!signal.aborted) { await tick(10); touch(); }
+  }, { idleMs: 50, maxMs: 120 }), /timed out/);
+  let watched = 0;
+  await assert.rejects(withStallDeadline(() => tick(1000), { idleMs: 500, maxMs: 2000, watchMs: 10,
+    watch: () => (++watched >= 3 ? 'cancelled' : null) }), /cancelled/);
+});
+
+test('cancelling a job aborts its in-progress PDF download', async () => {
+  const w = await worker({ initialQueue: { version: 1, paused: false, jobs: [{ ...running(), step: 'download_pdf' }] } });
+  const runId = w.data.jobQueue.jobs[0].runId;
+  w.context.chrome.permissions = { contains: async () => true };
+  w.context.fetch = (_url, options) => new Promise((_resolve, reject) => {
+    options.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+    setTimeout(() => { w.data.jobQueue.jobs[0].status = 'stopping'; }, 50);
+  });
+  w.context.pdfArgs = ['https://www.nature.com/articles/a.pdf', 'https://www.nature.com/articles/a', runId];
+  const started = Date.now();
+  await assert.rejects(vm.runInContext('downloadRemotePdfForUpload(...pdfArgs)', w.context), /cancelled/);
+  assert.ok(Date.now() - started < 8000);
 });
 
 test('boot reconciliation retries after a transient failure and message errors respond', async () => {
