@@ -1389,6 +1389,10 @@ async function handlePollAlarm(alarm) {
     } catch (error) { console.error('[Alarm] Tick failed:', error); }
 }
 
+function checkSourceSoon() {
+    for (const delayMs of [5000, 15000]) setTimeout(() => handlePollAlarm({ name: ALARM_NAME }), delayMs)?.unref?.();
+}
+
 chrome.alarms.onAlarm.addListener(handlePollAlarm);
 
 async function reconcilePipelineRuntime() {
@@ -1433,7 +1437,7 @@ const fallbackPdfOperation = createPdfFallback({
     transition: transitionRun,
     download: downloadRemotePdfForUpload,
     upload: (notebookId, file) => addFileSource(notebookId, file.filename, file.fileData, file.mimeType),
-    poll: () => chrome.alarms.create(ALARM_NAME, { periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES }),
+    poll: async () => { await chrome.alarms.create(ALARM_NAME, { periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES }); checkSourceSoon(); },
     fail: failPipeline,
     notify: state => notifyJobAttention(state, state.stepDetail),
 });
@@ -1605,6 +1609,7 @@ async function runPipelineOperation(runId, pdfUrl, pageUrl, uploadFile = null, s
             },
         });
         if (!polling) return;
+        checkSourceSoon();
         console.log('[Pipeline] Alarm-based polling started (30 s interval)');
 
     } catch (err) {
