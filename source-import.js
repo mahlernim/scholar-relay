@@ -44,7 +44,7 @@ export function createPdfFallback({ getState, transition, download, upload, poll
     });
     if (!claimed) return false;
     try {
-      const payload = file || await download(state.originalPdfUrl, state.pageUrl);
+      const payload = file || await download(state.originalPdfUrl, state.pageUrl, runId);
       const uploading = await transition(runId, {
         step: 'upload_pdf', fallbackUploadStarted: true,
         stepDetail: 'Uploading the PDF into the same notebook. Any failed URL source is kept.',

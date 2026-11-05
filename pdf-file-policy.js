@@ -101,3 +101,38 @@ export function hasBase64PdfSignature(value) {
     return false;
   }
 }
+
+export async function fetchPdfInPage(url, limit) {
+  const controller = new AbortController();
+  let idleTimer;
+  const touch = () => { clearTimeout(idleTimer); idleTimer = setTimeout(() => controller.abort(), 25000); };
+  const maxTimer = setTimeout(() => controller.abort(), 600000);
+  try {
+    touch();
+    const response = await fetch(url, { credentials: 'include', signal: controller.signal });
+    if (!response.ok || !response.body) return null;
+    const reader = response.body.getReader();
+    const chunks = [];
+    let total = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      touch();
+      total += value.byteLength;
+      if (total > limit) { reader.cancel().catch(() => {}); return null; }
+      chunks.push(value);
+    }
+    const dataUrl = await new Promise((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.onload = () => resolve(fileReader.result);
+      fileReader.onerror = () => reject(fileReader.error);
+      fileReader.readAsDataURL(new Blob(chunks));
+    });
+    return { dataUrl, url: response.url, contentDisposition: response.headers.get('content-disposition') || '' };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(idleTimer);
+    clearTimeout(maxTimer);
+  }
+}

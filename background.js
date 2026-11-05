@@ -81,6 +81,7 @@ import {
     MAX_PDF_UPLOAD_BYTES,
     assertPdfUploadSize,
     decodedBase64ByteLength,
+    fetchPdfInPage,
     hasBase64PdfSignature,
     hasPdfSignature,
     readResponseWithinLimit,
@@ -489,6 +490,46 @@ async function downloadRemotePdfForUpload(pdfUrl, pageUrl = null) {
             fileData,
         };
     }, 25000);
+}
+
+async function downloadPdfWithPageFallback(pdfUrl, pageUrl = null, runId = null) {
+    try {
+        return await downloadRemotePdfForUpload(pdfUrl, pageUrl, runId);
+    } catch (error) {
+        const tabId = runId && sameHttpOrigin(pdfUrl, pageUrl) ? (await getState(runId)).pageTabId : null;
+        const tab = Number.isInteger(tabId) ? await chrome.tabs.get(tabId).catch(() => null) : null;
+        if (!tab || tab.url !== pageUrl) throw error;
+        const deadline = Date.now() + 610000;
+        let watchTimer;
+        const stopped = new Promise(resolve => {
+            watchTimer = setInterval(async () => {
+                chrome.runtime.getPlatformInfo?.().catch(() => {});
+                const state = await getState(runId).catch(() => null);
+                if (Date.now() > deadline || !isActivePipelineRun(state, runId) || state.step !== 'download_pdf') resolve(null);
+            }, 5000);
+        });
+        try {
+            const results = await Promise.race([stopped, chrome.scripting.executeScript({ target: { tabId }, world: 'MAIN',
+                func: fetchPdfInPage, args: [pdfUrl, MAX_PDF_UPLOAD_BYTES] }).catch(() => null)]);
+            return pdfFromPageResult(results?.[0]?.result, pdfUrl);
+        } catch {
+            throw error;
+        } finally {
+            clearInterval(watchTimer);
+        }
+    }
+}
+
+function pdfFromPageResult(page, pdfUrl) {
+    const dataUrl = page?.dataUrl;
+    const prefixEnd = typeof dataUrl === 'string' ? dataUrl.indexOf(',') : -1;
+    if (prefixEnd < 0 || prefixEnd > 100 || !dataUrl.startsWith('data:') ||
+        dataUrl.length > prefixEnd + 1 + Math.ceil(MAX_PDF_UPLOAD_BYTES / 3) * 4 || !hasBase64PdfSignature(dataUrl)) {
+        throw new Error('The article page did not return a PDF.');
+    }
+    const text = value => (typeof value === 'string' ? value.slice(0, 2048) : '');
+    const filename = filenameFromContentDisposition(text(page.contentDisposition)) || filenameFromUrl(text(page.url) || pdfUrl);
+    return decodeQueuedPdf(dataUrl, ensurePdfFilename(filename));
 }
 
 // =========================================================================
@@ -1384,7 +1425,7 @@ const fallbackPdf = (runId, options) => withJobOperation(runId, () => fallbackPd
 const fallbackPdfOperation = createPdfFallback({
     getState,
     transition: transitionRun,
-    download: downloadRemotePdfForUpload,
+    download: downloadPdfWithPageFallback,
     upload: (notebookId, file) => addFileSource(notebookId, file.filename, file.fileData, file.mimeType),
     poll: () => chrome.alarms.create(ALARM_NAME, { periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES }),
     fail: failPipeline,
