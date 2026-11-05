@@ -179,8 +179,16 @@ async function openExtensionPopup(connection, url) {
 }
 
 async function reload(session) {
+  const previousBoot = await evaluate(session, 'globalThis.__smokeBootId');
   await session.call('Page.reload', { ignoreCache: true });
-  await delay(500);
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    try {
+      const state = await evaluate(session, '({boot:globalThis.__smokeBootId,ready:globalThis.__smokeInitialized === true})');
+      if (state.boot && state.boot !== previousBoot && state.ready) return;
+    } catch { /* The execution context may disappear during navigation. */ }
+    await delay(100);
+  }
+  throw new Error('Reloaded popup did not finish initialization within five seconds.');
 }
 
 function assert(condition, message) {
@@ -274,6 +282,9 @@ try {
   // Fixture replacement must use the same serialized writer as worker callbacks.
   await writeFile(workerPath, (await readFile(workerPath,'utf8')) + '\nchrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message.type!=="SMOKE_SET_QUEUE")return;ensureBootReconciled().then(()=>pipelineState.transact(queue=>{Object.assign(queue,message.queue);return {};})).then(()=>reply({ok:true})).catch(error=>reply({error:error.message}));return true;});\n');
   const popupPath = join(extensionRoot, 'popup.js');
+  const popupSource = await readFile(popupPath, 'utf8');
+  assert(/\ninit\(\);\s*$/.test(popupSource), 'Popup initialization changed. Review the readiness hook.');
+  await writeFile(popupPath, popupSource.replace(/\ninit\(\);\s*$/, '\nglobalThis.__smokeBootId = crypto.randomUUID();\ninit().then(() => { globalThis.__smokeInitialized = true; });\n'));
   await writeFile(popupPath, `${await readFile(popupPath, 'utf8')}\nglobalThis.__smoke = { startPipelineFile, refreshQueue, renderProgress, renderPaperSelection, renderDetection, async setFixtureState(state, extra = {}) { const result=await chrome.runtime.sendMessage({type:'SMOKE_SET_QUEUE',queue:{version:1,paused:false,jobs:state.status==='idle'?[]:[{runId:'fixture',...state}]}}); if(!result?.ok) throw new Error(result?.error||'Fixture write failed'); await chrome.storage.local.set(extra); } };\n`);
 
   const chromePath = await resolveChrome();
