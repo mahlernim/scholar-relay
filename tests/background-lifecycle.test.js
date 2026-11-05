@@ -332,6 +332,16 @@ test('alarm overlap warning remains reachable', async () => {
   await first;
 });
 
+test('a newly added source is checked before the first poll alarm', async () => {
+  const w = await worker();
+  installQueueService(w);
+  await w.startPipelineRequest({ pdfUrl: 'https://example.org/early.pdf', sourceTitle: 'Early paper' });
+  await settleUntil(() => w.data.jobQueue.jobs[0]?.step === 'wait_source');
+  const deadline = Date.now() + 8000;
+  while (w.data.jobQueue.jobs[0].step === 'wait_source' && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 100));
+  assert.notEqual(w.data.jobQueue.jobs[0].step, 'wait_source');
+});
+
 test('alarm cleanup failures are logged rather than lost in an effect result', async () => {
   const w = await worker();
   w.context.chrome.alarms.clear = async () => { throw new Error('Alarm unavailable'); };
