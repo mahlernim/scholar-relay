@@ -46,6 +46,12 @@ export async function usageRecoverySmoke({ popup, evaluate, reload, root, origin
                 const label=await evaluate(popup,`({text:document.querySelector('#sec-audio .s-section-title').textContent,disabled:document.getElementById('s-generateAudio').disabled,width:document.documentElement.scrollWidth})`);
                 assert(label.text.includes(expected('Limit'))&&!label.disabled,locale+' quota hint blocks or is absent');
                 assert(label.width<=width,locale+' settings overflow');
+                const fallbackLabel = await evaluate(popup, `({label:document.getElementById('s-pageTextFallback').getAttribute('aria-label'),checked:document.getElementById('s-pageTextFallback').checked})`);
+                assert(fallbackLabel.label === expected('Import page text if the URL fails') && !fallbackLabel.checked, locale+' fallback label/default');
+                await evaluate(popup, `document.getElementById('btn-save-close').click()`);
+                await evaluate(popup, `__smoke.renderDetection({isPdf:true,pdfUrl:'https://example.org/paper.pdf',pageUrl:'https://example.org/article',sourceTitle:'Example article',pdfEvidence:'citation_pdf_url',candidates:[]})`);
+                const webpage = await evaluate(popup, `({label:document.getElementById('single-paper-webpage')?.textContent,width:document.documentElement.scrollWidth})`);
+                assert(webpage.label === expected('Use this webpage') && webpage.width <= width, locale+' single-paper webpage option');
             }
         } finally { await popup.call('Page.removeScriptToEvaluateOnNewDocument',{identifier}); }
     }

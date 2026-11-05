@@ -103,15 +103,36 @@ export function hasBase64PdfSignature(value) {
   }
 }
 
-export async function fetchPdfInPage(url, limit) {
+export async function fetchPdfInPage(url, limit, expectedUrl, transferId, operation = 'start') {
+  // Standalone MAIN-world function. The page is untrusted, so bytes are rechecked by the worker.
+  const key = Symbol.for('scholarRelay.pdfTransfers');
+  const transfers = globalThis[key] ||= new Map();
+  if (operation === 'cancel') {
+    transfers.get(transferId)?.controller?.abort();
+    if (!transfers.has(transferId) && transfers.size < 20) {
+      const tombstone = {};
+      transfers.set(transferId, tombstone);
+      setTimeout(() => { if (transfers.get(transferId) === tombstone) transfers.delete(transferId); }, 15000);
+    }
+    return null;
+  }
+  if (operation === 'pulse') { transfers.get(transferId)?.pulse?.(); return null; }
+  if (operation !== 'start' || !transferId || transfers.has(transferId) || transfers.size >= 20 ||
+      location.href !== expectedUrl || new URL(url).origin !== location.origin) return null;
   const controller = new AbortController();
-  let idleTimer;
+  let idleTimer, leaseTimer;
+  const pulse = () => { clearTimeout(leaseTimer); leaseTimer = setTimeout(() => controller.abort(), 15000); };
+  const transfer = { controller, pulse };
+  transfers.set(transferId, transfer);
   const touch = () => { clearTimeout(idleTimer); idleTimer = setTimeout(() => controller.abort(), 25000); };
   const maxTimer = setTimeout(() => controller.abort(), 600000);
   try {
     touch();
+    pulse();
     const response = await fetch(url, { credentials: 'include', signal: controller.signal });
     if (!response.ok || !response.body) return null;
+    const declaredSize = Number(response.headers.get('content-length'));
+    if (declaredSize > limit) { controller.abort(); return null; }
     const reader = response.body.getReader();
     const chunks = [];
     let total = 0;
@@ -120,7 +141,7 @@ export async function fetchPdfInPage(url, limit) {
       if (done) break;
       touch();
       total += value.byteLength;
-      if (total > limit) { reader.cancel().catch(() => {}); return null; }
+      if (total > limit) { controller.abort(); reader.cancel().catch(() => {}); return null; }
       chunks.push(value);
     }
     const dataUrl = await new Promise((resolve, reject) => {
@@ -135,5 +156,7 @@ export async function fetchPdfInPage(url, limit) {
   } finally {
     clearTimeout(idleTimer);
     clearTimeout(maxTimer);
+    clearTimeout(leaseTimer);
+    if (transfers.get(transferId) === transfer) transfers.delete(transferId);
   }
 }

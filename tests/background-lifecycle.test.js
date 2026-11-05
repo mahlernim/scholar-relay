@@ -675,7 +675,7 @@ test('a PDF the publisher refuses to the worker is fetched from the open article
     await settleUntil(() => ['wait_source', 'wait_pdf_access'].includes(w.data.jobQueue.jobs[0]?.step) && w.data.jobQueue.jobs[0].fallbackAttempted);
     const job = w.data.jobQueue.jobs[0];
     if (item.uploaded) {
-      assert.deepEqual(scripts.map(script => [script.target.tabId, script.world, script.func.name, script.args[0]]), [[7, 'MAIN', 'fetchPdfInPage', pdfUrl]], item.name);
+      assert.deepEqual(scripts.filter(script => script.args[4] === 'start').map(script => [script.target.tabId, script.world, script.func.name, script.args[0]]), [[7, 'MAIN', 'fetchPdfInPage', pdfUrl]], item.name);
       assert.deepEqual(uploads, [{ filename: 'abc.pdf', text: '%PDF-1.7\n page copy' }], item.name);
       assert.equal(job.importMethod, 'file', item.name);
     } else {
@@ -698,6 +698,8 @@ test('a page PDF retry keeps the worker error for malformed, oversized or abando
   for (const result of [...results, 'never']) {
     const w = await worker({ initialQueue: { version: 1, paused: false, jobs: [{ ...running(), step: 'download_pdf', pageTabId: 7, pageUrl }] } });
     const runId = w.data.jobQueue.jobs[0].runId;
+    // Model an active transfer, not a worker restart interrupted by reconciliation.
+    w.data.jobQueue.jobs[0].step = 'download_pdf';
     w.context.chrome.permissions = { contains: async () => false };
     w.context.fetch = async () => new Response('Forbidden', { status: 403 });
     w.context.chrome.tabs.get = async id => ({ id, url: pageUrl });
@@ -1349,6 +1351,59 @@ async function pageFallbackWorker(step, extra = {}) {
   return w;
 }
 
+test('uncertain URL mutations with no matching source never create replacement text', async () => {
+  for (const code of ['TRANSIENT_MUTATION_UNCERTAIN', 'AUTH_MUTATION_UNCERTAIN', undefined]) {
+    const w = await pageFallbackWorker('add_source');
+    await w.failPipeline('fallback', Object.assign(new Error('Response unavailable'), { code }), 'notebook');
+    assert.equal(w.uploads.length, 0);
+    assert.equal(w.data.jobQueue.jobs[0].status, 'error');
+    assert.equal(w.files.size, 0);
+  }
+});
+
+test('source timeout reconciles ready work and never replaces missing or processing work', async () => {
+  for (const status of [api.SourceStatus.READY, api.SourceStatus.PROCESSING, null]) {
+    const w = await pageFallbackWorker('wait_source', { sourceId: 'url-source', stepStartedAt: new Date(Date.now() - 601000).toISOString() });
+    w.context.listSources = async () => status === null ? [] : [{ id: 'url-source', url: fallbackUrl, status }];
+    w.context.getNotebookTitle = async () => 'Article';
+    w.context.generateAudio = async () => ({ taskId: 'audio', status: 'in_progress' });
+    await w.tickSourcePoll(structuredClone(w.data.jobQueue.jobs[0]));
+    assert.equal(w.uploads.length, 0);
+    assert.equal(w.data.jobQueue.jobs[0].step, status === api.SourceStatus.READY ? 'wait_artifacts' : 'error');
+  }
+});
+
+test('early source checks ignore unrelated jobs and stale source identities', async () => {
+  const w = await worker();
+  const callbacks = [];
+  w.context.setTimeout = callback => { callbacks.push(callback); return { unref() {} }; };
+  const waiting = { ...running(), runId: 'source-job', step: 'wait_source', sourceId: 'source-a' };
+  w.data.jobQueue = { version: 1, paused: true, jobs: [waiting, { ...running(), runId: 'artifact-job' }] };
+  const polled = [];
+  w.context.tickSourcePoll = async state => polled.push(state.runId);
+  w.context.tickArtifactPoll = async () => assert.fail('Unrelated artifact was polled');
+  w.context.waiting = structuredClone(waiting);
+  vm.runInContext('checkSourceSoon(waiting)', w.context);
+  await callbacks[0]();
+  assert.deepEqual(polled, ['source-job']);
+  w.data.jobQueue.jobs[0].sourceId = 'source-b';
+  await callbacks[1]();
+  assert.deepEqual(polled, ['source-job']);
+});
+
+test('cancelled downloads and non-access failures never start a page retry', async () => {
+  for (const message of ['The PDF download was cancelled.', 'PDF exceeds size limit', 'HTTP 403 while downloading source PDF']) {
+    const pageUrl = 'https://journal.example.org/article';
+    const w = await worker({ initialQueue: { version: 1, paused: false, jobs: [{ ...running(), step: 'download_pdf', pageTabId: 7, pageUrl }] } });
+    w.context.chrome.permissions = { contains: async () => false };
+    w.context.fetch = async () => { w.data.jobQueue.jobs[0].status = 'stopping'; throw new Error(message); };
+    w.context.chrome.tabs.get = async id => ({ id, url: pageUrl });
+    w.context.chrome.scripting = { executeScript: async () => assert.fail('Started page fetch after stopping') };
+    w.context.pdfArgs = ['https://journal.example.org/paper.pdf', pageUrl, 'old'];
+    await assert.rejects(vm.runInContext('downloadPdfWithPageFallback(...pdfArgs)', w.context));
+  }
+});
+
 test('page text is saved for the URL fallback only when the setting is on and it is a single webpage', async () => {
   for (const pageTextFallback of [true, false]) {
     const w = await worker();
@@ -1364,7 +1419,7 @@ test('page text is saved for the URL fallback only when the setting is on and it
 test('a rejected or failed URL import adds the saved page text once and releases it', async () => {
   for (const [step, sourceId] of [['add_source', null], ['wait_source', 'url-source']]) {
     const w = await pageFallbackWorker(step, { sourceId });
-    await w.failPipeline('fallback', 'Source import failed.', 'notebook');
+    await w.failPipeline('fallback', Object.assign(new Error('Source import failed.'), { code: 'SOURCE_IMPORT_REJECTED' }), 'notebook');
     const job = w.data.jobQueue.jobs[0];
     assert.equal(w.uploads.length, 1);
     assert.equal(w.uploads[0][2], fallbackText.content);
@@ -1391,7 +1446,7 @@ test('an uncertain URL import adopts a usable URL source after one read instead 
 test('an uncertain page text add fails without replay and an unreadable notebook keeps the URL failure', async () => {
   const w = await pageFallbackWorker('add_source');
   w.context.addTextSource = async (...args) => { w.uploads.push(args); throw Object.assign(new Error('Uncertain'), { code: 'TRANSIENT_MUTATION_UNCERTAIN' }); };
-  await w.failPipeline('fallback', 'Source import failed.', 'notebook');
+  await w.failPipeline('fallback', Object.assign(new Error('Source import failed.'), { code: 'SOURCE_IMPORT_REJECTED' }), 'notebook');
   assert.deepEqual([w.data.jobQueue.jobs[0].status, w.uploads.length, w.files.size], ['error', 1, 0]);
   const restored = await worker({ initialQueue: w.data.jobQueue });
   restored.context.addTextSource = async () => assert.fail('Text add replayed');

@@ -59,7 +59,7 @@ export function createPdfFallback({ getState, transition, download, upload, poll
         step: 'wait_source', stepStartedAt: new Date().toISOString(),
         stepDetail: 'Replacement PDF uploaded. Waiting for processing...',
       }, { expectedSteps: ['upload_pdf'] });
-      if (waiting) await poll();
+      if (waiting) await poll(waiting);
       return !!waiting;
     } catch (error) {
       if (error?.code === 'PIPELINE_STALE_RUN') return false;

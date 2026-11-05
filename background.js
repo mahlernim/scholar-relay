@@ -507,26 +507,41 @@ async function downloadPdfWithPageFallback(pdfUrl, pageUrl = null, runId = null)
     try {
         return await downloadRemotePdfForUpload(pdfUrl, pageUrl, runId);
     } catch (error) {
-        const tabId = runId && sameHttpOrigin(pdfUrl, pageUrl) ? (await getState(runId)).pageTabId : null;
+        // Only a publisher access refusal benefits from the page's browser session.
+        if (!/^HTTP (401|403)\b/.test(error.message) || !runId || !sameHttpOrigin(pdfUrl, pageUrl)) throw error;
+        const current = await requireActiveRun(runId, ['download_pdf']);
+        const tabId = current.pageTabId;
         const tab = Number.isInteger(tabId) ? await chrome.tabs.get(tabId).catch(() => null) : null;
         if (!tab || tab.url !== pageUrl) throw error;
-        const deadline = Date.now() + 610000;
-        let watchTimer;
+        await requireActiveRun(runId, ['download_pdf']);
+        const transferId = crypto.randomUUID();
+        const execute = operation => chrome.scripting.executeScript({ target: { tabId }, world: 'MAIN',
+            func: fetchPdfInPage, args: [pdfUrl, MAX_PDF_UPLOAD_BYTES, pageUrl, transferId, operation] }).catch(() => null);
+        let watchTimer, deadlineTimer, watching = false;
         const stopped = new Promise(resolve => {
+            deadlineTimer = setTimeout(() => resolve(null), 610000);
             watchTimer = setInterval(async () => {
-                chrome.runtime.getPlatformInfo?.().catch(() => {});
-                const state = await getState(runId).catch(() => null);
-                if (Date.now() > deadline || !isActivePipelineRun(state, runId) || state.step !== 'download_pdf') resolve(null);
+                if (watching) return;
+                watching = true;
+                try {
+                    chrome.runtime.getPlatformInfo?.().catch(() => {});
+                    const state = await getState(runId).catch(() => null);
+                    if (!isActivePipelineRun(state, runId) || state.step !== 'download_pdf') resolve(null);
+                    else void execute('pulse');
+                } finally { watching = false; }
             }, 5000);
         });
         try {
-            const results = await Promise.race([stopped, chrome.scripting.executeScript({ target: { tabId }, world: 'MAIN',
-                func: fetchPdfInPage, args: [pdfUrl, MAX_PDF_UPLOAD_BYTES] }).catch(() => null)]);
+            const results = await Promise.race([stopped, execute('start')]);
+            await requireActiveRun(runId, ['download_pdf']);
             return pdfFromPageResult(results?.[0]?.result, pdfUrl);
         } catch {
             throw error;
         } finally {
             clearInterval(watchTimer);
+            clearTimeout(deadlineTimer);
+            // The page's short lease also aborts the request if this worker disappears.
+            void execute('cancel');
         }
     }
 }
@@ -867,7 +882,7 @@ async function failPipeline(runId, errorInput, notebookId = null) {
         await syncQueueRuntime();
         return;
     }
-    if (state.pageTextFallback && ['add_source', 'wait_source'].includes(state.step) && await usePageTextFallback(state)) return;
+    if (state.pageTextFallback && ['add_source', 'wait_source'].includes(state.step) && await usePageTextFallback(state, errorInput)) return;
     const diagnostic = failureDiagnostic(errorInput, state.step);
     const finalError = diagnostic.message;
     if (state.sources && ['wait_source', 'download_pdf'].includes(state.step)) {
@@ -888,17 +903,23 @@ async function failPipeline(runId, errorInput, notebookId = null) {
     console.error('[Pipeline] Error:', finalError);
 }
 
-async function usePageTextFallback(state) {
+async function usePageTextFallback(state, error) {
     const text = await pdfStore.get(state.payloadId).catch(() => null);
     let sources;
     try { sources = await listSources(state.notebookId, { mode: 'optional' }); } catch { return false; }
     if (typeof text?.content !== 'string') return false;
-    const usable = state.step === 'add_source' && sources.find(source => source.url === state.pdfUrl && source.status !== SourceStatus.ERROR);
+    const matches = sources.filter(source => state.sourceId
+        ? String(source.id) === String(state.sourceId) : source.url === state.pdfUrl);
+    const usable = matches.find(source => source.status !== SourceStatus.ERROR);
     if (usable) {
-        await transitionRun(state.runId, { sourceId: usable.id, step: 'wait_source', stepStartedAt: new Date().toISOString() },
+        if (state.step !== 'add_source') return false;
+        const waiting = await transitionRun(state.runId, { sourceId: usable.id, step: 'wait_source', stepStartedAt: new Date().toISOString() },
             { expectedSteps: ['add_source'] });
+        if (waiting) { await syncQueueRuntime(); checkSourceSoon(waiting); }
         return true;
     }
+    // An empty or malformed listing does not prove an uncertain write failed.
+    if (!matches.some(source => source.status === SourceStatus.ERROR) && !isConfirmedImportRejection(error)) return false;
     const claimed = await transitionRun(state.runId, { step: 'upload_text', pageTextFallback: false, importMethod: 'text',
         failedUrlSourceId: state.sourceId || null, stepDetail: 'URL import failed. Adding page text...' }, { expectedSteps: [state.step] });
     if (!claimed) return true;
@@ -912,7 +933,7 @@ async function usePageTextFallback(state) {
         });
         const waiting = await transitionRun(state.runId, { step: 'wait_source', stepStartedAt: new Date().toISOString(),
             stepDetail: 'Waiting for imported page text.' }, { expectedSteps: ['upload_text'] });
-        if (waiting) await syncQueueRuntime();
+        if (waiting) { await syncQueueRuntime(); checkSourceSoon(waiting); }
     } catch (error) {
         if ((await getState(state.runId)).status === 'running') await failPipeline(state.runId, error, state.notebookId);
     } finally {
@@ -939,21 +960,17 @@ async function tickSourcePollOperation(state) {
     const sourceLabel = getSourceLabel(state.sourceType);
     const ingestionLabel = getIngestionLabel(state.sourceType);
 
-    if (elapsed > SOURCE_TIMEOUT_MS) {
-        await failPipeline(
-            runId,
-            `${sourceLabel} ingestion timed out after 10 minutes.`,
-            state.notebookId
-        );
-        return;
-    }
-
     let sources;
     try {
-        sources = await listSources(state.notebookId, { mode: 'poll', deadline: Date.parse(state.stepStartedAt) + SOURCE_TIMEOUT_MS });
+        sources = await listSources(state.notebookId, elapsed > SOURCE_TIMEOUT_MS ? { mode: 'optional' }
+            : { mode: 'poll', deadline: Date.parse(state.stepStartedAt) + SOURCE_TIMEOUT_MS });
         await requireActiveRun(runId, ['wait_source']);
     } catch (err) {
         if (err?.code === 'PIPELINE_STALE_RUN') return;
+        if (elapsed > SOURCE_TIMEOUT_MS) {
+            await failPipeline(runId, `${sourceLabel} ingestion timed out after 10 minutes.`, state.notebookId);
+            return;
+        }
         // Transient network error -- log and retry next tick
         console.warn('[Tick] Could not list sources, will retry:', err.message);
         await transitionRun(runId, {
@@ -965,6 +982,11 @@ async function tickSourcePollOperation(state) {
 
     const source = sources.find(s => String(s.id) === String(state.sourceId));
     const elapsedSec = Math.round(elapsed / 1000);
+
+    if (elapsed > SOURCE_TIMEOUT_MS && ![SourceStatus.READY, SourceStatus.ERROR].includes(source?.status)) {
+        await failPipeline(runId, `${sourceLabel} ingestion timed out after 10 minutes.`, state.notebookId);
+        return;
+    }
 
     if (!source) {
         await transitionRun(runId, {
@@ -1430,8 +1452,22 @@ async function handlePollAlarm(alarm) {
     } catch (error) { console.error('[Alarm] Tick failed:', error); }
 }
 
-function checkSourceSoon() {
-    for (const delayMs of [5000, 15000]) setTimeout(() => handlePollAlarm({ name: ALARM_NAME }), delayMs)?.unref?.();
+function checkSourceSoon(waiting) {
+    if (!waiting || waiting.step !== 'wait_source') return;
+    for (const delayMs of [5000, 15000]) setTimeout(async () => {
+        try {
+            await runExclusivePollTick(async () => {
+                const current = await getState(waiting.runId);
+                if (!isActivePipelineRun(current, waiting.runId) || current.step !== 'wait_source' ||
+                    current.sourceId !== waiting.sourceId || current.stepStartedAt !== waiting.stepStartedAt) return;
+                await tickSourcePoll(current);
+                kickQueue();
+                await syncQueueRuntime();
+            });
+        } catch (error) {
+            if (error?.code !== 'PIPELINE_STALE_RUN') console.warn('[Source] Early check failed:', error.message);
+        }
+    }, delayMs)?.unref?.();
 }
 
 chrome.alarms.onAlarm.addListener(handlePollAlarm);
@@ -1478,7 +1514,7 @@ const fallbackPdfOperation = createPdfFallback({
     transition: transitionRun,
     download: downloadPdfWithPageFallback,
     upload: (notebookId, file) => addFileSource(notebookId, file.filename, file.fileData, file.mimeType),
-    poll: async () => { await chrome.alarms.create(ALARM_NAME, { periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES }); checkSourceSoon(); },
+    poll: async waiting => { await chrome.alarms.create(ALARM_NAME, { periodInMinutes: PIPELINE_POLL_PERIOD_MINUTES }); checkSourceSoon(waiting); },
     fail: failPipeline,
     notify: state => notifyJobAttention(state, state.stepDetail),
 });
@@ -1650,7 +1686,7 @@ async function runPipelineOperation(runId, pdfUrl, pageUrl, uploadFile = null, s
             },
         });
         if (!polling) return;
-        checkSourceSoon();
+        checkSourceSoon(polling);
         console.log('[Pipeline] Alarm-based polling started (30 s interval)');
 
     } catch (err) {
