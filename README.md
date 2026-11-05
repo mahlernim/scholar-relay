@@ -122,6 +122,7 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 - 컬렉션이 보이지 않으면 Gemini Notebook에서 컬렉션을 만든 뒤 설정의 새로고침 버튼을 클릭합니다.
 - PDF URL 가져오기나 처리 실패가 확인되면 같은 노트북에 PDF 업로드를 한 번 시도합니다. 논문 페이지가 무료 열람이 아니라고 표시하면 Gemini Notebook이 읽을 수 없는 URL 가져오기를 건너뛰고 PDF를 바로 내려받아 업로드합니다. 다운로드 권한이 필요하면 팝업에서 허용하거나 PDF를 직접 선택하세요. 시간 초과나 결과가 불확실한 응답에서는 추가 업로드를 실행하지 않습니다.
 - Chrome 메모리를 안전하게 유지하기 위해 직접 내려받기 및 로컬 업로드는 40 MiB로 제한됩니다. 더 큰 원격 PDF는 URL 가져오기를 사용하고, 더 큰 로컬 파일은 Gemini Notebook에서 직접 업로드합니다.
+- 출판사가 확장 프로그램의 PDF 다운로드를 거부해도 시작한 탭에 논문 페이지가 그대로 열려 있으면 그 페이지에서 PDF를 한 번 더 요청합니다.
 
 ---
 
@@ -196,6 +197,7 @@ The queue holds up to 20 unfinished jobs. Local PDFs are saved temporarily on yo
 - If a collection is missing, create it in Gemini Notebook and use the refresh button in Settings.
 - Confirmed PDF URL import or processing failures trigger one upload fallback in the same notebook. When the article page marks the paper as not free to read, the PDF is downloaded and uploaded directly instead of trying a URL import that Gemini Notebook cannot read. If download access is needed, reopen the popup to grant it or select the PDF manually. Timeouts and uncertain responses do not trigger another upload.
 - Direct downloads and local uploads are limited to 40 MiB to keep Chrome memory use safe. Larger remote PDFs use URL import, while larger local files should be uploaded directly in Gemini Notebook.
+- If a publisher refuses the extension's PDF download while its article page is still open in the tab you started from, the PDF is requested once more from that page.
 
 ## Credits and compatibility
 

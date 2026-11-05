@@ -654,6 +654,65 @@ test('a paper awaiting PDF access does not block the next paper or let resume st
   assert.equal(w.data.jobQueue.jobs.find(job => job.runId === next.runId).step, 'wait_source');
 });
 
+test('a PDF the publisher refuses to the worker is fetched from the open article tab', async () => {
+  const pageUrl = 'https://journal.example.org/doi/10.1/abc';
+  const pdfUrl = 'https://journal.example.org/doi/pdf/10.1/abc';
+  for (const item of [{ name: 'tab still on the article', tabUrl: pageUrl, uploaded: true },
+    { name: 'tab navigated away', tabUrl: 'https://journal.example.org/other', uploaded: false }]) {
+    const w = await worker();
+    installQueueService(w);
+    const uploads = []; const scripts = [];
+    w.context.addUrlSource = async () => { throw Object.assign(new Error('Rejected'), { code: 'SOURCE_IMPORT_REJECTED' }); };
+    w.context.chrome.permissions = { contains: async () => false };
+    w.context.fetch = async () => new Response('Forbidden', { status: 403, headers: { 'content-type': 'text/html' } });
+    w.context.chrome.tabs.get = async id => ({ id, url: item.tabUrl });
+    w.context.chrome.scripting = { executeScript: async options => {
+      scripts.push(options);
+      return [{ result: { dataUrl: `data:application/pdf;base64,${btoa('%PDF-1.7\n page copy')}`, url: pdfUrl, contentDisposition: 'attachment; filename="abc.pdf"' } }];
+    } };
+    w.context.addFileSource = async (id, filename, fileData) => { uploads.push({ filename, text: new TextDecoder().decode(fileData) }); return { id: 'uploaded-source' }; };
+    await w.startPipelineRequest({ pdfUrl, pageUrl, pageTabId: 7, pdfEvidence: 'citation_pdf_url', sourceTitle: 'Paper' });
+    await settleUntil(() => ['wait_source', 'wait_pdf_access'].includes(w.data.jobQueue.jobs[0]?.step) && w.data.jobQueue.jobs[0].fallbackAttempted);
+    const job = w.data.jobQueue.jobs[0];
+    if (item.uploaded) {
+      assert.deepEqual(scripts.map(script => [script.target.tabId, script.world, script.func.name, script.args[0]]), [[7, 'MAIN', 'fetchPdfInPage', pdfUrl]], item.name);
+      assert.deepEqual(uploads, [{ filename: 'abc.pdf', text: '%PDF-1.7\n page copy' }], item.name);
+      assert.equal(job.importMethod, 'file', item.name);
+    } else {
+      assert.equal(scripts.length, 0, item.name);
+      assert.equal(job.step, 'wait_pdf_access', item.name);
+      assert.equal(job.pdfWaitReason, 'publisher', item.name);
+    }
+  }
+});
+
+test('a page PDF retry keeps the worker error for malformed, oversized or abandoned results', async () => {
+  const pageUrl = 'https://journal.example.org/doi/10.1/abc';
+  const pdfUrl = 'https://journal.example.org/doi/pdf/10.1/abc';
+  const pdfData = `data:application/pdf;base64,${btoa('%PDF-1.7\n page copy')}`;
+  const results = [
+    { dataUrl: pdfData, contentDisposition: {} },
+    { dataUrl: `data:${'x'.repeat(200)};base64,${btoa('%PDF-1.7\n page copy')}` },
+    { dataUrl: `${pdfData}!!` },
+  ];
+  for (const result of [...results, 'never']) {
+    const w = await worker({ initialQueue: { version: 1, paused: false, jobs: [{ ...running(), step: 'download_pdf', pageTabId: 7, pageUrl }] } });
+    const runId = w.data.jobQueue.jobs[0].runId;
+    w.context.chrome.permissions = { contains: async () => false };
+    w.context.fetch = async () => new Response('Forbidden', { status: 403 });
+    w.context.chrome.tabs.get = async id => ({ id, url: pageUrl });
+    w.context.chrome.scripting = { executeScript: async () => {
+      if (result !== 'never') return [{ result }];
+      setTimeout(() => { w.data.jobQueue.jobs[0].status = 'stopping'; }, 50);
+      return new Promise(() => {});
+    } };
+    w.context.pdfArgs = [pdfUrl, pageUrl, runId];
+    const download = vm.runInContext('downloadPdfWithPageFallback(...pdfArgs)', w.context);
+    if (result === results[0]) assert.equal((await download).filename, 'abc.pdf');
+    else await assert.rejects(download, /HTTP 403/);
+  }
+});
+
 test('queue storage failures do not acknowledge a job or retain its PDF outside the budget', async () => {
   const w = await worker();
   const writes = installQueueService(w);

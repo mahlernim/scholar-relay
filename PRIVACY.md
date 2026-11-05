@@ -16,6 +16,7 @@ The extension handles only data needed for a user-requested workflow:
 - Available account compute-meter percentages, reset times and per-action availability. These are advisory snapshots, not a promise of remaining generations or a successful retry.
 - The existing authenticated Gemini Notebook browser session. The extension makes HTTPS requests that allow Chrome to attach the session already established by the user on Gemini Notebook.
 - For a PDF hosted on a different website, the extension may request access to that specific website and use the site's existing browser session when downloading the user-selected PDF.
+- If the publisher refuses that download, the extension can request the same PDF once from the article page the user started from, while that tab still shows the page. The bytes stay in memory and are uploaded only to the user's notebook.
 
 The extension never asks for, reads, stores, or transmits a Google password or multi-factor authentication code. It does not use the Chrome Cookies API. Temporary Gemini Notebook CSRF and session values are kept only in service-worker memory and are discarded when that worker stops.
 
