@@ -835,7 +835,7 @@ function renderDetection(data) {
     ${/^https?:\/\//i.test(data.pageUrl || '') ? `<div class="paper-tools paper-actions"><button id="single-paper-auto">${escapeHtml(t('Detect automatically on this site'))}</button></div><div id="single-paper-feedback" role="status"></div>` : ''}`;
     updateArtifactSummary();
     document.getElementById('btn-start').addEventListener('click', () =>
-        startPipeline(data.pdfUrl, data.pageUrl, 'pdf', data.sourceTitle, data.pdfEvidence || data.source)
+        startPipeline(data.pdfUrl, data.pageUrl, 'pdf', data.sourceTitle, data.pdfEvidence || data.source, data.paywalled)
             .catch(error => showError(error.message))
     );
     document.getElementById('single-paper-auto')?.addEventListener('click', async () => {
@@ -1061,12 +1061,12 @@ async function resumeFallbackFromPopup(runId, file = {}) {
 // Pipeline control
 // =========================================================================
 
-async function startPipeline(pdfUrl, pageUrl, sourceType = 'pdf', sourceTitle = null, pdfEvidence = null) {
+async function startPipeline(pdfUrl, pageUrl, sourceType = 'pdf', sourceTitle = null, pdfEvidence = null, paywalled = false) {
     const btn = document.getElementById('btn-start') || document.getElementById('btn-start-url');
     const originalText = btn?.textContent || '';
     if (btn) { btn.disabled = true; btn.textContent = t("⏳ Starting..."); }
     try {
-        const response = await enqueueRequest({ type: 'START_PIPELINE', pdfUrl, pageUrl, sourceType, sourceTitle, pdfEvidence });
+        const response = await enqueueRequest({ type: 'START_PIPELINE', pdfUrl, pageUrl, sourceType, sourceTitle, pdfEvidence, paywalled });
         if (!response?.ok) {
             const error = new Error(response?.message || 'Could not start pipeline');
             error.code = response?.code;

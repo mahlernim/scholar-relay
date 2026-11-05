@@ -482,6 +482,28 @@ test('two papers retain settings and ownership while generation overlaps the nex
   assert.notEqual(aJob().notebookId, bJob().notebookId);
 });
 
+test('an article marked not free downloads its PDF directly instead of a URL import that cannot succeed', async () => {
+  const pdf = () => new Response(new TextEncoder().encode('%PDF-1.7\n copy'), { headers: { 'content-type': 'application/pdf' } });
+  const cases = [
+    { name: 'page marks article not free', paywalled: true, direct: true },
+    { name: 'no access declaration', paywalled: false, direct: false },
+  ];
+  for (const item of cases) {
+    const w = await worker();
+    const writes = installQueueService(w); const uploads = [];
+    w.context.chrome.permissions = { contains: async () => true };
+    w.context.fetch = async () => pdf();
+    w.context.addFileSource = async (id, filename) => { uploads.push({ id, filename }); return { id: 'uploaded-source' }; };
+    await w.startPipelineRequest({ pdfUrl: 'https://journal.example.org/articles/a.pdf', pageUrl: 'https://journal.example.org/articles/a',
+      pdfEvidence: 'citation_pdf_url', sourceTitle: 'Paper', paywalled: item.paywalled });
+    await settleUntil(() => w.data.jobQueue.jobs[0]?.step === 'wait_source');
+    const job = w.data.jobQueue.jobs[0];
+    assert.equal(writes.filter(write => write.kind === 'source').length, item.direct ? 0 : 1, item.name);
+    assert.equal(uploads.length, item.direct ? 1 : 0, item.name);
+    assert.equal(job.importMethod, item.direct ? 'file' : 'url', item.name);
+  }
+});
+
 test('pause stops new starts, duplicates reuse the saved job, and removing one job preserves others', async () => {
   const w = await worker();
   const writes = installQueueService(w);
