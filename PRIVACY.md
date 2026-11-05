@@ -23,7 +23,7 @@ For Notebook connection checks, required access to https://accounts.google.com/*
 
 ## How data is used and shared
 
-HTML metadata is read before remote PDF import. PDF bytes are downloaded only when upload is needed, such as after a confirmed URL import failure.
+HTML metadata is read before remote PDF import. PDF bytes are downloaded only when upload is needed, such as after a confirmed URL import failure or when the article page marks the paper as not free to read.
 
 Data is used only to detect the source selected by the user, upload or import it into the user's Gemini Notebook account, apply the user's notebook settings, request the selected artifacts, and report progress.
 

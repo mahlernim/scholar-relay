@@ -83,3 +83,19 @@ test('linked arXiv papers merge repeated destinations and preserve explicit vers
   assert.equal(result.candidates.filter(x=>x.featured).length,1);
   assert.equal(result.candidates.at(-1).supplementary,true);
 });
+
+test('only the citation PDF of an article marked not free is flagged as subscription content', () => {
+  const article = free => JSON.stringify({ mainEntity: { '@type': 'ScholarlyArticle', headline: 'Paywalled paper', isAccessibleForFree: free } });
+  const meta = [['citation_pdf_url', 'https://www.nature.com/articles/a.pdf']];
+  const links = [['https://static-content.springer.com/esm/a_ESM.pdf', 'Supplementary Information (download PDF)']];
+  const paywalled = inspectPaperPage(page({ meta, links, json: [article(false)] }), 'https://www.nature.com/articles/a');
+  assert.equal(paywalled.paywalled, true);
+  assert.deepEqual(paywalled.candidates.map(item => [item.pdfEvidence, !!item.paywalled]), [['citation_pdf_url', true], ['pdf_link', false]]);
+  for (const free of [true, 'True', undefined]) {
+    const open = inspectPaperPage(page({ meta, json: [article(free)] }), 'https://www.nature.com/articles/a');
+    assert.equal(open.paywalled, false);
+    assert.equal(open.candidates[0].paywalled, undefined);
+  }
+  assert.equal(inspectPaperPage(page({ meta, json: [JSON.stringify({ '@type': 'ScholarlyArticle', isAccessibleForFree: 'False' })] }), 'https://www.nature.com/articles/a').paywalled, true);
+});
+

@@ -26,7 +26,7 @@ export function pdfWaitReason(state) {
 }
 
 export function createPdfFallback({ getState, transition, download, upload, poll, fail, notify = async () => {} }) {
-  return async function fallback(runId, { resume = false, file = null } = {}) {
+  return async function fallback(runId, { resume = false, file = null, direct = false } = {}) {
     const state = await getState(runId);
     const steps = resume ? ['wait_pdf_access'] : ['add_source', 'wait_source'];
     const claimed = await transition(runId, {
@@ -35,7 +35,9 @@ export function createPdfFallback({ getState, transition, download, upload, poll
       pdfWaitReason: null,
       fallbackAttempted: true,
       failedUrlSourceId: state.sourceId || null,
-      stepDetail: file ? 'Preparing the selected PDF...' : 'URL import failed. Downloading the PDF for this notebook...',
+      stepDetail: file ? 'Preparing the selected PDF...' : direct
+        ? 'The page marks this paper as not free to read. Downloading the PDF for this notebook...'
+        : 'URL import failed. Downloading the PDF for this notebook...',
     }, {
       expectedSteps: steps,
       condition: current => resume

@@ -1567,6 +1567,11 @@ async function runPipelineOperation(runId, pdfUrl, pageUrl, uploadFile = null, s
             if (typeof pdfUrl === 'string' && pdfUrl.startsWith('file://')) {
                 throw new Error('Local PDF detected. Use local upload mode instead of URL mode.');
             }
+            const current = await getState(runId);
+            if (current.paywalled && canFallback(current)) {
+                await fallbackPdf(runId, { direct: true });
+                return;
+            }
             try {
                 await requireActiveRun(runId, ['add_source']);
                 sourceMutationStarted = true;
@@ -1740,6 +1745,7 @@ async function startPipelineRequest(message, uploadFile = null) {
                 sourceType: file ? 'pdf' : (message.sourceType || 'pdf'),
                 pageUrl: message.pageUrl || null, pageTabId: Number.isInteger(message.pageTabId) ? message.pageTabId : null,
                 sourceTitle: normalizeSourceTitle(message.sourceTitle) || null,
+                paywalled: !file && !sources && message.paywalled === true,
                 sourceKey, importMethod: file ? 'file' : 'url', originalPdfUrl: file ? null : message.pdfUrl,
                 pdfEvidence: message.pdfEvidence || null,
                 payloadId: file || pageText ? runId : null, payloadBytes, pageTextFallback: !!pageText,

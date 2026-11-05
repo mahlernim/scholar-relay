@@ -836,7 +836,7 @@ function renderDetection(data) {
     ${/^https?:\/\//i.test(data.pageUrl || '') ? `<div class="paper-tools paper-actions">${data.pageUrl !== data.pdfUrl ? `<button id="single-paper-webpage">${escapeHtml(t('Use this webpage'))}</button>` : ''}<button id="single-paper-auto">${escapeHtml(t('Detect automatically on this site'))}</button></div><div id="single-paper-feedback" role="status"></div>` : ''}`;
     updateArtifactSummary();
     document.getElementById('btn-start').addEventListener('click', () =>
-        startPipeline(data.pdfUrl, data.pageUrl, 'pdf', data.sourceTitle, data.pdfEvidence || data.source)
+        startPipeline(data.pdfUrl, data.pageUrl, 'pdf', data.sourceTitle, data.pdfEvidence || data.source, data.paywalled)
             .catch(error => showError(error.message))
     );
     document.getElementById('single-paper-webpage')?.addEventListener('click', () =>
@@ -1064,13 +1064,13 @@ async function resumeFallbackFromPopup(runId, file = {}) {
 // Pipeline control
 // =========================================================================
 
-async function startPipeline(pdfUrl, pageUrl, sourceType = 'pdf', sourceTitle = null, pdfEvidence = null) {
+async function startPipeline(pdfUrl, pageUrl, sourceType = 'pdf', sourceTitle = null, pdfEvidence = null, paywalled = false) {
     const btn = document.getElementById('btn-start') || document.getElementById('btn-start-url');
     const originalText = btn?.textContent || '';
     if (btn) { btn.disabled = true; btn.textContent = t("⏳ Starting..."); }
     try {
         const pageText = sourceType === 'webpage' ? await capturePageText(pageUrl) : null;
-        const response = await enqueueRequest({ type: 'START_PIPELINE', pdfUrl, pageUrl, sourceType, sourceTitle, pdfEvidence, pageText });
+        const response = await enqueueRequest({ type: 'START_PIPELINE', pdfUrl, pageUrl, sourceType, sourceTitle, pdfEvidence, pageText, paywalled });
         if (!response?.ok) {
             const error = new Error(response?.message || 'Could not start pipeline');
             error.code = response?.code;
