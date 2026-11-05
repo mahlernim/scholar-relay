@@ -1208,3 +1208,93 @@ test('scheduled history with completed and uncertain requests retains checking g
   assert.doesNotMatch(w.data.pipelineState.error, /timed out/);
   assert.equal(w.data.pipelineState.tasks[1].status, 'uncertain');
 });
+
+const fallbackUrl = 'https://example.org/article';
+const fallbackText = { kind: 'text', title: 'Article', content: 'Page text from browser tab\n' + fallbackUrl };
+async function pageFallbackWorker(step, extra = {}) {
+  const job = { ...running(), runId: 'fallback', step, sourceType: 'webpage', importMethod: 'url', pdfUrl: fallbackUrl, pageUrl: fallbackUrl,
+    pageTextFallback: true, payloadId: 'fallback', payloadBytes: 40, settings: { generateAudio: true, notificationEnabled: false }, ...extra };
+  const w = await worker();
+  w.data.jobQueue = { version: 1, paused: false, jobs: [job] };
+  w.files.set('fallback', structuredClone(fallbackText));
+  w.uploads = [];
+  w.context.listSources = async () => [];
+  w.context.addTextSource = async (...args) => { w.uploads.push(args); return { id: 'text-source' }; };
+  return w;
+}
+
+test('page text is saved for the URL fallback only when the setting is on and it is a single webpage', async () => {
+  for (const pageTextFallback of [true, false]) {
+    const w = await worker();
+    w.data.jobQueue = { version: 1, paused: true, jobs: [] };
+    const job = await w.startPipelineRequest({ pdfUrl: fallbackUrl, pageUrl: fallbackUrl, sourceType: 'webpage', sourceTitle: 'Article',
+      pageText: 'Article body', settings: { ...settings.DEFAULT_SETTINGS, pageTextFallback } });
+    assert.equal(w.data.jobQueue.jobs[0].importMethod, 'url');
+    assert.equal(w.data.jobQueue.jobs[0].pageTextFallback, pageTextFallback);
+    assert.equal(w.files.get(job.runId)?.content, pageTextFallback ? 'Article body' : undefined);
+  }
+});
+
+test('a rejected or failed URL import adds the saved page text once and releases it', async () => {
+  for (const [step, sourceId] of [['add_source', null], ['wait_source', 'url-source']]) {
+    const w = await pageFallbackWorker(step, { sourceId });
+    await w.failPipeline('fallback', 'Source import failed.', 'notebook');
+    const job = w.data.jobQueue.jobs[0];
+    assert.equal(w.uploads.length, 1);
+    assert.equal(w.uploads[0][2], fallbackText.content);
+    assert.deepEqual([job.status, job.step, job.sourceId, job.importMethod, job.pageTextFallback], ['running', 'wait_source', 'text-source', 'text', false]);
+    assert.equal(job.failedUrlSourceId, sourceId);
+    assert.equal(w.files.size, 0);
+  }
+});
+
+test('an uncertain URL import adopts a usable URL source after one read instead of adding text', async () => {
+  const w = await pageFallbackWorker('add_source');
+  w.context.listSources = async () => [{ id: 'late-url-source', url: fallbackUrl, status: api.SourceStatus.PROCESSING }];
+  await w.failPipeline('fallback', 'Response unavailable.', 'notebook');
+  const job = w.data.jobQueue.jobs[0];
+  assert.deepEqual([job.step, job.sourceId, job.pageTextFallback, w.uploads.length], ['wait_source', 'late-url-source', true, 0]);
+  assert.equal(w.files.size, 1);
+  w.context.listSources = async () => [{ id: 'late-url-source', status: api.SourceStatus.READY }];
+  w.context.getNotebookTitle = async () => 'Article';
+  w.context.generateAudio = async () => ({ taskId: 'audio', status: 'in_progress' });
+  await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  assert.equal(w.files.size, 0);
+});
+
+test('an uncertain page text add fails without replay and an unreadable notebook keeps the URL failure', async () => {
+  const w = await pageFallbackWorker('add_source');
+  w.context.addTextSource = async (...args) => { w.uploads.push(args); throw Object.assign(new Error('Uncertain'), { code: 'TRANSIENT_MUTATION_UNCERTAIN' }); };
+  await w.failPipeline('fallback', 'Source import failed.', 'notebook');
+  assert.deepEqual([w.data.jobQueue.jobs[0].status, w.uploads.length, w.files.size], ['error', 1, 0]);
+  const restored = await worker({ initialQueue: w.data.jobQueue });
+  restored.context.addTextSource = async () => assert.fail('Text add replayed');
+  await restored.reconcilePipelineRuntime();
+  const unreadable = await pageFallbackWorker('add_source');
+  unreadable.context.listSources = async () => { throw new Error('Read failed'); };
+  await unreadable.failPipeline('fallback', 'Source import failed.', 'notebook');
+  assert.deepEqual([unreadable.data.jobQueue.jobs[0].status, unreadable.uploads.length, unreadable.files.size], ['error', 0, 0]);
+});
+
+test('saved page text survives a deferred source read but not unrelated waits', async () => {
+  const w = await worker();
+  for (const [step, retained] of [['wait_read', true], ['wait_source', true], ['wait_artifacts', false]]) {
+    assert.equal(w.shouldRetainJobPdf({ step, pageTextFallback: true }), retained);
+  }
+  assert.equal(w.shouldRetainJobPdf({ step: 'wait_read' }), false);
+});
+
+test('stopping during the page text add keeps the accepted text source identity', async () => {
+  const w = await pageFallbackWorker('wait_source', { sourceId: 'url-source' });
+  let finish;
+  w.context.addTextSource = () => new Promise(resolve => { finish = resolve; });
+  w.context.listSources = async () => [{ id: 'url-source', url: fallbackUrl, status: api.SourceStatus.ERROR }];
+  const pending = w.tickSourcePoll(structuredClone(w.data.jobQueue.jobs[0]));
+  await settleUntil(() => !!finish);
+  await w.stopPipelineRequest('fallback', 'keep');
+  finish({ id: 'late-text-source' });
+  await pending;
+  const job = w.data.jobQueue.jobs[0];
+  assert.deepEqual([job.status, job.sourceId, job.replacementSourceId, job.failedUrlSourceId], ['stopped', 'late-text-source', 'late-text-source', 'url-source']);
+  assert.equal(w.files.size, 0);
+});

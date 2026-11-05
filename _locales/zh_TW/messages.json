@@ -1081,6 +1081,10 @@
     "message": "匯入網頁內文",
     "description": "Import page text"
   },
+  "ui_49e779da": {
+    "message": "網址匯入失敗時匯入網頁內文",
+    "description": "Import page text if the URL fails"
+  },
   "ui_15d48e31": {
     "message": "將分頁內文作為文字來源傳送給 Google，可能包含僅登入後可見的內容。",
     "description": "Sends tab text to Google as a text source. May include sign-in-only content."

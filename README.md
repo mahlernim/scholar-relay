@@ -32,9 +32,11 @@ Requests that may have changed a notebook are not replayed after an authenticati
 
 Select linked papers individually. Create separate notebooks or combine up to 20 sources in one notebook, optionally including the current webpage as context. The combined notebook waits for source readiness before generation. If a source cannot be processed, inspect the failure or explicitly skip it before continuing. Uncertain remote mutations are never replayed automatically.
 
+When one paper is detected, Use this webpage imports the open page instead. With Import page text if the URL fails turned on in Settings, a webpage URL that Gemini Notebook cannot fetch is replaced by the page's text once, including headings, links and image addresses. The setting is off by default.
+
 The compact selector remembers its notebook mode. Optional per-site detection shows a blue candidate count independently of progress. With arXiv access, bounded HTML metadata lookups improve titles without downloading PDFs. Website access is optional and can be revoked in Chrome.
 
-연결된 논문을 개별 선택하여 각각의 노트북으로 만들거나, 현재 웹페이지를 포함한 최대 20개 소스를 하나의 노트북으로 합칠 수 있습니다. 소스 준비가 끝난 뒤 생성하며, 처리 실패 시 확인하거나 해당 소스를 명시적으로 제외한 뒤 계속합니다. 결과가 불확실한 요청은 자동 재시도하지 않습니다. 사이트별 자동 감지와 arXiv 제목 조회는 선택 권한을 사용하며 진행 배지와 별도로 논문 후보 수를 표시합니다.
+연결된 논문을 개별 선택하여 각각의 노트북으로 만들거나, 현재 웹페이지를 포함한 최대 20개 소스를 하나의 노트북으로 합칠 수 있습니다. 소스 준비가 끝난 뒤 생성하며, 처리 실패 시 확인하거나 해당 소스를 명시적으로 제외한 뒤 계속합니다. 결과가 불확실한 요청은 자동 재시도하지 않습니다. 논문이 하나만 감지되어도 '이 웹페이지 사용'으로 현재 페이지를 가져올 수 있습니다. 설정에서 'URL을 가져오지 못하면 페이지 본문 가져오기'를 켜면 Gemini Notebook이 웹페이지 URL을 가져오지 못할 때 제목, 링크, 이미지 주소를 포함한 페이지 본문을 한 번 대신 추가합니다. 기본값은 꺼짐입니다. 사이트별 자동 감지와 arXiv 제목 조회는 선택 권한을 사용하며 진행 배지와 별도로 논문 후보 수를 표시합니다.
 
 ## Screenshots
 

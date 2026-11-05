@@ -268,6 +268,7 @@
   "Compute window resets $1.": "運算用量區間於 $1 重設。",
   "Server wait until $1.": "依伺服器要求等候至 $1。",
   "Import page text": "匯入網頁內文",
+  "Import page text if the URL fails": "網址匯入失敗時匯入網頁內文",
   "Sends tab text to Google as a text source. May include sign-in-only content.": "將分頁內文作為文字來源傳送給 Google，可能包含僅登入後可見的內容。",
   "This recovery is no longer available.": "此復原操作已無法使用。",
   "Open the original page to import its text.": "請開啟原始網頁以匯入內文。",
