@@ -706,3 +706,12 @@ Spanish for Latin America uses `es_419` and keeps Spain Spanish as a separate lo
 #115는 서버 상태 7을 예약됨으로 처리하고 조회와 재시작 후에도 작업 ID를 보존합니다. 예약 상태는 완료로 처리하지 않으며 실제 활성 작업만 애니메이션을 표시합니다. 20분의 로컬 확인과 동시 생성 세 자리 제한을 유지합니다. 예약 상태를 관찰한 작업이 기한에도 해결되지 않으면 노트북 링크와 작업 상태를 기록에 남기고 로컬 자리를 비웁니다. 완료 알림, 재생성, 시간 초과 실패나 자동 삭제를 하지 않습니다. 기록 정리에서도 해결되지 않은 작업을 보존합니다.
 
 라틴 아메리카 스페인어 `es_419`를 별도로 추가하여 14개 화면 언어를 지원합니다. 284개 문구, 메타데이터, 알림, 복구 안내와 스토어 설명을 번역했으며 공식 도움말 용어를 참고했습니다. 기계 보조 검토이며 원어민 검수는 아닙니다. 자동 테스트 358개, 14개 언어 카탈로그 검사, JavaScript 파일 49개와 JSON 파일 47개의 구문 검사를 통과했습니다. 팝업 검증은 14개 언어의 320/360 픽셀 화면을 다룹니다. 버전은 패치 1.5.5이며 런타임 파일은 40개입니다. 모든 검증 후 공개와 스토어 제출을 진행하고 최종 빌드 근거와 심사 상태는 릴리스에 기록합니다.
+
+
+### November 5 v1.5.6 import recovery
+
+PRs #118, #120, #121, #122 and #123 address #117 and #119. The release preserves their original commits and corrects three reproduced regressions. An uncertain URL mutation never triggers text creation from an empty listing. Source-timeout reconciliation accepts a ready source and does not replace missing or processing work. A stopped download cannot start a page retry. Page requests also receive cancellation and expire without worker heartbeats. Early source checks are scoped to the saved run, source and wait start.
+
+The optional text fallback is off by default, saves at most 200 kB in local IndexedDB, and uploads once after confirmed rejection or processing failure. Existing direct confirmation remains available. Only publisher HTTP 401/403 responses qualify for a same-origin retry in the unchanged original tab. No permissions are added. The Chrome Web Store API reported v1.5.5 published at 100% without a pending submission or policy flags before release preparation.
+
+한국어: PR 5개를 통합하고 불확실한 URL 요청 뒤의 중복 소스 생성, 이미 준비된 소스의 대체와 취소 후 페이지 다운로드 시작을 수정했습니다. 선택적인 본문 대체 기능은 기본으로 꺼져 있으며 최대 200 kB를 로컬에 임시 저장하고 실패가 확인된 경우에만 한 번 업로드합니다. 출판사의 HTTP 401/403 응답만 원래 탭에서 재시도하며 취소와 작업자 종료 시 전송을 중단합니다. 새 권한은 추가하지 않습니다.

@@ -1081,6 +1081,10 @@
     "message": "Importar texto de la página",
     "description": "Import page text"
   },
+  "ui_49e779da": {
+    "message": "Importar texto de la página si falla la URL",
+    "description": "Import page text if the URL fails"
+  },
   "ui_15d48e31": {
     "message": "Envía el texto de la pestaña a Google como fuente de texto. Puede incluir contenido que requiere iniciar sesión.",
     "description": "Sends tab text to Google as a text source. May include sign-in-only content."

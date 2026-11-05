@@ -28,6 +28,7 @@ export function inspectPaperPage(doc = null, pageUrl = null, publish = false, ob
     const values = key => meta.filter(item => item.key === key).map(item => item.value);
     const candidates = ['citation_title', 'bepress_citation_title', 'prism.title', 'dc.title', 'dcterms.title']
         .flatMap(values);
+    let paywalled = false;
     for (const script of doc.querySelectorAll('script[type="application/ld+json"]')) {
         if ((script.textContent || '').length > 200000) continue;
         try {
@@ -40,6 +41,7 @@ export function inspectPaperPage(doc = null, pageUrl = null, publish = false, ob
                 const types = [].concat(node['@type'] || []);
                 if (types.some(type => /^(?:ScholarlyArticle|Article|MedicalScholarlyArticle)$/.test(type))) {
                     candidates.push(node.headline, node.name);
+                    if (/^false$/i.test(String(node.isAccessibleForFree))) paywalled = true;
                 }
                 if (node['@graph']) queue.push(node['@graph']);
                 if (node.mainEntity) queue.push(node.mainEntity);
@@ -124,7 +126,8 @@ export function inspectPaperPage(doc = null, pageUrl = null, publish = false, ob
     }
     const detectedCandidates = [...paperCandidates.values()];
     if (!pdfUrl && detectedCandidates.length) { pdfUrl = detectedCandidates[0].pdfUrl; source = detectedCandidates[0].pdfEvidence; }
-    const result = { isPdf: !!pdfUrl, pdfUrl, pageUrl, source, sourceTitle, pdfEvidence: source, candidates: detectedCandidates, truncated };
+    if (paywalled) for (const item of detectedCandidates) if (item.pdfEvidence === 'citation_pdf_url') item.paywalled = true;
+    const result = { isPdf: !!pdfUrl, pdfUrl, pageUrl, source, sourceTitle, pdfEvidence: source, paywalled: paywalled && source === 'citation_pdf_url', candidates: detectedCandidates, truncated };
     if (publish) chrome.runtime.sendMessage({ type: 'DETECT_PDF', data: result }).catch(() => {});
     if (observe && typeof MutationObserver !== 'undefined' && !globalThis.__scholarRelayObserver) {
         let timer;

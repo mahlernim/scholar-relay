@@ -14,7 +14,7 @@ import * as jobs from '../job-queue.js';
 import * as settings from '../settings.js';
 import * as usage from '../usage.js';
 import * as pageText from '../page-text.js';
-import { withRequestDeadline } from '../request-deadline.js';
+import { withRequestDeadline, withStallDeadline } from '../request-deadline.js';
 
 // Run the shipped worker with real policy modules and controlled browser/service IO.
 const source = (await readFile(new URL('../background.js', import.meta.url), 'utf8'))
@@ -49,10 +49,10 @@ async function worker({ failInitialQueueRead = false, initialQueue = null, initi
   const apiMocks = Object.fromEntries(Object.entries(api).map(([key, value]) => [key,
     typeof value === 'function' ? () => { throw new Error(`Unexpected service call ${key}`); } : value]));
   const context = vm.createContext({
-    ...apiMocks, ...runtime, ...fallback, ...detection, ...pdf, ...permissions, ...i18n, ...jobs, ...settings, ...usage, ...pageText, withRequestDeadline,
+    ...apiMocks, ...runtime, ...fallback, ...detection, ...pdf, ...permissions, ...i18n, ...jobs, ...settings, ...usage, ...pageText, withRequestDeadline, withStallDeadline,
     createQueuedPdfStore: () => ({ put: async (id,file) => files.set(id,structuredClone(file)), get: async id => files.get(id), remove: async id => files.delete(id), prune: async () => {} }),
     console: Object.fromEntries(['log', 'warn', 'error'].map(level => [level, (...args) => logs.push([level, ...args])])),
-    crypto: webcrypto, AbortController, URL, TextEncoder, TextDecoder, Uint8Array, ArrayBuffer, atob, btoa, setTimeout, clearTimeout,
+    crypto: webcrypto, AbortController, URL, TextEncoder, TextDecoder, Uint8Array, ArrayBuffer, atob, btoa, setTimeout, clearTimeout, setInterval, clearInterval,
     chrome: {
       storage: { local: {
         async remove(key) { if(key!=='pipelineState') delete data[key]; },
@@ -332,6 +332,16 @@ test('alarm overlap warning remains reachable', async () => {
   await first;
 });
 
+test('a newly added source is checked before the first poll alarm', async () => {
+  const w = await worker();
+  installQueueService(w);
+  await w.startPipelineRequest({ pdfUrl: 'https://example.org/early.pdf', sourceTitle: 'Early paper' });
+  await settleUntil(() => w.data.jobQueue.jobs[0]?.step === 'wait_source');
+  const deadline = Date.now() + 8000;
+  while (w.data.jobQueue.jobs[0].step === 'wait_source' && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 100));
+  assert.notEqual(w.data.jobQueue.jobs[0].step, 'wait_source');
+});
+
 test('alarm cleanup failures are logged rather than lost in an effect result', async () => {
   const w = await worker();
   w.context.chrome.alarms.clear = async () => { throw new Error('Alarm unavailable'); };
@@ -482,6 +492,28 @@ test('two papers retain settings and ownership while generation overlaps the nex
   assert.notEqual(aJob().notebookId, bJob().notebookId);
 });
 
+test('an article marked not free downloads its PDF directly instead of a URL import that cannot succeed', async () => {
+  const pdf = () => new Response(new TextEncoder().encode('%PDF-1.7\n copy'), { headers: { 'content-type': 'application/pdf' } });
+  const cases = [
+    { name: 'page marks article not free', paywalled: true, direct: true },
+    { name: 'no access declaration', paywalled: false, direct: false },
+  ];
+  for (const item of cases) {
+    const w = await worker();
+    const writes = installQueueService(w); const uploads = [];
+    w.context.chrome.permissions = { contains: async () => true };
+    w.context.fetch = async () => pdf();
+    w.context.addFileSource = async (id, filename) => { uploads.push({ id, filename }); return { id: 'uploaded-source' }; };
+    await w.startPipelineRequest({ pdfUrl: 'https://journal.example.org/articles/a.pdf', pageUrl: 'https://journal.example.org/articles/a',
+      pdfEvidence: 'citation_pdf_url', sourceTitle: 'Paper', paywalled: item.paywalled });
+    await settleUntil(() => w.data.jobQueue.jobs[0]?.step === 'wait_source');
+    const job = w.data.jobQueue.jobs[0];
+    assert.equal(writes.filter(write => write.kind === 'source').length, item.direct ? 0 : 1, item.name);
+    assert.equal(uploads.length, item.direct ? 1 : 0, item.name);
+    assert.equal(job.importMethod, item.direct ? 'file' : 'url', item.name);
+  }
+});
+
 test('pause stops new starts, duplicates reuse the saved job, and removing one job preserves others', async () => {
   const w = await worker();
   const writes = installQueueService(w);
@@ -552,6 +584,41 @@ test('queued PDF data URLs decode correctly and payloads survive permission wait
   assert.equal(w.shouldRetainJobPdf({ step: 'wait_source' }), false);
 });
 
+test('PDF download deadlines end stalled transfers but let slow steady transfers finish', async () => {
+  const tick = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const steady = await withStallDeadline(async (_signal, touch) => {
+    for (let chunk = 0; chunk < 6; chunk += 1) { await tick(20); touch(); }
+    return 'complete';
+  }, { idleMs: 50, maxMs: 1000 });
+  assert.equal(steady, 'complete');
+  let aborted = false;
+  await assert.rejects(withStallDeadline(async signal => {
+    signal.addEventListener('abort', () => { aborted = true; });
+    await tick(200);
+  }, { idleMs: 50, maxMs: 1000 }), /stalled/);
+  assert.equal(aborted, true);
+  await assert.rejects(withStallDeadline(async (signal, touch) => {
+    while (!signal.aborted) { await tick(10); touch(); }
+  }, { idleMs: 50, maxMs: 120 }), /timed out/);
+  let watched = 0;
+  await assert.rejects(withStallDeadline(() => tick(1000), { idleMs: 500, maxMs: 2000, watchMs: 10,
+    watch: () => (++watched >= 3 ? 'cancelled' : null) }), /cancelled/);
+});
+
+test('cancelling a job aborts its in-progress PDF download', async () => {
+  const w = await worker({ initialQueue: { version: 1, paused: false, jobs: [{ ...running(), step: 'download_pdf' }] } });
+  const runId = w.data.jobQueue.jobs[0].runId;
+  w.context.chrome.permissions = { contains: async () => true };
+  w.context.fetch = (_url, options) => new Promise((_resolve, reject) => {
+    options.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+    setTimeout(() => { w.data.jobQueue.jobs[0].status = 'stopping'; }, 50);
+  });
+  w.context.pdfArgs = ['https://www.nature.com/articles/a.pdf', 'https://www.nature.com/articles/a', runId];
+  const started = Date.now();
+  await assert.rejects(vm.runInContext('downloadRemotePdfForUpload(...pdfArgs)', w.context), /cancelled/);
+  assert.ok(Date.now() - started < 8000);
+});
+
 test('boot reconciliation retries after a transient failure and message errors respond', async () => {
   const w = await worker({ failInitialQueueRead: true });
   assert.ok(w.logs.some(row => row[0] === 'error' && row[1].includes('Initial reconciliation failed')));
@@ -585,6 +652,67 @@ test('a paper awaiting PDF access does not block the next paper or let resume st
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(w.data.jobQueue.jobs.find(job => job.runId === 'needs-access').step, 'queued_pdf');
   assert.equal(w.data.jobQueue.jobs.find(job => job.runId === next.runId).step, 'wait_source');
+});
+
+test('a PDF the publisher refuses to the worker is fetched from the open article tab', async () => {
+  const pageUrl = 'https://journal.example.org/doi/10.1/abc';
+  const pdfUrl = 'https://journal.example.org/doi/pdf/10.1/abc';
+  for (const item of [{ name: 'tab still on the article', tabUrl: pageUrl, uploaded: true },
+    { name: 'tab navigated away', tabUrl: 'https://journal.example.org/other', uploaded: false }]) {
+    const w = await worker();
+    installQueueService(w);
+    const uploads = []; const scripts = [];
+    w.context.addUrlSource = async () => { throw Object.assign(new Error('Rejected'), { code: 'SOURCE_IMPORT_REJECTED' }); };
+    w.context.chrome.permissions = { contains: async () => false };
+    w.context.fetch = async () => new Response('Forbidden', { status: 403, headers: { 'content-type': 'text/html' } });
+    w.context.chrome.tabs.get = async id => ({ id, url: item.tabUrl });
+    w.context.chrome.scripting = { executeScript: async options => {
+      scripts.push(options);
+      return [{ result: { dataUrl: `data:application/pdf;base64,${btoa('%PDF-1.7\n page copy')}`, url: pdfUrl, contentDisposition: 'attachment; filename="abc.pdf"' } }];
+    } };
+    w.context.addFileSource = async (id, filename, fileData) => { uploads.push({ filename, text: new TextDecoder().decode(fileData) }); return { id: 'uploaded-source' }; };
+    await w.startPipelineRequest({ pdfUrl, pageUrl, pageTabId: 7, pdfEvidence: 'citation_pdf_url', sourceTitle: 'Paper' });
+    await settleUntil(() => ['wait_source', 'wait_pdf_access'].includes(w.data.jobQueue.jobs[0]?.step) && w.data.jobQueue.jobs[0].fallbackAttempted);
+    const job = w.data.jobQueue.jobs[0];
+    if (item.uploaded) {
+      assert.deepEqual(scripts.filter(script => script.args[4] === 'start').map(script => [script.target.tabId, script.world, script.func.name, script.args[0]]), [[7, 'MAIN', 'fetchPdfInPage', pdfUrl]], item.name);
+      assert.deepEqual(uploads, [{ filename: 'abc.pdf', text: '%PDF-1.7\n page copy' }], item.name);
+      assert.equal(job.importMethod, 'file', item.name);
+    } else {
+      assert.equal(scripts.length, 0, item.name);
+      assert.equal(job.step, 'wait_pdf_access', item.name);
+      assert.equal(job.pdfWaitReason, 'publisher', item.name);
+    }
+  }
+});
+
+test('a page PDF retry keeps the worker error for malformed, oversized or abandoned results', async () => {
+  const pageUrl = 'https://journal.example.org/doi/10.1/abc';
+  const pdfUrl = 'https://journal.example.org/doi/pdf/10.1/abc';
+  const pdfData = `data:application/pdf;base64,${btoa('%PDF-1.7\n page copy')}`;
+  const results = [
+    { dataUrl: pdfData, contentDisposition: {} },
+    { dataUrl: `data:${'x'.repeat(200)};base64,${btoa('%PDF-1.7\n page copy')}` },
+    { dataUrl: `${pdfData}!!` },
+  ];
+  for (const result of [...results, 'never']) {
+    const w = await worker({ initialQueue: { version: 1, paused: false, jobs: [{ ...running(), step: 'download_pdf', pageTabId: 7, pageUrl }] } });
+    const runId = w.data.jobQueue.jobs[0].runId;
+    // Model an active transfer, not a worker restart interrupted by reconciliation.
+    w.data.jobQueue.jobs[0].step = 'download_pdf';
+    w.context.chrome.permissions = { contains: async () => false };
+    w.context.fetch = async () => new Response('Forbidden', { status: 403 });
+    w.context.chrome.tabs.get = async id => ({ id, url: pageUrl });
+    w.context.chrome.scripting = { executeScript: async () => {
+      if (result !== 'never') return [{ result }];
+      setTimeout(() => { w.data.jobQueue.jobs[0].status = 'stopping'; }, 50);
+      return new Promise(() => {});
+    } };
+    w.context.pdfArgs = [pdfUrl, pageUrl, runId];
+    const download = vm.runInContext('downloadPdfWithPageFallback(...pdfArgs)', w.context);
+    if (result === results[0]) assert.equal((await download).filename, 'abc.pdf');
+    else await assert.rejects(download, /HTTP 403/);
+  }
 });
 
 test('queue storage failures do not acknowledge a job or retain its PDF outside the budget', async () => {
@@ -1207,4 +1335,147 @@ test('scheduled history with completed and uncertain requests retains checking g
   assert.match(w.data.pipelineState.error, /Uncertain artifact generation/);
   assert.doesNotMatch(w.data.pipelineState.error, /timed out/);
   assert.equal(w.data.pipelineState.tasks[1].status, 'uncertain');
+});
+
+const fallbackUrl = 'https://example.org/article';
+const fallbackText = { kind: 'text', title: 'Article', content: 'Page text from browser tab\n' + fallbackUrl };
+async function pageFallbackWorker(step, extra = {}) {
+  const job = { ...running(), runId: 'fallback', step, sourceType: 'webpage', importMethod: 'url', pdfUrl: fallbackUrl, pageUrl: fallbackUrl,
+    pageTextFallback: true, payloadId: 'fallback', payloadBytes: 40, settings: { generateAudio: true, notificationEnabled: false }, ...extra };
+  const w = await worker();
+  w.data.jobQueue = { version: 1, paused: false, jobs: [job] };
+  w.files.set('fallback', structuredClone(fallbackText));
+  w.uploads = [];
+  w.context.listSources = async () => [];
+  w.context.addTextSource = async (...args) => { w.uploads.push(args); return { id: 'text-source' }; };
+  return w;
+}
+
+test('uncertain URL mutations with no matching source never create replacement text', async () => {
+  for (const code of ['TRANSIENT_MUTATION_UNCERTAIN', 'AUTH_MUTATION_UNCERTAIN', undefined]) {
+    const w = await pageFallbackWorker('add_source');
+    await w.failPipeline('fallback', Object.assign(new Error('Response unavailable'), { code }), 'notebook');
+    assert.equal(w.uploads.length, 0);
+    assert.equal(w.data.jobQueue.jobs[0].status, 'error');
+    assert.equal(w.files.size, 0);
+  }
+});
+
+test('source timeout reconciles ready work and never replaces missing or processing work', async () => {
+  for (const status of [api.SourceStatus.READY, api.SourceStatus.PROCESSING, null]) {
+    const w = await pageFallbackWorker('wait_source', { sourceId: 'url-source', stepStartedAt: new Date(Date.now() - 601000).toISOString() });
+    w.context.listSources = async () => status === null ? [] : [{ id: 'url-source', url: fallbackUrl, status }];
+    w.context.getNotebookTitle = async () => 'Article';
+    w.context.generateAudio = async () => ({ taskId: 'audio', status: 'in_progress' });
+    await w.tickSourcePoll(structuredClone(w.data.jobQueue.jobs[0]));
+    assert.equal(w.uploads.length, 0);
+    assert.equal(w.data.jobQueue.jobs[0].step, status === api.SourceStatus.READY ? 'wait_artifacts' : 'error');
+  }
+});
+
+test('early source checks ignore unrelated jobs and stale source identities', async () => {
+  const w = await worker();
+  const callbacks = [];
+  w.context.setTimeout = callback => { callbacks.push(callback); return { unref() {} }; };
+  const waiting = { ...running(), runId: 'source-job', step: 'wait_source', sourceId: 'source-a' };
+  w.data.jobQueue = { version: 1, paused: true, jobs: [waiting, { ...running(), runId: 'artifact-job' }] };
+  const polled = [];
+  w.context.tickSourcePoll = async state => polled.push(state.runId);
+  w.context.tickArtifactPoll = async () => assert.fail('Unrelated artifact was polled');
+  w.context.waiting = structuredClone(waiting);
+  vm.runInContext('checkSourceSoon(waiting)', w.context);
+  await callbacks[0]();
+  assert.deepEqual(polled, ['source-job']);
+  w.data.jobQueue.jobs[0].sourceId = 'source-b';
+  await callbacks[1]();
+  assert.deepEqual(polled, ['source-job']);
+});
+
+test('cancelled downloads and non-access failures never start a page retry', async () => {
+  for (const message of ['The PDF download was cancelled.', 'PDF exceeds size limit', 'HTTP 403 while downloading source PDF']) {
+    const pageUrl = 'https://journal.example.org/article';
+    const w = await worker({ initialQueue: { version: 1, paused: false, jobs: [{ ...running(), step: 'download_pdf', pageTabId: 7, pageUrl }] } });
+    w.context.chrome.permissions = { contains: async () => false };
+    w.context.fetch = async () => { w.data.jobQueue.jobs[0].status = 'stopping'; throw new Error(message); };
+    w.context.chrome.tabs.get = async id => ({ id, url: pageUrl });
+    w.context.chrome.scripting = { executeScript: async () => assert.fail('Started page fetch after stopping') };
+    w.context.pdfArgs = ['https://journal.example.org/paper.pdf', pageUrl, 'old'];
+    await assert.rejects(vm.runInContext('downloadPdfWithPageFallback(...pdfArgs)', w.context));
+  }
+});
+
+test('page text is saved for the URL fallback only when the setting is on and it is a single webpage', async () => {
+  for (const pageTextFallback of [true, false]) {
+    const w = await worker();
+    w.data.jobQueue = { version: 1, paused: true, jobs: [] };
+    const job = await w.startPipelineRequest({ pdfUrl: fallbackUrl, pageUrl: fallbackUrl, sourceType: 'webpage', sourceTitle: 'Article',
+      pageText: 'Article body', settings: { ...settings.DEFAULT_SETTINGS, pageTextFallback } });
+    assert.equal(w.data.jobQueue.jobs[0].importMethod, 'url');
+    assert.equal(w.data.jobQueue.jobs[0].pageTextFallback, pageTextFallback);
+    assert.equal(w.files.get(job.runId)?.content, pageTextFallback ? 'Article body' : undefined);
+  }
+});
+
+test('a rejected or failed URL import adds the saved page text once and releases it', async () => {
+  for (const [step, sourceId] of [['add_source', null], ['wait_source', 'url-source']]) {
+    const w = await pageFallbackWorker(step, { sourceId });
+    await w.failPipeline('fallback', Object.assign(new Error('Source import failed.'), { code: 'SOURCE_IMPORT_REJECTED' }), 'notebook');
+    const job = w.data.jobQueue.jobs[0];
+    assert.equal(w.uploads.length, 1);
+    assert.equal(w.uploads[0][2], fallbackText.content);
+    assert.deepEqual([job.status, job.step, job.sourceId, job.importMethod, job.pageTextFallback], ['running', 'wait_source', 'text-source', 'text', false]);
+    assert.equal(job.failedUrlSourceId, sourceId);
+    assert.equal(w.files.size, 0);
+  }
+});
+
+test('an uncertain URL import adopts a usable URL source after one read instead of adding text', async () => {
+  const w = await pageFallbackWorker('add_source');
+  w.context.listSources = async () => [{ id: 'late-url-source', url: fallbackUrl, status: api.SourceStatus.PROCESSING }];
+  await w.failPipeline('fallback', 'Response unavailable.', 'notebook');
+  const job = w.data.jobQueue.jobs[0];
+  assert.deepEqual([job.step, job.sourceId, job.pageTextFallback, w.uploads.length], ['wait_source', 'late-url-source', true, 0]);
+  assert.equal(w.files.size, 1);
+  w.context.listSources = async () => [{ id: 'late-url-source', status: api.SourceStatus.READY }];
+  w.context.getNotebookTitle = async () => 'Article';
+  w.context.generateAudio = async () => ({ taskId: 'audio', status: 'in_progress' });
+  await w.listener({ name: runtime.PIPELINE_ALARM_NAME });
+  assert.equal(w.files.size, 0);
+});
+
+test('an uncertain page text add fails without replay and an unreadable notebook keeps the URL failure', async () => {
+  const w = await pageFallbackWorker('add_source');
+  w.context.addTextSource = async (...args) => { w.uploads.push(args); throw Object.assign(new Error('Uncertain'), { code: 'TRANSIENT_MUTATION_UNCERTAIN' }); };
+  await w.failPipeline('fallback', Object.assign(new Error('Source import failed.'), { code: 'SOURCE_IMPORT_REJECTED' }), 'notebook');
+  assert.deepEqual([w.data.jobQueue.jobs[0].status, w.uploads.length, w.files.size], ['error', 1, 0]);
+  const restored = await worker({ initialQueue: w.data.jobQueue });
+  restored.context.addTextSource = async () => assert.fail('Text add replayed');
+  await restored.reconcilePipelineRuntime();
+  const unreadable = await pageFallbackWorker('add_source');
+  unreadable.context.listSources = async () => { throw new Error('Read failed'); };
+  await unreadable.failPipeline('fallback', 'Source import failed.', 'notebook');
+  assert.deepEqual([unreadable.data.jobQueue.jobs[0].status, unreadable.uploads.length, unreadable.files.size], ['error', 0, 0]);
+});
+
+test('saved page text survives a deferred source read but not unrelated waits', async () => {
+  const w = await worker();
+  for (const [step, retained] of [['wait_read', true], ['wait_source', true], ['wait_artifacts', false]]) {
+    assert.equal(w.shouldRetainJobPdf({ step, pageTextFallback: true }), retained);
+  }
+  assert.equal(w.shouldRetainJobPdf({ step: 'wait_read' }), false);
+});
+
+test('stopping during the page text add keeps the accepted text source identity', async () => {
+  const w = await pageFallbackWorker('wait_source', { sourceId: 'url-source' });
+  let finish;
+  w.context.addTextSource = () => new Promise(resolve => { finish = resolve; });
+  w.context.listSources = async () => [{ id: 'url-source', url: fallbackUrl, status: api.SourceStatus.ERROR }];
+  const pending = w.tickSourcePoll(structuredClone(w.data.jobQueue.jobs[0]));
+  await settleUntil(() => !!finish);
+  await w.stopPipelineRequest('fallback', 'keep');
+  finish({ id: 'late-text-source' });
+  await pending;
+  const job = w.data.jobQueue.jobs[0];
+  assert.deepEqual([job.status, job.sourceId, job.replacementSourceId, job.failedUrlSourceId], ['stopped', 'late-text-source', 'late-text-source', 'url-source']);
+  assert.equal(w.files.size, 0);
 });

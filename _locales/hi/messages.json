@@ -1081,6 +1081,10 @@
     "message": "पृष्ठ का टेक्स्ट आयात करें",
     "description": "Import page text"
   },
+  "ui_49e779da": {
+    "message": "URL विफल होने पर पृष्ठ का टेक्स्ट आयात करें",
+    "description": "Import page text if the URL fails"
+  },
   "ui_15d48e31": {
     "message": "टैब का टेक्स्ट Google को टेक्स्ट स्रोत के रूप में भेजता है। इसमें केवल साइन इन के बाद दिखने वाली सामग्री हो सकती है।",
     "description": "Sends tab text to Google as a text source. May include sign-in-only content."

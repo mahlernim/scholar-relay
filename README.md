@@ -32,9 +32,11 @@ Requests that may have changed a notebook are not replayed after an authenticati
 
 Select linked papers individually. Create separate notebooks or combine up to 20 sources in one notebook, optionally including the current webpage as context. The combined notebook waits for source readiness before generation. If a source cannot be processed, inspect the failure or explicitly skip it before continuing. Uncertain remote mutations are never replayed automatically.
 
+When one paper is detected, Use this webpage imports the open page instead. With Import page text if the URL fails turned on in Settings, a webpage URL that Gemini Notebook cannot fetch is replaced by the page's text once, including headings, links and image addresses. The setting is off by default.
+
 The compact selector remembers its notebook mode. Optional per-site detection shows a blue candidate count independently of progress. With arXiv access, bounded HTML metadata lookups improve titles without downloading PDFs. Website access is optional and can be revoked in Chrome.
 
-연결된 논문을 개별 선택하여 각각의 노트북으로 만들거나, 현재 웹페이지를 포함한 최대 20개 소스를 하나의 노트북으로 합칠 수 있습니다. 소스 준비가 끝난 뒤 생성하며, 처리 실패 시 확인하거나 해당 소스를 명시적으로 제외한 뒤 계속합니다. 결과가 불확실한 요청은 자동 재시도하지 않습니다. 사이트별 자동 감지와 arXiv 제목 조회는 선택 권한을 사용하며 진행 배지와 별도로 논문 후보 수를 표시합니다.
+연결된 논문을 개별 선택하여 각각의 노트북으로 만들거나, 현재 웹페이지를 포함한 최대 20개 소스를 하나의 노트북으로 합칠 수 있습니다. 소스 준비가 끝난 뒤 생성하며, 처리 실패 시 확인하거나 해당 소스를 명시적으로 제외한 뒤 계속합니다. 결과가 불확실한 요청은 자동 재시도하지 않습니다. 논문이 하나만 감지되어도 '이 웹페이지 사용'으로 현재 페이지를 가져올 수 있습니다. 설정에서 'URL을 가져오지 못하면 페이지 본문 가져오기'를 켜면 Gemini Notebook이 웹페이지 URL을 가져오지 못할 때 제목, 링크, 이미지 주소를 포함한 페이지 본문을 한 번 대신 추가합니다. 기본값은 꺼짐입니다. 사이트별 자동 감지와 arXiv 제목 조회는 선택 권한을 사용하며 진행 배지와 별도로 논문 후보 수를 표시합니다.
 
 ## Screenshots
 
@@ -118,8 +120,9 @@ Chrome 120 이상과 Gemini Notebook에 로그인할 Google 계정이 필요합�
 - 로컬 `file://` PDF를 읽으려면 확장 프로그램 세부정보에서 **파일 URL에 대한 액세스 허용**을 켜야 할 수 있습니다.
 - 실행되지 않으면 [Gemini Notebook](https://notebook.google.com)에 로그인되어 있는지 확인하고 다시 시도합니다.
 - 컬렉션이 보이지 않으면 Gemini Notebook에서 컬렉션을 만든 뒤 설정의 새로고침 버튼을 클릭합니다.
-- PDF URL 가져오기나 처리 실패가 확인되면 같은 노트북에 PDF 업로드를 한 번 시도합니다. 다운로드 권한이 필요하면 팝업에서 허용하거나 PDF를 직접 선택하세요. 시간 초과나 결과가 불확실한 응답에서는 추가 업로드를 실행하지 않습니다.
+- PDF URL 가져오기나 처리 실패가 확인되면 같은 노트북에 PDF 업로드를 한 번 시도합니다. 논문 페이지가 무료 열람이 아니라고 표시하면 Gemini Notebook이 읽을 수 없는 URL 가져오기를 건너뛰고 PDF를 바로 내려받아 업로드합니다. 다운로드 권한이 필요하면 팝업에서 허용하거나 PDF를 직접 선택하세요. 시간 초과나 결과가 불확실한 응답에서는 추가 업로드를 실행하지 않습니다.
 - Chrome 메모리를 안전하게 유지하기 위해 직접 내려받기 및 로컬 업로드는 40 MiB로 제한됩니다. 더 큰 원격 PDF는 URL 가져오기를 사용하고, 더 큰 로컬 파일은 Gemini Notebook에서 직접 업로드합니다.
+- 출판사가 확장 프로그램의 PDF 다운로드를 거부해도 시작한 탭에 논문 페이지가 그대로 열려 있으면 그 페이지에서 PDF를 한 번 더 요청합니다.
 
 ---
 
@@ -192,8 +195,9 @@ The queue holds up to 20 unfinished jobs. Local PDFs are saved temporarily on yo
 - To read local `file://` PDFs, enable **Allow access to file URLs** in the extension's details.
 - If a run does not start, confirm that you are signed in at [Gemini Notebook](https://notebook.google.com) and retry.
 - If a collection is missing, create it in Gemini Notebook and use the refresh button in Settings.
-- Confirmed PDF URL import or processing failures trigger one upload fallback in the same notebook. If download access is needed, reopen the popup to grant it or select the PDF manually. Timeouts and uncertain responses do not trigger another upload.
+- Confirmed PDF URL import or processing failures trigger one upload fallback in the same notebook. When the article page marks the paper as not free to read, the PDF is downloaded and uploaded directly instead of trying a URL import that Gemini Notebook cannot read. If download access is needed, reopen the popup to grant it or select the PDF manually. Timeouts and uncertain responses do not trigger another upload.
 - Direct downloads and local uploads are limited to 40 MiB to keep Chrome memory use safe. Larger remote PDFs use URL import, while larger local files should be uploaded directly in Gemini Notebook.
+- If a publisher refuses the extension's PDF download while its article page is still open in the tab you started from, the PDF is requested once more from that page.
 
 ## Credits and compatibility
 

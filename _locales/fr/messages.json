@@ -1081,6 +1081,10 @@
     "message": "Importer le texte de la page",
     "description": "Import page text"
   },
+  "ui_49e779da": {
+    "message": "Importer le texte de la page si l’URL échoue",
+    "description": "Import page text if the URL fails"
+  },
   "ui_15d48e31": {
     "message": "Envoie le texte de l’onglet à Google comme source textuelle. Il peut contenir des informations accessibles uniquement après connexion.",
     "description": "Sends tab text to Google as a text source. May include sign-in-only content."

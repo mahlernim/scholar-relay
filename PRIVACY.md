@@ -1,6 +1,6 @@
 # Privacy Policy for ScholarRelay
 
-Last updated: October 22, 2026
+Last updated: November 5, 2026
 
 ScholarRelay is an independent browser extension that helps a user add a PDF or webpage to the user's own Gemini Notebook account (formerly NotebookLM) and request artifacts. It is not affiliated with, authorized by, or endorsed by Google.
 
@@ -9,13 +9,14 @@ ScholarRelay is an independent browser extension that helps a user add a PDF or 
 The extension handles only data needed for a user-requested workflow:
 
 - The URL and title of the active tab, and limited page content needed to detect a PDF link or paper title.
-- After an eligible URL import failure and a separate confirmation, article text from the original open tab. This can include content visible only after signing in. Extraction excludes forms, hidden elements, scripts, embedded frames and media, is limited to 200 kB including provenance, and does not refetch the page. Equations and embedded content may be incomplete.
+- Article text from the original open tab after a separate recovery confirmation, or at job creation when the optional text-fallback setting is enabled. This can include content visible only after signing in, link destinations and image addresses. Extraction excludes forms, hidden elements, scripts, embedded frames and media bytes, is limited to 200 kB including provenance, and does not refetch the page. Equations and embedded content may be incomplete.
 - A PDF selected by the user or detected in the active tab. Selected local PDFs are saved temporarily in extension-owned IndexedDB so queued uploads survive popup and browser restarts. Remote PDF downloads remain temporary in memory.
 - Extension settings, custom artifact instructions, selected collection, and pipeline progress.
 - Gemini Notebook notebook, source, collection, and artifact identifiers and status information.
 - Available account compute-meter percentages, reset times and per-action availability. These are advisory snapshots, not a promise of remaining generations or a successful retry.
 - The existing authenticated Gemini Notebook browser session. The extension makes HTTPS requests that allow Chrome to attach the session already established by the user on Gemini Notebook.
 - For a PDF hosted on a different website, the extension may request access to that specific website and use the site's existing browser session when downloading the user-selected PDF.
+- If the publisher refuses that download, the extension can request the same PDF once from the article page the user started from, while that tab still shows the page. The bytes stay in memory and are uploaded only to the user's notebook.
 
 The extension never asks for, reads, stores, or transmits a Google password or multi-factor authentication code. It does not use the Chrome Cookies API. Temporary Gemini Notebook CSRF and session values are kept only in service-worker memory and are discarded when that worker stops.
 
@@ -23,11 +24,13 @@ For Notebook connection checks, required access to https://accounts.google.com/*
 
 ## How data is used and shared
 
-HTML metadata is read before remote PDF import. PDF bytes are downloaded only when upload is needed, such as after a confirmed URL import failure.
+HTML metadata is read before remote PDF import. PDF bytes are downloaded only when upload is needed, such as after a confirmed URL import failure or when the article page marks the paper as not free to read.
 
 Data is used only to detect the source selected by the user, upload or import it into the user's Gemini Notebook account, apply the user's notebook settings, request the selected artifacts, and report progress.
 
 Import page text sends the confirmed tab's article text to Google as a text source in the same notebook. The original failed source remains. The extension requests access to that specific site on the confirmation click and checks that the tab still shows the original URL. Declining confirmation prevents extraction and upload. The text includes the capture time and a source URL without query or fragment. Article text is held in memory only and is not written to the extension's queue or local history.
+
+Import page text if the URL fails is off by default. When it is on and the user starts a webpage import, the extension reads the open tab's visible text, links and image addresses at that click and saves it in the extension's local IndexedDB storage with the queued job. The text is sent to Google only after a confirmed URL import rejection or source-processing failure. An uncertain request or an empty source listing does not trigger another upload. Saved text is deleted when the URL source is ready, after the text upload attempt, or when the job fails or is cancelled. Cleanup interrupted by browser shutdown finishes when the extension next starts.
 
 Usage reads occur on popup open, job start and once after a generation-limit failure. Unavailable or expired data is hidden. Snapshots and failure-related reset hints stay in popup or service-worker memory, with no usage history or developer telemetry. A read does not generate content or debit usage locally.
 

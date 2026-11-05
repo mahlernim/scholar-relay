@@ -1081,6 +1081,10 @@
     "message": "استيراد نص الصفحة",
     "description": "Import page text"
   },
+  "ui_49e779da": {
+    "message": "استيراد نص الصفحة إذا تعذّر استيراد عنوان URL",
+    "description": "Import page text if the URL fails"
+  },
   "ui_15d48e31": {
     "message": "يرسل نص علامة التبويب إلى Google كمصدر نصي. قد يتضمّن محتوى يتطلّب تسجيل الدخول.",
     "description": "Sends tab text to Google as a text source. May include sign-in-only content."
