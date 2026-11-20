@@ -58,6 +58,43 @@ test('arXiv PDF URL preserves explicit versions, including legacy identifiers', 
   }
 });
 
+test('alphaXiv paper views select the paper download and ignore related papers and viewer controls', () => {
+  const nativeId = '2611.society-ai-scientists';
+  const title = 'A Society of AI Scientists';
+  const doc = page({ meta: [['og:title', title]], links: [
+    ['/pdf/' + nativeId, 'View Paper'], ['/abs/1706.03762', 'Related paper'],
+    ['https://example.org/cv.pdf', 'Author CV'],
+  ] });
+  for (const [route, id] of [
+    ['pdf', nativeId], ['abs', nativeId + 'v1'], ['ko/abs', '1706.03762v2'],
+    ['overview', '1706.03762'], ['pdf', 'hep-th/9901001v1'],
+  ]) {
+    const url = `https://www.alphaxiv.org/${route}/${id}?from=feed#page=4`;
+    const result = inspectPaperPage(doc, url);
+    assert.equal(result.pageUrl, url);
+    assert.equal(result.pdfUrl, `https://www.alphaxiv.org/abs/${id}.pdf`);
+    assert.equal(result.pdfEvidence, 'publisher_pdf');
+    assert.deepEqual(result.candidates.map(item => [item.pdfUrl, item.sourceTitle]), [[result.pdfUrl, title]]);
+  }
+});
+
+test('alphaXiv feed links merge reader and download views while preserving distinct revisions', () => {
+  const result = inspectPaperPage(page({ links: [
+    ['/abs/2611.society-ai-scientists', 'A Society of AI Scientists'],
+    ['/pdf/2611.society-ai-scientists', 'Read'],
+    ['/abs/2611.society-ai-scientists.pdf', 'PDF'],
+    ['/abs/2611.society-ai-scientistsv1', 'First version'],
+    ['/about', 'About alphaXiv'],
+    ['/abs/invalid', 'Invalid paper'],
+    ['https://alphaxiv.org.example.org/abs/1706.03762', 'Another site'],
+  ] }), 'https://alphaxiv.org/');
+  assert.deepEqual(result.candidates.map(item => [item.pdfUrl, item.sourceTitle]), [
+    ['https://www.alphaxiv.org/abs/2611.society-ai-scientists.pdf', 'A Society of AI Scientists'],
+    ['https://www.alphaxiv.org/abs/2611.society-ai-scientistsv1.pdf', 'First version'],
+  ]);
+  assert.equal(result.pdfUrl, result.candidates[0].pdfUrl);
+});
+
 test('missing titles, browser challenges, filenames and empty PDF metadata do not become article metadata', () => {
   for (const title of ['', 'Client Challenge', 'Checking your browser - reCAPTCHA', 'Sign in - Google', '1706.03762.pdf', 'https://example.org/a']) {
     const result = inspectPaperPage(page({ title, meta: [['citation_pdf_url', '']] }), 'https://example.org/article');
