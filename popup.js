@@ -798,7 +798,7 @@ function renderDetection(data) {
     const truncated = data.pdfUrl.length > 80 ? data.pdfUrl.substring(0, 77) + '...' : data.pdfUrl;
     const sourceLabel = {
         direct_pdf_url: 'Direct PDF', pdf_content_type: 'PDF document',
-        citation_pdf_url: 'Publisher PDF', pdf_link: 'Article PDF', embedded_pdf: 'Embedded PDF viewer',
+        citation_pdf_url: 'Publisher PDF', publisher_pdf: 'Publisher PDF', pdf_link: 'Article PDF', embedded_pdf: 'Embedded PDF viewer',
         arxiv_abstract: 'arXiv abstract page', arxiv_pdf: 'arXiv PDF',
         arxiv_link: 'arXiv PDF link', page_link: 'PDF link on page',
         direct_url: 'Direct PDF URL', local_file: 'Local file',

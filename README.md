@@ -32,6 +32,10 @@ Requests that may have changed a notebook are not replayed after an authenticati
 
 Select linked papers individually. Create separate notebooks or combine up to 20 sources in one notebook, optionally including the current webpage as context. The combined notebook waits for source readiness before generation. If a source cannot be processed, inspect the failure or explicitly skip it before continuing. Uncertain remote mutations are never replayed automatically.
 
+On alphaXiv, open a paper in the reader or abstract view and click ScholarRelay to import its PDF. Links to specific revisions keep that revision. You can also select papers from an alphaXiv feed.
+
+alphaXiv에서 논문 뷰어나 초록 페이지를 열고 ScholarRelay를 누르면 논문 PDF를 가져옵니다. 특정 버전의 링크를 열면 해당 버전을 가져오며, alphaXiv 피드에서 여러 논문을 선택할 수도 있습니다.
+
 When one paper is detected, Use this webpage imports the open page instead. With Import page text if the URL fails turned on in Settings, a webpage URL that Gemini Notebook cannot fetch is replaced by the page's text once, including headings, links and image addresses. The setting is off by default.
 
 The compact selector remembers its notebook mode. Optional per-site detection shows a blue candidate count independently of progress. With arXiv access, bounded HTML metadata lookups improve titles without downloading PDFs. Website access is optional and can be revoked in Chrome.

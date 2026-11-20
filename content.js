@@ -21,6 +21,13 @@ export function inspectPaperPage(doc = null, pageUrl = null, publish = false, ob
         try { const u = new URL(value, pageUrl); return /^https?:$/.test(u.protocol) ? u.href : null; }
         catch { return null; }
     };
+    // alphaXiv's /pdf/ route opens its HTML reader. The /abs/<id>.pdf
+    // download works for both native preprints and papers mirrored from arXiv.
+    const alphaXivPdf = href => {
+        if (!href) return null;
+        const match = href.match(/^https?:\/\/(?:www\.)?alphaxiv\.org\/(?:[a-z]{2}\/)?(?:abs|pdf|overview|html)\/((?:\d{4}\.(?:\d{4,5}|[a-z][a-z0-9-]*)|[a-z-]+(?:\.[a-z]{2})?\/\d{7})(?:v\d+)?)(?:\.pdf)?\/?(?:[?#].*)?$/i);
+        return match ? `https://www.alphaxiv.org/abs/${match[1]}.pdf` : null;
+    };
     const meta = Array.from(doc.querySelectorAll('meta')).map(el => ({
         key: (el.getAttribute('name') || el.getAttribute('property') || '').toLowerCase(),
         value: el.getAttribute('content') || '',
@@ -55,9 +62,13 @@ export function inspectPaperPage(doc = null, pageUrl = null, publish = false, ob
     let pdfUrl = null;
     let source = null;
     const arxiv = pageUrl.match(/^https?:\/\/(?:www\.)?arxiv\.org\/(abs|html|pdf)\/([^?#]+?)(?:\.pdf)?(?:[?#].*)?$/i);
+    const alphaPdf = alphaXivPdf(pageUrl);
     if (arxiv) {
         pdfUrl = `https://arxiv.org/pdf/${arxiv[2]}`;
         source = arxiv[1] === 'abs' ? 'arxiv_abstract' : `arxiv_${arxiv[1]}`;
+    } else if (alphaPdf) {
+        pdfUrl = alphaPdf;
+        source = 'publisher_pdf';
     } else if (/\.pdf(?:[?#]|$)/i.test(pageUrl) || isPdfDocument) {
         pdfUrl = pageUrl;
         source = isPdfDocument ? 'pdf_content_type' : 'direct_pdf_url';
@@ -66,7 +77,8 @@ export function inspectPaperPage(doc = null, pageUrl = null, publish = false, ob
         if (pdfUrl) source = 'citation_pdf_url';
         if (!pdfUrl) {
             const links = Array.from(doc.querySelectorAll('a[href], link[type="application/pdf"]')).map(el => {
-                const href = absolute(el.getAttribute('href'));
+                const linkUrl = absolute(el.getAttribute('href'));
+                const href = alphaXivPdf(linkUrl) || linkUrl;
                 const label = `${el.textContent || ''} ${el.getAttribute('title') || ''} ${el.getAttribute('aria-label') || ''}`.trim();
                 const supplementary = /(?:[-_/](?:figures?|supplement\w*|supporting)[-_.\/]|\b(?:figures? only|supplement\w*|supporting information)\b)/i.test(`${href || ''} ${label}`);
                 const pdf = /\.pdf(?:[?#]|$)|\/pdf(?:[/?#]|$)/i.test(href || '') || /\bpdf\b/i.test(label) || el.getAttribute('type') === 'application/pdf';
@@ -110,12 +122,13 @@ export function inspectPaperPage(doc = null, pageUrl = null, publish = false, ob
             hasTitle: !!title, arxivId, pdfEvidence: arxivId ? 'arxiv_link' : evidence, featured, supplementary });
     };
     if (pdfUrl && source !== 'pdf_link') addCandidate(pdfUrl, sourceTitle, source, true);
-    if (!arxiv && !isPdfDocument && source !== 'direct_pdf_url') {
+    if (!arxiv && !alphaPdf && !isPdfDocument && source !== 'direct_pdf_url') {
         for (const href of values('citation_pdf_url')) addCandidate(href, sourceTitle, 'citation_pdf_url', true);
         const links = doc.querySelectorAll('a[href], link[type="application/pdf"]');
         truncated ||= links.length > 5000;
         for (const el of Array.from(links).slice(0, 5000)) {
-            const href = absolute(el.getAttribute('href'));
+            const linkUrl = absolute(el.getAttribute('href'));
+            const href = alphaXivPdf(linkUrl) || linkUrl;
             if (!href) continue;
             const label = (el.textContent || el.getAttribute('title') || el.getAttribute('aria-label') || '').trim();
             const id = arxivIdentity(href);
